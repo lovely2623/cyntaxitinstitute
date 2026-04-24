@@ -1,0 +1,146 @@
+.footer-section {
+    background-color: #1a1a1a; /* Dark gray/blackish background */
+    color: #ffffff;
+    padding: 60px 0 20px 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.footer-container {
+    width: 90%;
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.footer-box {
+    flex: 1;
+    min-width: 250px;
+}
+
+.footer-box h3 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #38bdf8; /* Light blue accent */
+    position: relative;
+}
+
+.footer-box h3::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    width: 50px;
+    height: 2px;
+    background: #38bdf8;
+}
+
+.footer-box p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #ccc;
+    margin-bottom: 10px;
+}
+
+.footer-box ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-box ul li {
+    margin-bottom: 10px;
+}
+
+.footer-box ul li a {
+    color: #ccc;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.footer-box ul li a:hover {
+    color: #38bdf8;
+    padding-left: 5px;
+}
+
+.social-icons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.social-icons a {
+    color: white;
+    font-size: 20px;
+    transition: 0.3s;
+}
+
+.social-icons a:hover {
+    color: #38bdf8;
+    transform: translateY(-3px);
+}
+
+/* Bottom Bar */
+.footer-bottom {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+    text-align: center;
+    font-size: 14px;
+    color: #999;
+}
+
+.bottom-container {
+    width: 90%;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.visitor-count {
+    background: #333;
+    padding: 5px 15px;
+    border-radius: 20px;
+    color: #fff;
+}
+
+.visitor-count span {
+    color: #38bdf8;
+    font-weight: bold;
+}
+
+.maintained-by a {
+    color: #38bdf8;
+    text-decoration: none;
+}
+
+/* Map Container Styling */
+.map-container {
+    margin-top: 15px;
+    width: 100%;
+    overflow: hidden; /* Rounded corners ke liye zaroori hai */
+    border-radius: 15px; /* Rounded Corners */
+    border: 2px solid #333;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.map-container iframe {
+    display: block;
+    filter: grayscale(10%) contrast(1.1); /* Map ko thoda dark theme se match karne ke liye */
+}
+
+/* Hover karne par map thoda bright ho jaye */
+.map-container:hover iframe {
+    filter: grayscale(0%);
+    transition: 0.3s;
+}
+
+@media (max-width: 768px) {
+    .bottom-container {
+        flex-direction: column;
+        text-align: center;
+    }
+}

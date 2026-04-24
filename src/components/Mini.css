@@ -1,0 +1,59 @@
+.mini-one {
+    display: flex;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000; /* Isse sabse upar rakhne ke liye */
+    
+    background-color: #0000FF; /* Pure Blue color */
+    color: white; /* Sab kuch white dikhega */
+    
+    padding: 10px 20px;
+    width: 100%;
+    padding-left: 50px;
+    
+    /* Left side alignment aur items ke beech gap */
+    justify-content: flex-start;
+    align-items: center;
+    gap: 50px; /* Inke beech ka gap yahan se kam ya zyada kar sakte ho */
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Icon aur text ke beech ka chhota gap */
+}
+
+/* Links (Email aur WhatsApp) ki styling */
+.info-item a {
+    text-decoration: none;
+    color: white; /* Links bhi white dikhenge */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.3s;
+}
+
+.info-item a:hover {
+    opacity: 0.8; /* Hover karne par halka sa fade effect */
+}
+
+/* Icons ka size thoda adjust karne ke liye */
+.mini-one i {
+    font-size: 16px;
+}
+
+.mini-one span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Mobile responsive check */
+@media (max-width: 768px) {
+    .mini-one {
+        gap: 15px;
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+}

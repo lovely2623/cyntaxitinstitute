@@ -1,0 +1,98 @@
+/* Facilities Styling */
+.facilities-section {
+    padding: 80px 0 0 0; /* Niche ka padding 0 kiya kyunki marquee end mein aayega */
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.section-title {
+    font-size: 36px;
+    color: #1a1a1a;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.underline {
+    width: 80px;
+    height: 4px;
+    background: #0000FF;
+    margin: 0 auto 50px;
+}
+
+.facilities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    width: 90%;
+    margin: 0 auto 60px auto; /* Grid aur Marquee ke beech gap */
+}
+
+.facility-card {
+    background: white;
+    padding: 40px 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    transition: 0.3s;
+    border: 1px solid #eee;
+}
+
+.facility-card:hover {
+    transform: translateY(-10px);
+    border-color: #0000FF;
+}
+
+/* MARQUEE STYLING INSIDE FACILITIES */
+.marquee-wrapper {
+    width: 100%;
+    background-color: white;
+    overflow: hidden;
+    padding: 25px 0;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    
+    /* YEH RAHI MAGIC LINE */
+    margin-top: 30px; 
+    margin-bottom: 50px; /* Footer se chipkega nahi ab, 50px ka gap dega */
+    
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* Thoda sa shadow taaki utha hua dikhe */
+}
+
+.marquee-content {
+    display: flex;
+    white-space: nowrap;
+    animation: marqueeMove 25s linear infinite;
+}
+
+.marquee-content span {
+    font-size: 32px; /* Bda bold text */
+    font-weight: 900;
+    color: black; /* Black color */
+    text-transform: uppercase;
+    padding: 0 60px;
+    font-family: 'Arial Black', sans-serif;
+}
+
+@keyframes marqueeMove {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+.marquee-wrapper:hover .marquee-content {
+    animation-play-state: paused; /* Mouse le jane par ruk jayega */
+}
+
+/* Icons */
+.icon-box {
+    width: 70px; height: 70px;
+    background: #eef2ff;
+    color: #0000FF;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px; font-size: 30px;
+}
+
+.facility-card:hover .icon-box {
+    background: #0000FF; color: white;
+}

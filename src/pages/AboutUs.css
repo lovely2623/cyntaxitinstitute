@@ -1,0 +1,97 @@
+.about-page {
+    padding-top: 100px;
+    background: #fdfdfd;
+}
+
+.about-header {
+    background: linear-gradient(rgba(0,0,255,0.8), rgba(0,0,255,0.8)), url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1350&q=80');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.about-header h1 { font-size: 45px; font-weight: 900; }
+
+.about-container {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding: 0 20px;
+}
+
+/* Mission Section */
+.mission-section {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 50px;
+    align-items: center;
+    margin-bottom: 100px;
+}
+
+.mission-text h2 { color: #0000FF; margin-bottom: 20px; font-size: 32px; }
+.mission-text p { font-size: 18px; line-height: 1.8; color: #444; }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.stat-card {
+    background: #0000FF;
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+/* Director Section Styling */
+.director-section {
+    background: #f0f4ff;
+    padding: 60px;
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+}
+
+.director-card {
+    display: flex;
+    align-items: center;
+    gap: 60px;
+}
+
+.director-image {
+    width: 300px;
+    height: 350px;
+    background: #ddd;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 5px solid white;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.director-image i { font-size: 100px; color: #aaa; }
+.director-image img { width: 100%; height: 100%; object-fit: cover; }
+
+.director-text { flex: 1; position: relative; }
+.quote-icon {
+    font-size: 80px;
+    color: rgba(0, 0, 255, 0.1);
+    position: absolute;
+    top: -40px;
+    left: -20px;
+}
+
+.director-text h2 { font-size: 32px; margin-bottom: 20px; color: #333; }
+.director-text p { font-size: 17px; line-height: 1.7; font-style: italic; color: #555; }
+
+.signature { margin-top: 30px; }
+.signature h4 { font-size: 22px; color: #0000FF; margin-bottom: 5px; }
+
+@media (max-width: 992px) {
+    .mission-section, .director-card { grid-template-columns: 1fr; flex-direction: column; text-align: center; }
+    .director-image { margin: 0 auto 30px; }
+}
