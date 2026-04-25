@@ -46,6 +46,7 @@ function Navbar() {
       <div className="nav-container">
         <div className="logo">
           <img src={logo} alt="Logo" className="logo-img" />
+          <h1>Cyntax IT Institute</h1>
         </div>
 
         {/* Hamburger Icon */}

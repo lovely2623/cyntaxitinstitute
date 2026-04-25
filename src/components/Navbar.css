@@ -41,6 +41,10 @@
   cursor: pointer;
 }
 
+.logo h1 {
+  color: #ff0000 #000000;
+}
+
 .logo-img {
   height: 60px;
   width: auto;
