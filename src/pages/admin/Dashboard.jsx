@@ -23,21 +23,32 @@ function Dashboard() {
 
   const fetchData = async () => {
     if (!checkAuth()) return;
+    
+    // Refresh dikhane ke liye loading true kar sakte hain, but auto-refresh mein irritates users
+    // Isliye initial load pe hi loading state rakhi hai
 
     try {
-      // Fetch Stats
-      const statsRes = await fetch('https://cyntaxitinstitute.onrender.com/api/admin/stats');
-      const statsData = await statsRes.json();
-      setStats(statsData);
+      const BASE_URL = 'https://cyntaxitinstitute.onrender.com';
 
-      // Fetch All Contact Messages
-      const msgRes = await fetch('https://cyntaxitinstitute.onrender.com/api/contact/all');
-      const msgData = await msgRes.json();
-      setMessages(msgData);
+      // Promise.all use karke parallel fetch karenge efficiency ke liye
+      const [statsRes, msgRes] = await Promise.all([
+        fetch(`${BASE_URL}/api/admin/stats`),
+        fetch(`${BASE_URL}/api/contact/all`)
+      ]);
 
-      setLoading(false);
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+
+      if (msgRes.ok) {
+        const msgData = await msgRes.json();
+        setMessages(msgData);
+      }
+
     } catch (err) {
       console.error("Dashboard Fetch Error:", err);
+    } finally {
       setLoading(false);
     }
   };
@@ -100,7 +111,7 @@ function Dashboard() {
       <div className="messages-section">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4 className="fw-bold m-0"><i className="fas fa-comment-dots me-2 text-primary"></i>Student Enquiries</h4>
-          <button className="btn btn-outline-dark btn-sm rounded-pill px-3" onClick={fetchData}>
+          <button className="btn btn-outline-dark btn-sm rounded-pill px-3" onClick={() => { setLoading(true); fetchData(); }}>
             <i className="fas fa-sync-alt"></i> Refresh
           </button>
         </div>

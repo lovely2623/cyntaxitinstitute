@@ -69,7 +69,28 @@ const Contact = mongoose.model('Contact', contactSchema, 'contacts');
 
 // --- ROUTES ---
 
-// Verification Route (Specifically for Student ID Search)
+// 1. ADMIN STATS ROUTE (Dashboard ke liye)
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const totalAdmissions = await Student.countDocuments();
+    const totalMessages = await Contact.countDocuments();
+    res.json({ totalAdmissions, totalMessages });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. FETCH ALL CONTACT MESSAGES (Dashboard ke liye)
+app.get('/api/contact/all', async (req, res) => {
+  try {
+    const messages = await Contact.find().sort({ date: -1 });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Verification Route
 app.get('/api/students/verify/:id', async (req, res) => {
   try {
     const student = await Student.findOne({ studentId: req.params.id.toUpperCase() });
