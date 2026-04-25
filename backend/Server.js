@@ -10,7 +10,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 
-// Health Check Route (Ye check karne ke liye ki server zinda hai)
+// Health Check Route
 app.get('/', (req, res) => {
   res.send("🚀 Cyntax Backend is Live and Running!");
 });
@@ -35,7 +35,7 @@ const studentSchema = new mongoose.Schema({
   fatherName: { type: String, required: true },
   motherName: { type: String, required: true },
   dob: { type: Date, required: true },
-  aadhaarNumber: { type: String, required: true }, // [Aadhaar Redacted for Privacy]
+  aadhaarNumber: { type: String, required: true }, // [Aadhaar Redacted]
   phone: { type: String, required: true },
   address: String,
   course: String,
@@ -44,10 +44,31 @@ const studentSchema = new mongoose.Schema({
   photo: String, 
   status: { type: String, default: 'Active' }
 });
-
 const Student = mongoose.model('Student', studentSchema, 'students');
 
+// --- CONTACT MESSAGE SCHEMA (Naya Section) ---
+const contactSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  mobile: { type: String, required: true },
+  course: { type: String },
+  message: { type: String },
+  date: { type: Date, default: Date.now }
+});
+const Contact = mongoose.model('Contact', contactSchema);
+
 // --- ROUTES ---
+
+// Submit Contact Form
+app.post('/api/contact', async (req, res) => {
+  try {
+    const newMessage = new Contact(req.body);
+    await newMessage.save();
+    res.status(201).json({ success: true, message: "Message sent successfully!" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Visitor Hit
 app.get('/api/visitors/hit', async (req, res) => {
@@ -69,10 +90,12 @@ app.get('/api/visitors/hit', async (req, res) => {
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalCount = await Student.countDocuments();
+    const totalMessages = await Contact.countDocuments(); // Naya stat
     const uniqueCourses = await Student.distinct('course');
     const latestEntries = await Student.find().sort({ joiningDate: -1 }).limit(5);
     res.json({
       totalAdmissions: totalCount,
+      totalMessages: totalMessages,
       totalCourses: uniqueCourses.length,
       recentAdmissions: latestEntries
     });
@@ -118,7 +141,4 @@ app.delete('/api/students/:id', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on port ${PORT}`));
-
-

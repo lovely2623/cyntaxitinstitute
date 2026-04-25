@@ -1,7 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './ContactUs.css';
 
 function ContactUs() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    mobile: '',
+    course: '',
+    message: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:5000/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert("Shukriya! Aapka message humein mil gaya hai. 🚀");
+        setFormData({ name: '', email: '', mobile: '', course: '', message: '' }); // Form clear
+      } else {
+        alert("Oops! Kuch gadbad ho gayi. Dobara koshish karein.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Server connect nahi ho pa raha!");
+    }
+  };
+
   return (
     <div className="contact-page">
       <div className="contact-header">
@@ -36,20 +70,52 @@ function ContactUs() {
         {/* Right Side: Contact Form */}
         <div className="contact-form-box">
           <h2>Send us a Message</h2>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="input-group">
-              <input type="text" placeholder="Aapka Naam" required />
-              <input type="email" placeholder="Email Address" required />
+              <input 
+                type="text" 
+                name="name"
+                placeholder="Aapka Naam" 
+                value={formData.name}
+                onChange={handleChange}
+                required 
+              />
+              <input 
+                type="email" 
+                name="email"
+                placeholder="Email Address" 
+                value={formData.email}
+                onChange={handleChange}
+                required 
+              />
             </div>
-            <input type="text" placeholder="Mobile Number" required />
-            <select required>
+            <input 
+              type="text" 
+              name="mobile"
+              placeholder="Mobile Number" 
+              value={formData.mobile}
+              onChange={handleChange}
+              required 
+            />
+            <select 
+              name="course" 
+              value={formData.course}
+              onChange={handleChange}
+              required
+            >
               <option value="">Course Choose Karein</option>
               <option value="dca">DCA / PGDCA</option>
               <option value="steno">Steno (Hindi/English)</option>
               <option value="web">Web Development</option>
               <option value="govt">Govt. Exam Preparation</option>
             </select>
-            <textarea placeholder="Aapka Sawal (Message)" rows="5"></textarea>
+            <textarea 
+              name="message"
+              placeholder="Aapka Sawal (Message)" 
+              rows="5"
+              value={formData.message}
+              onChange={handleChange}
+            ></textarea>
             <button type="submit" className="submit-btn">Send Message 🚀</button>
           </form>
         </div>
@@ -58,7 +124,7 @@ function ContactUs() {
       {/* Full Width Google Map */}
       <div className="map-section">
         <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3429.673843516053!2d77.1042738753733!3d30.90342507449551!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390f840656a8775d%3A0x6e6e2f1f0e0f0e0f!2sSolan%2C%20Himachal%20Pradesh!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin" 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3430.2!2d77.1!3d30.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390f86c!2sSolan!5e0!3m2!1sen!2sin!4v1611111111111" 
           width="100%" 
           height="400" 
           style={{border:0}} 
