@@ -16,11 +16,21 @@ app.get('/', (req, res) => {
 });
 
 // MongoDB Connection
+// TIP: Agar ECONNREFUSED aa raha hai, to apni .env mein MONGO_URI 
+// ko Atlas se "Node.js version 2.2.12 or later" wala string le kar badlein.
 const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/cyntax_db';
 
-mongoose.connect(mongoURI)
+mongoose.connect(mongoURI, {
+  // Ye options DNS issues mein help karte hain
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000 
+})
   .then(() => console.log("✅ MongoDB Connected Successfully"))
-  .catch(err => console.log("❌ MongoDB Connection Error:", err));
+  .catch(err => {
+    console.log("❌ MongoDB Connection Error Details:");
+    console.error(err.message);
+  });
 
 // --- VISITOR SCHEMA ---
 const visitorSchema = new mongoose.Schema({
@@ -70,7 +80,7 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// 2. Get All Contact Messages (Messages check karne ke liye)
+// 2. Get All Contact Messages
 app.get('/api/contact/all', async (req, res) => {
   try {
     const messages = await Contact.find().sort({ date: -1 });

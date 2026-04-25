@@ -20,7 +20,7 @@ function ContactUs() {
     setLoading(true);
     
     try {
-      // Local testing ke liye localhost:5000, deploy hone par URL badal dena
+      // Local testing ke liye localhost:5000 hi rahega
       const response = await fetch('http://localhost:5000/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,7 +32,7 @@ function ContactUs() {
         alert("Shukriya! Aapka message humein mil gaya hai. 🚀");
         setFormData({ name: '', email: '', mobile: '', course: '', message: '' });
       } else {
-        alert("Oops! Server ne error di hai: " + (result.error || "Unknown Error"));
+        alert("Oops! Server Error: " + (result.error || "Message save nahi ho paya."));
       }
     } catch (error) {
       console.error("Connection Error:", error);
@@ -132,7 +132,7 @@ function ContactUs() {
       {/* Full Width Google Map */}
       <div className="map-section">
         <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3430.2!2d77.1!3d30.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390f86c!2sSolan!5e0!3m2!1sen!2sin!4v1611111111111" 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3429.834416568326!2d77.1065!3d30.9084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDU0JzMwLjIiTiA3N8KwMDYnMjMuNCJF!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin" 
           width="100%" 
           height="400" 
           style={{border:0}} 
