@@ -24,7 +24,7 @@ function ContactUs() {
     try {
       // 1. Agar aap local computer pe chala rahe ho to localhost:5000 hi rahega
       // 2. Agar aapne backend Render pe deploy kiya h, to yahan wo URL aayegi
-      const response = await fetch('http://localhost:5000/api/contact', {
+      const response = await fetch('https://cyntaxitinstitute.onrender.com/api/contact', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
