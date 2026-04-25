@@ -56,17 +56,21 @@ function InfoSection() {
             <h2>Latest Jobs PDF</h2>
           </div>
           <div className="pdf-list">
-            <a href="/pdfs/aicte.pdf" target="_blank" rel="noreferrer" className="pdf-item">
+            <a href="/pdfs/steno.pdf" target="_blank" rel="noreferrer" className="pdf-item">
               <div className="pdf-icon">PDF</div>
-              <div className="pdf-text">AICTE Notification 2026</div>
+              <div className="pdf-text">Steno Guidelines</div>
             </a>
-            <a href="/pdfs/incc.pdf" target="_blank" rel="noreferrer" className="pdf-item">
+            <a href="/pdfs/teacher.pdf" target="_blank" rel="noreferrer" className="pdf-item">
               <div className="pdf-icon">PDF</div>
-              <div className="pdf-text">New Hiring Alert!</div>
+              <div className="pdf-text">CBSE Teacher </div>
             </a>
-            <a href="/pdfs/Cvramp.pdf" target="_blank" rel="noreferrer" className="pdf-item">
+            <a href="/pdfs/steno.pdf" target="_blank" rel="noreferrer" className="pdf-item">
               <div className="pdf-icon">PDF</div>
-              <div className="pdf-text">Important Job Update</div>
+              <div className="pdf-text">SSC Steno Vacancy</div>
+            </a>
+                <a href="/pdfs/teacher.pdf" target="_blank" rel="noreferrer" className="pdf-item">
+              <div className="pdf-icon">PDF</div>
+              <div className="pdf-text">HPRCA Teacher Vacancy</div>
             </a>
           </div>
         </div>
