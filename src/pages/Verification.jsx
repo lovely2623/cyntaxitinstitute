@@ -11,12 +11,13 @@ function Verification() {
     setLoading(true);
     
     try {
+      // Backend route updated to match the studentId search
       const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/verify/${searchId}`);
       const data = await response.json();
       
-      if (response.ok) {
+      if (response.ok && data) {
         setStudentData(data);
-        setSearchId(''); // <--- Ye raha magic, input field automatic blank ho jayegi
+        setSearchId(''); 
       } else {
         alert("Opps! Ye Student ID hamare record mein nahi hai.");
         setStudentData(null);
@@ -37,13 +38,11 @@ function Verification() {
   return (
     <div className="v-portal-wrapper">
       <div className="container">
-        {/* Verification Hero Section */}
         <div className="v-hero-content text-center mb-5">
           <h1 className="display-5 fw-bold text-dark">E-Verification Portal</h1>
           <p className="lead text-secondary">Cyntax Education Official Student Authentication System</p>
         </div>
 
-        {/* Search Box Card */}
         <div className="row justify-content-center">
           <div className="col-md-6">
             <div className="v-search-card">
@@ -66,7 +65,6 @@ function Verification() {
           </div>
         </div>
 
-        {/* Student Profile Display */}
         {studentData && (
           <div className="row justify-content-center mt-5">
             <div className="col-lg-9 animate-profile">
@@ -89,7 +87,7 @@ function Verification() {
                     </div>
 
                     <div className="col-md-8 ps-md-5">
-                      <h5 className="v-section-title">Academic Details</h5>
+                      <h5 className="v-section-title">Academic & Personal Details</h5>
                       <div className="v-info-grid">
                         <div className="v-info-item">
                           <label>Course Name</label>
@@ -104,8 +102,20 @@ function Verification() {
                           <span>{studentData.fatherName}</span>
                         </div>
                         <div className="v-info-item">
+                          <label>Mother's Name</label>
+                          <span>{studentData.motherName}</span>
+                        </div>
+                        <div className="v-info-item">
+                          <label>Date of Birth</label>
+                          <span>{formatDate(studentData.dob)}</span>
+                        </div>
+                        <div className="v-info-item">
                           <label>Admission Date</label>
                           <span className="text-success">{formatDate(studentData.joiningDate)}</span>
+                        </div>
+                        <div className="v-info-item">
+                          <label>Contact Number</label>
+                          <span>{studentData.phone}</span>
                         </div>
                         <div className="v-info-item w-100">
                           <label>Verified Address</label>
