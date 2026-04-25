@@ -17,11 +17,20 @@ function Login() {
   }, [navigate]);
 
   const handleAdminLogin = () => {
+    // Basic Validation
+    if (!email || !password) {
+        alert("Bhai Email aur Password toh daal de!");
+        return;
+    }
+
     if (email === 'admin@test.com' && password === '123456') {
       alert('Login Successful! Welcome Mohit Sir.');
       localStorage.setItem('isAdminAuthenticated', 'true');
+      
+      // Navigate ke baad reload ki zaroorat nahi hai agar Navbar auth state check kar raha hai
       navigate('/AdminLayout/Dashboard');
-      window.location.reload(); 
+      
+      // Page refresh ki wajah se Netlify 404 deta hai, isliye sirf navigate kaafi hai
     } else {
       alert('Galat Email ya Password hai bhai!');
     }
