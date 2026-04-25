@@ -7,7 +7,7 @@
   
   /* FIXED POSITION LOGIC */
   position: fixed !important; 
-  top: 35px; /* Mini bar ke liye space (Laptop/Desktop) */
+  top: 53px; /* Mini bar ke liye space (Laptop/Desktop) */
   left: 0;
   right: 0;
   z-index: 9999;
