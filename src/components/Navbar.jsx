@@ -8,34 +8,24 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
 
-  // 1. Check Login Status
   const isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
 
   useEffect(() => {
     const handleScroll = () => {
-      // Background color change on scroll logic
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-
-      // --- Naya Logic: Scroll hone par menu band ho jaye ---
-      if (menuOpen) {
-        setMenuOpen(false);
-      }
+      if (window.scrollY > 50) setScrolled(true);
+      else setScrolled(false);
+      if (menuOpen) setMenuOpen(false);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [menuOpen]); // menuOpen ki state yahan monitor ho rahi hai
+  }, [menuOpen]);
 
-  // 2. Logout Logic
   const handleLogout = () => {
     if(window.confirm("Mohit Sir, Logout karna hai?")) {
-      localStorage.removeItem('isAdminAuthenticated'); // Memory saaf
-      navigate('/'); // Seedha Home par
-      window.location.reload(); // Refresh taaki Login wapas dikhe
+      localStorage.removeItem('isAdminAuthenticated');
+      navigate('/');
+      window.location.reload();
     }
   };
 
@@ -44,14 +34,13 @@ function Navbar() {
   return (
     <nav className={`navbar ${scrolled ? "navbar-scrolled" : ""}`}>
       <div className="nav-container">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
           <img src={logo} alt="Logo" className="logo-img" />
           <h1 className="logo-text-branding">Cyntax IT Institute</h1>
         </div>
 
-        {/* Hamburger Icon */}
         <div className="hamburger" onClick={() => setMenuOpen(!menuOpen)}> 
-          {menuOpen ? "✖" : "☰"} 
+          {menuOpen ? <i className="fas fa-times"></i> : <i className="fas fa-bars"></i>} 
         </div>
 
         <ul className={menuOpen ? "nav-menu active" : "nav-menu"}>
@@ -62,19 +51,16 @@ function Navbar() {
           <li><NavLink to="/Gallery" onClick={closeMenu}>Gallery</NavLink></li>
           <li><NavLink to="/Verification" onClick={closeMenu}>Verification</NavLink></li>
 
-          {/* Login/Logout Switch */}
           {isAuthenticated ? (
-            <li>
-              <button onClick={handleLogout} className="nav-logout-btn">
-                <span className="login-icon">🏃</span>
-                <span className="login-text">Logout</span>
+            <li className="nav-item-special">
+              <button onClick={handleLogout} className="nav-logout-btn-premium">
+                <i className="fas fa-power-off me-2"></i> Logout
               </button>
             </li>
           ) : (
-            <li>
-              <NavLink to="/Login" onClick={closeMenu} className="login-box">
-                <span className="login-icon">👤</span>
-                <span className="login-text">Login</span>
+            <li className="nav-item-special">
+              <NavLink to="/Login" onClick={closeMenu} className="nav-login-btn-premium">
+                <i className="fas fa-user-shield me-2"></i> Staff Login
               </NavLink>
             </li>
           )}
