@@ -19,24 +19,31 @@ function ContactUs() {
     e.preventDefault();
     setLoading(true);
     
+    console.log("Sending data to backend:", formData); // Debugging ke liye
+
     try {
-      // Local testing ke liye localhost:5000 hi rahega
+      // 1. Agar aap local computer pe chala rahe ho to localhost:5000 hi rahega
+      // 2. Agar aapne backend Render pe deploy kiya h, to yahan wo URL aayegi
       const response = await fetch('http://localhost:5000/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify(formData)
       });
 
       const result = await response.json();
+      console.log("Server Response:", result); // Debugging ke liye
+
       if (response.ok && result.success) {
-        alert("Shukriya! Aapka message humein mil gaya hai. 🚀");
+        alert("Shukriya Mohit Sir! Aapka message database mein save ho gaya hai. 🚀");
         setFormData({ name: '', email: '', mobile: '', course: '', message: '' });
       } else {
-        alert("Oops! Server Error: " + (result.error || "Message save nahi ho paya."));
+        alert("Oops! Server Error: " + (result.error || "Data save nahi hua."));
       }
     } catch (error) {
       console.error("Connection Error:", error);
-      alert("Server connect nahi ho pa raha! Check karein ki Backend terminal mein chalu hai.");
+      alert("Backend se baat nahi ho pa rahi! Check karein ki Terminal mein 'Server running on port 5000' likha hai?");
     } finally {
       setLoading(false);
     }
@@ -50,7 +57,6 @@ function ContactUs() {
       </div>
 
       <div className="contact-container">
-        {/* Left Side: Contact Info */}
         <div className="contact-info">
           <div className="info-card">
             <i className="fas fa-phone-alt"></i>
@@ -73,14 +79,13 @@ function ContactUs() {
           </div>
         </div>
 
-        {/* Right Side: Contact Form */}
         <div className="contact-form-box">
           <h2>Send us a Message</h2>
           <form onSubmit={handleSubmit}>
             <div className="input-group">
               <input 
                 type="text" 
-                name="name"
+                name="name" // Backend schema se match hona chahiye
                 placeholder="Aapka Naam" 
                 value={formData.name}
                 onChange={handleChange}
@@ -88,7 +93,7 @@ function ContactUs() {
               />
               <input 
                 type="email" 
-                name="email"
+                name="email" // Backend schema se match hona chahiye
                 placeholder="Email Address" 
                 value={formData.email}
                 onChange={handleChange}
@@ -97,7 +102,7 @@ function ContactUs() {
             </div>
             <input 
               type="text" 
-              name="mobile"
+              name="mobile" // Backend schema se match hona chahiye
               placeholder="Mobile Number" 
               value={formData.mobile}
               onChange={handleChange}
@@ -123,13 +128,12 @@ function ContactUs() {
               onChange={handleChange}
             ></textarea>
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? "Bhej rahe hain..." : "Send Message 🚀"}
+              {loading ? "Processing..." : "Send Message 🚀"}
             </button>
           </form>
         </div>
       </div>
 
-      {/* Full Width Google Map */}
       <div className="map-section">
         <iframe 
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3429.834416568326!2d77.1065!3d30.9084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDU0JzMwLjIiTiA3N8KwMDYnMjMuNCJF!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin" 
