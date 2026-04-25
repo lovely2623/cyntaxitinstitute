@@ -78,7 +78,7 @@ function Footer() {
           <div className="visitor-count">
              <i className="fas fa-eye"></i> Visitors: <span>{visitorCount}</span>
           </div>
-          <p className="maintained-by">Maintained by <a href="#">Cyntax IT Team</a></p>
+          <p className="maintained-by">Maintained by <a href="#">Lovely Mohit Thakur</a></p>
         </div>
       </div>
     </footer>
