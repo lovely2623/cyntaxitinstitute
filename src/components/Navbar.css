@@ -41,9 +41,7 @@
   cursor: pointer;
 }
 
-.logo h1 {
-  color: #ff0000 #000000;
-}
+
 
 .logo-img {
   height: 60px;
@@ -221,3 +219,51 @@
     color: white;
   }
 }
+
+/* --- LOGO SECTION UPDATE --- */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Logo aur text ke beech ka gap */
+  cursor: pointer;
+}
+
+.logo-img {
+  height: 60px;
+  width: auto;
+  transition: 0.3s;
+}
+
+/* Red aur Black Mix Color Text Styling */
+.logo-text-branding {
+  font-size: 24px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: -0.5px;
+  /* Gradient Logic: Black se Red ki taraf */
+  background: linear-gradient(90deg, #000000 30%, #ff0000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Scroll hone par text thoda chota ho jaye */
+.navbar-scrolled .logo-text-branding {
+  font-size: 20px;
+}
+
+/* Mobile par responsive adjustment */
+@media (max-width: 768px) {
+  .logo-text-branding {
+    font-size: 18px; /* Mobile par screen choti hoti h isliye kam kiya */
+    letter-spacing: -1px;
+  }
+  
+  .logo-img {
+    height: 45px;
+  }
+}
+
+/* Baki ka saara CSS jo pehle tha vese hi rehne de... */
