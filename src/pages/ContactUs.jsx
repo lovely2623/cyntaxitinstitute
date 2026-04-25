@@ -19,11 +19,10 @@ function ContactUs() {
     e.preventDefault();
     setLoading(true);
     
-    console.log("Sending data to backend:", formData); // Debugging ke liye
+    console.log("Sending data to Cyntax Render Backend:", formData);
 
     try {
-      // 1. Agar aap local computer pe chala rahe ho to localhost:5000 hi rahega
-      // 2. Agar aapne backend Render pe deploy kiya h, to yahan wo URL aayegi
+      // Ab ye seedha aapke Render backend par data bhejega
       const response = await fetch('https://cyntaxitinstitute.onrender.com/api/contact', {
         method: 'POST',
         headers: { 
@@ -33,7 +32,7 @@ function ContactUs() {
       });
 
       const result = await response.json();
-      console.log("Server Response:", result); // Debugging ke liye
+      console.log("Render Server Response:", result);
 
       if (response.ok && result.success) {
         alert("Shukriya Mohit Sir! Aapka message database mein save ho gaya hai. 🚀");
@@ -43,7 +42,7 @@ function ContactUs() {
       }
     } catch (error) {
       console.error("Connection Error:", error);
-      alert("Backend se baat nahi ho pa rahi! Check karein ki Terminal mein 'Server running on port 5000' likha hai?");
+      alert("Backend se connect nahi ho pa raha! Check karein ki Render par backend 'Live' hai ya nahi.");
     } finally {
       setLoading(false);
     }
@@ -57,6 +56,7 @@ function ContactUs() {
       </div>
 
       <div className="contact-container">
+        {/* Left Side: Contact Info */}
         <div className="contact-info">
           <div className="info-card">
             <i className="fas fa-phone-alt"></i>
@@ -79,13 +79,14 @@ function ContactUs() {
           </div>
         </div>
 
+        {/* Right Side: Contact Form */}
         <div className="contact-form-box">
           <h2>Send us a Message</h2>
           <form onSubmit={handleSubmit}>
             <div className="input-group">
               <input 
                 type="text" 
-                name="name" // Backend schema se match hona chahiye
+                name="name"
                 placeholder="Aapka Naam" 
                 value={formData.name}
                 onChange={handleChange}
@@ -93,7 +94,7 @@ function ContactUs() {
               />
               <input 
                 type="email" 
-                name="email" // Backend schema se match hona chahiye
+                name="email"
                 placeholder="Email Address" 
                 value={formData.email}
                 onChange={handleChange}
@@ -102,7 +103,7 @@ function ContactUs() {
             </div>
             <input 
               type="text" 
-              name="mobile" // Backend schema se match hona chahiye
+              name="mobile"
               placeholder="Mobile Number" 
               value={formData.mobile}
               onChange={handleChange}
