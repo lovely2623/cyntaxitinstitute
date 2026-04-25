@@ -28,7 +28,7 @@ function Dashboard() {
     if (!checkAuth()) return; // Security Guard
 
     try {
-      const res = await fetch('http://localhost:5000/api/admin/stats');
+      const res = await fetch('https://cyntaxitinstitute.onrender.com/api/admin/stats');
       const data = await res.json();
       setStats(data);
       setLoading(false);

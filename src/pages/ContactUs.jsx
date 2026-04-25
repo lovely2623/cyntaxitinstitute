@@ -9,6 +9,7 @@ function ContactUs() {
     course: '',
     message: ''
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -16,7 +17,10 @@ function ContactUs() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    
     try {
+      // Local testing ke liye localhost:5000, deploy hone par URL badal dena
       const response = await fetch('http://localhost:5000/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -24,15 +28,17 @@ function ContactUs() {
       });
 
       const result = await response.json();
-      if (result.success) {
+      if (response.ok && result.success) {
         alert("Shukriya! Aapka message humein mil gaya hai. 🚀");
-        setFormData({ name: '', email: '', mobile: '', course: '', message: '' }); // Form clear
+        setFormData({ name: '', email: '', mobile: '', course: '', message: '' });
       } else {
-        alert("Oops! Kuch gadbad ho gayi. Dobara koshish karein.");
+        alert("Oops! Server ne error di hai: " + (result.error || "Unknown Error"));
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("Server connect nahi ho pa raha!");
+      console.error("Connection Error:", error);
+      alert("Server connect nahi ho pa raha! Check karein ki Backend terminal mein chalu hai.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -116,7 +122,9 @@ function ContactUs() {
               value={formData.message}
               onChange={handleChange}
             ></textarea>
-            <button type="submit" className="submit-btn">Send Message 🚀</button>
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? "Bhej rahe hain..." : "Send Message 🚀"}
+            </button>
           </form>
         </div>
       </div>

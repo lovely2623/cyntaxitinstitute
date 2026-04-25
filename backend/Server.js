@@ -35,7 +35,7 @@ const studentSchema = new mongoose.Schema({
   fatherName: { type: String, required: true },
   motherName: { type: String, required: true },
   dob: { type: Date, required: true },
-  aadhaarNumber: { type: String, required: true }, // [Aadhaar Redacted]
+  aadhaarNumber: { type: String, required: true }, 
   phone: { type: String, required: true },
   address: String,
   course: String,
@@ -46,7 +46,7 @@ const studentSchema = new mongoose.Schema({
 });
 const Student = mongoose.model('Student', studentSchema, 'students');
 
-// --- CONTACT MESSAGE SCHEMA (Naya Section) ---
+// --- CONTACT MESSAGE SCHEMA ---
 const contactSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
@@ -59,7 +59,7 @@ const Contact = mongoose.model('Contact', contactSchema);
 
 // --- ROUTES ---
 
-// Submit Contact Form
+// 1. Submit Contact Form
 app.post('/api/contact', async (req, res) => {
   try {
     const newMessage = new Contact(req.body);
@@ -70,7 +70,17 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// Visitor Hit
+// 2. Get All Contact Messages (Messages check karne ke liye)
+app.get('/api/contact/all', async (req, res) => {
+  try {
+    const messages = await Contact.find().sort({ date: -1 });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Visitor Hit
 app.get('/api/visitors/hit', async (req, res) => {
   try {
     let visitorData = await Visitor.findOne();
@@ -86,11 +96,11 @@ app.get('/api/visitors/hit', async (req, res) => {
   }
 });
 
-// Admin Stats
+// 4. Admin Stats
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalCount = await Student.countDocuments();
-    const totalMessages = await Contact.countDocuments(); // Naya stat
+    const totalMessages = await Contact.countDocuments();
     const uniqueCourses = await Student.distinct('course');
     const latestEntries = await Student.find().sort({ joiningDate: -1 }).limit(5);
     res.json({
@@ -102,7 +112,7 @@ app.get('/api/admin/stats', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Get All Students
+// 5. Get All Students
 app.get('/api/students', async (req, res) => {
   try {
     const data = await Student.find().sort({ joiningDate: -1 });
@@ -110,7 +120,7 @@ app.get('/api/students', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Post Student
+// 6. Post Student
 app.post('/api/students', async (req, res) => {
   try {
     const studentData = req.body;
@@ -124,7 +134,7 @@ app.post('/api/students', async (req, res) => {
   }
 });
 
-// Update Student
+// 7. Update Student
 app.put('/api/students/:id', async (req, res) => {
   try {
     const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -132,13 +142,13 @@ app.put('/api/students/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Delete Student
+// 8. Delete Student
 app.delete('/api/students/:id', async (req, res) => {
   try {
     await Student.findByIdAndDelete(req.params.id);
     res.json({ message: "Student record deleted!" });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
+ 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on port ${PORT}`));

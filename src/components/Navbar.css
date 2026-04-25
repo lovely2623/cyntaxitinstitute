@@ -7,7 +7,7 @@
   
   /* FIXED POSITION LOGIC */
   position: fixed !important; 
-  top: 44px; /* Mini bar ke thik niche (Desktop) */
+  top: 41px; /* Mini bar ke thik niche (Desktop) */
   left: 0;
   right: 0;
   z-index: 9999;
