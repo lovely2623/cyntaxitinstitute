@@ -11,7 +11,7 @@ function Verification() {
     setLoading(true);
     
     try {
-      const response = await fetch(`http://localhost:5000/api/students/verify/${searchId}`);
+      const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/verify/${searchId}`);
       const data = await response.json();
       
       if (response.ok) {

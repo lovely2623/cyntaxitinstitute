@@ -8,7 +8,7 @@ function Footer() {
 
   useEffect(() => {
     if (!hasCalled.current) {
-      fetch('http://localhost:5000/api/visitors/hit')
+      fetch('https://cyntaxitinstitute.onrender.com/api/visitors/hit')
         .then(res => res.json())
         .then(data => {
           setVisitorCount(data.count.toLocaleString());

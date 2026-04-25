@@ -8,7 +8,7 @@ function StudentList() {
 
   const fetchStudents = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/students', { cache: 'no-store' });
+      const response = await fetch('https://cyntaxitinstitute.onrender.com/api/students', { cache: 'no-store' });
       const data = await response.json();
       setStudents(data.reverse());
     } catch (error) {
@@ -20,7 +20,7 @@ function StudentList() {
 
   const handleDelete = async (id) => {
     if (window.confirm("Bhai, pakka delete karna hai?")) {
-      await fetch(`http://localhost:5000/api/students/${id}`, { method: 'DELETE' });
+      await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${id}`, { method: 'DELETE' });
       fetchStudents();
     }
   };
@@ -28,7 +28,7 @@ function StudentList() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:5000/api/students/${editStudent._id}`, {
+      const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${editStudent._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editStudent)
