@@ -1,9 +1,31 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit'); // Naya package install karein
 require('dotenv').config();
 
 const app = express();
+
+// --- SPAM PROTECTION ---
+// Contact form ke liye: Ek IP se 24 ghante mein sirf 5 messages
+const contactLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 5,
+  message: { success: false, error: "Spam Alert! Aapne limit cross kar di hai. Please kal try karein." }
+});
+
+// Visitor count ke liye: Ek IP se 1 ghante mein sirf 1 count badhega (Fake hits rokne ke liye)
+const visitorLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, 
+  max: 1, 
+  keyGenerator: (req) => req.ip, 
+  handler: async (req, res, next) => {
+    // Agar limit cross ho jaye, toh count badhaye bina sirf current count bhej do
+    const data = await mongoose.model('Visitor').findOne({});
+    res.json({ count: data ? data.count : 1000 });
+  },
+  skipFailedRequests: true
+});
 
 // Middleware
 app.use(express.json({ limit: '50mb' })); 
@@ -20,10 +42,7 @@ const mongoURI = process.env.MONGO_URI || 'mongodb://admin:Mohit12345@ac-vwea0ti
 
 mongoose.connect(mongoURI)
   .then(() => console.log("✅ MongoDB Connected Successfully"))
-  .catch(err => {
-    console.log("❌ MongoDB Connection Error:");
-    console.error(err.message);
-  });
+  .catch(err => console.error("❌ MongoDB Connection Error:", err.message));
 
 // --- SCHEMAS ---
 const visitorSchema = new mongoose.Schema({ count: { type: Number, default: 1000 } });
@@ -58,8 +77,18 @@ const Contact = mongoose.model('Contact', contactSchema, 'contacts');
 
 // --- ROUTES ---
 
-// Submit Contact Form
-app.post('/api/contact', async (req, res) => {
+// 🚀 UPDATED: Real Visitor Count (Database se connect aur IP check ke sath)
+app.get('/api/visitors/hit', visitorLimiter, async (req, res) => {
+  try {
+    let visitorData = await Visitor.findOneAndUpdate({}, { $inc: { count: 1 } }, { upsert: true, new: true });
+    res.json({ count: visitorData.count });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Submit Contact Form (With Spam Protection)
+app.post('/api/contact', contactLimiter, async (req, res) => {
   try {
     const newMessage = new Contact(req.body);
     await newMessage.save();
@@ -69,14 +98,12 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// Get All Contact Messages (Dashboard ke liye)
+// Get All Contact Messages
 app.get('/api/contact/all', async (req, res) => {
   try {
     const messages = await Contact.find().sort({ date: -1 });
     res.json(messages);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // Admin Stats
@@ -84,16 +111,11 @@ app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalAdmissions = await Student.countDocuments();
     const totalMessages = await Contact.countDocuments();
-    res.json({
-      totalAdmissions,
-      totalMessages
-    });
-  } catch (err) { 
-    res.status(500).json({ error: err.message }); 
-  }
+    res.json({ totalAdmissions, totalMessages });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Student Management Routes (No Changes here)
+// Student Management Routes
 app.get('/api/students', async (req, res) => {
   try {
     const data = await Student.find().sort({ joiningDate: -1 });
