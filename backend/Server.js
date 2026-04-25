@@ -1,22 +1,27 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config(); // Dotenv support add kiya
 
 const app = express();
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 
-mongoose.connect('mongodb://localhost:27017/cyntax_db')
+// MongoDB Connection Fix: Render/Atlas ke liye check
+const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/cyntax_db';
+
+mongoose.connect(mongoURI)
   .then(() => console.log("✅ MongoDB Connected Successfully"))
   .catch(err => console.log("❌ MongoDB Connection Error:", err));
 
-// --- VISITOR SCHEMA (New Add-on) ---
+// --- VISITOR SCHEMA ---
 const visitorSchema = new mongoose.Schema({
-  count: { type: Number, default: 12345 } // Aapka starting number
+  count: { type: Number, default: 1000 }
 });
 const Visitor = mongoose.model('Visitor', visitorSchema);
 
+// --- STUDENT SCHEMA ---
 const studentSchema = new mongoose.Schema({
   studentId: { type: String, unique: true, required: true },
   name: { type: String, required: true },
@@ -35,14 +40,14 @@ const studentSchema = new mongoose.Schema({
 
 const Student = mongoose.model('Student', studentSchema, 'students');
 
-// --- VISITOR API ROUTE (New Add-on) ---
+// --- ROUTES ---
 app.get('/api/visitors/hit', async (req, res) => {
   try {
     let visitorData = await Visitor.findOne();
     if (!visitorData) {
-      visitorData = new Visitor({ count: 12345 });
+      visitorData = new Visitor({ count: 1000 });
     } else {
-      visitorData.count += 1; // Har hit pe +1
+      visitorData.count += 1;
     }
     await visitorData.save();
     res.json({ count: visitorData.count });
@@ -51,9 +56,6 @@ app.get('/api/visitors/hit', async (req, res) => {
   }
 });
 
-// --- ROUTES ---
-
-// Dashboard Stats
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalCount = await Student.countDocuments();
@@ -64,22 +66,16 @@ app.get('/api/admin/stats', async (req, res) => {
       totalCourses: uniqueCourses.length,
       recentAdmissions: latestEntries
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Get All Students
 app.get('/api/students', async (req, res) => {
   try {
     const data = await Student.find().sort({ joiningDate: -1 });
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Post Student
 app.post('/api/students', async (req, res) => {
   try {
     const studentData = req.body;
@@ -87,33 +83,25 @@ app.post('/api/students', async (req, res) => {
     const newStudent = new Student(studentData);
     await newStudent.save();
     res.status(201).json({ message: "Student added successfully!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (err) { 
+    console.error("Save Error:", err.message);
+    res.status(500).json({ error: err.message }); 
   }
 });
 
-// ✅ 1. UPDATE STUDENT
 app.put('/api/students/:id', async (req, res) => {
   try {
-    const updatedStudent = await Student.findByIdAndUpdate(
-      req.params.id, 
-      req.body, 
-      { new: true }
-    );
+    const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json({ message: "Data update ho gaya!", data: updatedStudent });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ✅ 2. DELETE STUDENT Route
 app.delete('/api/students/:id', async (req, res) => {
   try {
     await Student.findByIdAndDelete(req.params.id);
     res.json({ message: "Student record deleted!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.listen(5000, () => console.log("🚀 Server running on port 5000"));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

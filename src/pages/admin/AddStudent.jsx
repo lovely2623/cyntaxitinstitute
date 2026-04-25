@@ -7,10 +7,13 @@ function AddStudent() {
     course: '', courseDuration: '', joiningDate: '', photo: ''
   });
 
+  // CHANGE THIS TO YOUR RENDER URL
+  const API_BASE_URL = "https://cyntaxitinstitute-backend.onrender.com"; 
+
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit check
+      if (file.size > 2 * 1024 * 1024) { 
         alert("Photo bahut badi hai! 2MB se kam ki photo chune.");
         return;
       }
@@ -43,9 +46,9 @@ function AddStudent() {
       const uniqueId = "CYN-" + Math.floor(1000 + Math.random() * 9000);
       const finalData = { ...student, studentId: uniqueId };
 
-      console.log("Sending data to server...");
+      console.log("Sending data to:", `${API_BASE_URL}/api/students`);
       
-      const response = await fetch('http://localhost:5000/api/students', {
+      const response = await fetch(`${API_BASE_URL}/api/students`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(finalData)
@@ -55,18 +58,17 @@ function AddStudent() {
 
       if (response.ok) {
         alert(`Mubarak ho! Admission ho gaya. ID: ${uniqueId}`);
-        // Reset Form
         setStudent({
           name: '', fatherName: '', motherName: '', fatherOccupation: '',
           dob: '', aadhaarNumber: '', phone: '', address: '',
           course: '', courseDuration: '', joiningDate: '', photo: ''
         });
       } else {
-        alert("Server ne mana kar diya: " + result.error);
+        alert("Server Error: " + result.error);
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      alert("Backend se connection nahi ho paa raha! Server.js check karo.");
+      alert("Backend se connection nahi ho paa raha! Check if Backend is Live on Render.");
     }
   };
 
@@ -85,7 +87,6 @@ function AddStudent() {
               <input type="file" accept="image/*" onChange={handlePhotoChange} className="mt-2" />
             </div>
 
-            {/* Baaki inputs (Name, FatherName, etc.) jo tumne likhe the, wo yahan niche rahenge */}
             <div className="col-md-4 mb-3">
               <label>Student Name</label>
               <input type="text" className="form-control" value={student.name} required 
