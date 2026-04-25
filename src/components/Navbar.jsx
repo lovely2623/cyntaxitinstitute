@@ -13,12 +13,22 @@ function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 50) setScrolled(true);
-      else setScrolled(false);
+      // Background color change on scroll logic
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+
+      // --- Naya Logic: Scroll hone par menu band ho jaye ---
+      if (menuOpen) {
+        setMenuOpen(false);
+      }
     };
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [menuOpen]); // menuOpen ki state yahan monitor ho rahi hai
 
   // 2. Logout Logic
   const handleLogout = () => {
@@ -38,7 +48,10 @@ function Navbar() {
           <img src={logo} alt="Logo" className="logo-img" />
         </div>
 
-        <div className="hamburger" onClick={() => setMenuOpen(!menuOpen)}> ☰ </div>
+        {/* Hamburger Icon */}
+        <div className="hamburger" onClick={() => setMenuOpen(!menuOpen)}> 
+          {menuOpen ? "✖" : "☰"} 
+        </div>
 
         <ul className={menuOpen ? "nav-menu active" : "nav-menu"}>
           <li><NavLink to="/" onClick={closeMenu}>Home</NavLink></li>
@@ -53,12 +66,12 @@ function Navbar() {
             <li>
               <button onClick={handleLogout} className="nav-logout-btn">
                 <span className="login-icon">🏃</span>
-                <span className="login-text">Logoutt</span>
+                <span className="login-text">Logout</span>
               </button>
             </li>
           ) : (
             <li>
-              <NavLink to="/Login" onClick={closeMenu}>
+              <NavLink to="/Login" onClick={closeMenu} className="login-box">
                 <span className="login-icon">👤</span>
                 <span className="login-text">Login</span>
               </NavLink>

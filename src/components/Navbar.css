@@ -9,6 +9,16 @@
   left: 0;
   right: 0;
   z-index: 9999;
+  /* Add-on: Smooth transition jab class change ho */
+  transition: all 0.3s ease-in-out;
+}
+
+/* Add-on: Scroll hone par navbar ki styling (Optional: isse height thodi kam ho jayegi) */
+.navbar-scrolled {
+  top: 0; /* Scroll hone par mini bar ke upar chala jaye */
+  padding: 10px 0;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
 }
 
 .active-link {
@@ -34,6 +44,12 @@
 .logo-img {
   height: 60px;
   width: auto;
+  transition: 0.3s; /* Add-on: Logo size transition */
+}
+
+/* Add-on: Scrolled state mein logo thoda chota */
+.navbar-scrolled .logo-img {
+  height: 50px;
 }
 
 /* --- DESKTOP MENU --- */
@@ -92,6 +108,19 @@
   color: black;
 }
 
+/* Add-on: Logout button reset (taaki button link jaisa dikhe) */
+.nav-logout-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: black;
+  font-family: inherit;
+}
+
 .login-icon {
   font-size: 22px;
 }
@@ -120,6 +149,11 @@
     padding: 10px 0;
   }
 
+  /* Add-on: Mobile par scroll hone par navbar top 0 ho jaye */
+  .navbar-scrolled {
+    top: 0;
+  }
+
   .logo-img {
     height: 50px;
   }
@@ -129,7 +163,7 @@
     display: none; /* Default hidden */
     flex-direction: column;
     position: absolute;
-    top: 75px; /* Navbar ke niche */
+    top: 100%; /* Navbar ke niche dynamic adjustment */
     right: 5%;
     width: 220px;
     background: #1e293b; /* Dark Background */
@@ -138,6 +172,14 @@
     gap: 20px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     z-index: 10000;
+    /* Add-on: Menu transition */
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  /* Add-on: Fade in animation for mobile menu */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .nav-menu.active {
@@ -148,6 +190,11 @@
     width: 100%;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 10px;
+  }
+
+  .nav-logout-btn {
+    color: white; /* Mobile menu mein logout text white */
+    align-items: flex-start;
   }
 
   .nav-menu li:last-child {
