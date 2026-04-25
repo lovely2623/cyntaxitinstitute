@@ -8,7 +8,7 @@ function AddStudent() {
   });
 
   // CHANGE THIS TO YOUR RENDER URL
-  const API_BASE_URL = "https://cyntaxitinstitute-backend.onrender.com"; 
+  const API_BASE_URL = "https://cyntaxitinstitute.onrender.com"; 
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
