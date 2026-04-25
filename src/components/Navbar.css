@@ -7,7 +7,7 @@
   
   /* FIXED POSITION LOGIC */
   position: fixed !important; 
-  top: 60px; /* Mini bar ke liye space (Laptop/Desktop) */
+  top: 44px; /* Mini bar ke thik niche (Desktop) */
   left: 0;
   right: 0;
   z-index: 9999;
@@ -17,7 +17,7 @@
 
 /* Jab page scroll ho tab navbar ki styling */
 .navbar-scrolled {
-  top: 40px; /* Scroll hone par top se chipak jayega */
+  top: 44px; /* Scroll par bhi wahin fixed rahega mini-bar ke niche */
   padding: 10px 0;
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
@@ -161,9 +161,13 @@
   }
 
   .navbar {
-    top: 0; /* Mobile par top bar nahi hoti aksar, isliye 0 */
+    top: 36px; /* Mobile par mini-bar thoda chota hota h, isliye 36px */
     padding: 10px 0;
     position: fixed !important;
+  }
+
+  .navbar-scrolled {
+    top: 36px; /* Scroll par bhi mini-bar ke niche rahe */
   }
 
   .logo-img {
