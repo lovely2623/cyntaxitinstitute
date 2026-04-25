@@ -1,36 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Navigation ke liye
+import { useNavigate } from 'react-router-dom';
 import '../admin/AdminLayout.css';
-
-const TOTAL_AVAILABLE_COURSES = 8; 
 
 function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalAdmissions: 0,
-    totalCourses: 0,
-    recentAdmissions: []
+    totalMessages: 0,
   });
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // SECURITY CHECK: Page load hote hi session check karo
+  // SECURITY CHECK
   const checkAuth = () => {
     const auth = localStorage.getItem('isAdminAuthenticated');
     if (auth !== 'true') {
-      alert("⚠️ Error: Session Expired! Please login again.");
       navigate('/Login');
       return false;
     }
     return true;
   };
 
-  const fetchStats = async () => {
-    if (!checkAuth()) return; // Security Guard
+  const fetchData = async () => {
+    if (!checkAuth()) return;
 
     try {
-      const res = await fetch('https://cyntaxitinstitute.onrender.com/api/admin/stats');
-      const data = await res.json();
-      setStats(data);
+      // Fetch Stats
+      const statsRes = await fetch('https://cyntaxitinstitute.onrender.com/api/admin/stats');
+      const statsData = await statsRes.json();
+      setStats(statsData);
+
+      // Fetch All Contact Messages
+      const msgRes = await fetch('https://cyntaxitinstitute.onrender.com/api/contact/all');
+      const msgData = await msgRes.json();
+      setMessages(msgData);
+
       setLoading(false);
     } catch (err) {
       console.error("Dashboard Fetch Error:", err);
@@ -39,82 +43,120 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    fetchStats();
-    const interval = setInterval(fetchStats, 30000);
+    fetchData();
+    const interval = setInterval(fetchData, 60000); // Har 1 min mein refresh
     return () => clearInterval(interval);
   }, []);
 
-  const formatTime = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  if (loading) return <div className="p-5 text-center" style={{color: '#000'}}><h3>📊 Connecting to Cyntax DB...</h3></div>;
-
-  const statCards = [
-    { id: 1, title: "Total Admissions", count: stats.totalAdmissions, icon: "fa-users", color: "#0000FF" },
-    { id: 2, title: "Active Courses", count: TOTAL_AVAILABLE_COURSES, icon: "fa-book-open", color: "#22c55e" },
-    { id: 3, title: "Academic Session", count: "2026", icon: "fa-calendar-check", color: "#f59e0b" }
-  ];
+  if (loading) {
+    return (
+      <div className="p-5 text-center">
+        <div className="spinner-border text-primary" role="status"></div>
+        <h3 className="mt-3">📊 Fetching Cyntax Data...</h3>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-dashboard fade-in p-4" style={{backgroundColor: '#f8f9fa', minHeight: '100vh'}}>
-      <div className="dashboard-header mb-5">
-        <h1 className="fw-bold" style={{ color: '#000000', marginBottom: '10px' }}>Mohit Sir, Aaj ki Report! 👋</h1>
-        <p className="fw-bold" style={{ color: '#444444' }}>Cyntax IT Institute - Live Analytics Dashboard</p>
+    <div className="admin-dashboard p-3 p-md-4" style={{ backgroundColor: '#f4f7f6', minHeight: '100vh' }}>
+      {/* Header Section */}
+      <div className="dashboard-header mb-4 text-center text-md-start">
+        <h1 className="fw-bold text-dark">Mohit Sir, Aaj ki Report! 👋</h1>
+        <p className="text-secondary mb-0">Cyntax IT Institute - Enquiry & Admission Control</p>
       </div>
 
-      <div className="stats-grid row g-4">
-        {statCards.map(item => (
-          <div className="col-md-4" key={item.id}>
-            <div className="stat-card shadow-sm bg-white p-4 rounded-4 border-start border-5" style={{ borderColor: item.color }}>
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h2 className="fw-bold mb-0" style={{ color: '#000000', fontSize: '2.5rem' }}>{item.count}</h2>
-                  <p className="fw-bold mb-0" style={{ color: '#333333', textTransform: 'uppercase', fontSize: '0.9rem' }}>{item.title}</p>
-                </div>
-                <i className={`fas ${item.icon} fa-2x`} style={{ color: item.color, opacity: '0.5' }}></i>
+      {/* Main Stats Cards */}
+      <div className="row g-3 mb-5">
+        <div className="col-6 col-md-4">
+          <div className="card border-0 shadow-sm rounded-4 p-3 border-start border-primary border-5">
+            <div className="d-flex align-items-center">
+              <div className="icon-box bg-primary-subtle p-3 rounded-circle me-3 d-none d-md-block">
+                <i className="fas fa-user-graduate text-primary fs-4"></i>
+              </div>
+              <div>
+                <h2 className="fw-bold mb-0">{stats.totalAdmissions}</h2>
+                <small className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.7rem' }}>Total Admissions</small>
               </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="recent-activity mt-5">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="fw-bold" style={{ color: '#000000' }}><i className="fas fa-history me-2"></i>Latest Admissions</h3>
-          <button className="btn btn-dark btn-sm rounded-pill px-4 shadow-sm" onClick={fetchStats}>Manual Sync</button>
         </div>
 
-        <div className="bg-white shadow-sm rounded-4 overflow-hidden border">
-          {stats.recentAdmissions.length > 0 ? (
-            stats.recentAdmissions.map((s) => (
-              <div key={s._id} className="d-flex justify-content-between align-items-center p-4 border-bottom bg-white item-hover">
-                <div className="d-flex align-items-center">
-                  <div className="avatar-circle bg-light p-3 rounded-circle me-3" style={{border: '1px solid #eee'}}>
-                    <i className="fas fa-user text-dark"></i>
+        <div className="col-6 col-md-4">
+          <div className="card border-0 shadow-sm rounded-4 p-3 border-start border-warning border-5">
+            <div className="d-flex align-items-center">
+              <div className="icon-box bg-warning-subtle p-3 rounded-circle me-3 d-none d-md-block">
+                <i className="fas fa-envelope-open-text text-warning fs-4"></i>
+              </div>
+              <div>
+                <h2 className="fw-bold mb-0">{stats.totalMessages}</h2>
+                <small className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.7rem' }}>New Enquiries</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Messages Section */}
+      <div className="messages-section">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h4 className="fw-bold m-0"><i className="fas fa-comment-dots me-2 text-primary"></i>Student Enquiries</h4>
+          <button className="btn btn-outline-dark btn-sm rounded-pill px-3" onClick={fetchData}>
+            <i className="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+
+        <div className="row g-3">
+          {messages.length > 0 ? (
+            messages.map((msg) => (
+              <div key={msg._id} className="col-12 col-lg-6">
+                <div className="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                  <div className="card-header bg-white border-0 pt-3 px-4">
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div>
+                        <h5 className="fw-bold text-dark mb-0">{msg.name}</h5>
+                        <small className="text-primary fw-bold">Interested in: {msg.course?.toUpperCase() || 'General'}</small>
+                      </div>
+                      <span className="badge bg-light text-dark border shadow-sm">
+                        {new Date(msg.date).toLocaleDateString('en-IN')}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h5 className="fw-bold mb-0" style={{ color: '#000000' }}>{s.name}</h5>
-                    <small className="fw-bold" style={{ color: '#6610f2' }}>Enrolled in {s.course}</small>
+                  <div className="card-body px-4">
+                    <div className="message-content bg-light p-3 rounded-3 mb-3" style={{ borderLeft: '3px solid #dee2e6' }}>
+                      <p className="small mb-0 text-dark italic">"{msg.message}"</p>
+                    </div>
+                    <div className="contact-details row g-2">
+                      <div className="col-sm-6">
+                        <a href={`tel:${msg.mobile}`} className="text-decoration-none text-dark small d-block">
+                          <i className="fas fa-phone-alt me-2 text-success"></i> {msg.mobile}
+                        </a>
+                      </div>
+                      <div className="col-sm-6">
+                        <a href={`mailto:${msg.email}`} className="text-decoration-none text-dark small d-block text-truncate">
+                          <i className="fas fa-envelope me-2 text-danger"></i> {msg.email}
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-end">
-                  <span className="badge bg-dark text-white p-2 mb-1 d-block shadow-sm" style={{fontSize: '0.85rem'}}>
-                    {formatTime(s.joiningDate)}
-                  </span>
-                  <small className="fw-bold text-black-50">{new Date(s.joiningDate).toLocaleDateString('en-GB')}</small>
+                  <div className="card-footer bg-white border-0 pb-3 px-4">
+                    <a 
+                      href={`https://wa.me/91${msg.mobile}?text=Hi ${msg.name}, Cyntax IT Institute se Mohit Sir baat kar raha hoon...`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="btn btn-success btn-sm w-100 rounded-pill"
+                    >
+                      <i className="fab fa-whatsapp me-2"></i> WhatsApp Reply
+                    </a>
+                  </div>
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-5">
-              <p className="fw-bold" style={{ color: '#000000' }}>No recent admissions found.</p>
+            <div className="col-12 text-center py-5">
+              <div className="bg-white p-5 rounded-4 shadow-sm border">
+                <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p className="text-muted fw-bold">Koi enquiry nahi mili hai abhi tak.</p>
+              </div>
             </div>
           )}
         </div>
