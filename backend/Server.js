@@ -15,17 +15,11 @@ app.get('/', (req, res) => {
   res.send("🚀 Cyntax Backend is Live and Running!");
 });
 
-// MongoDB Connection
-// TIP: Agar ECONNREFUSED aa raha hai, to apni .env mein MONGO_URI 
-// ko Atlas se "Node.js version 2.2.12 or later" wala string le kar badlein.
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/cyntax_db';
+// MongoDB Connection (Updated with your Shard Link)
+const mongoURI = process.env.MONGO_URI || 'mongodb://admin:Mohit12345@ac-vwea0ti-shard-00-00.nz7abad.mongodb.net:27017,ac-vwea0ti-shard-00-01.nz7abad.mongodb.net:27017,ac-vwea0ti-shard-00-02.nz7abad.mongodb.net:27017/?ssl=true&replicaSet=atlas-9qswbz-shard-0&authSource=admin&appName=Cluster0';
 
-mongoose.connect(mongoURI, {
-  // Ye options DNS issues mein help karte hain
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000 
-})
+// Connection logic without deprecated options for newer Mongoose versions
+mongoose.connect(mongoURI)
   .then(() => console.log("✅ MongoDB Connected Successfully"))
   .catch(err => {
     console.log("❌ MongoDB Connection Error Details:");
@@ -45,7 +39,7 @@ const studentSchema = new mongoose.Schema({
   fatherName: { type: String, required: true },
   motherName: { type: String, required: true },
   dob: { type: Date, required: true },
-  aadhaarNumber: { type: String, required: true }, 
+  aadhaarNumber: { type: String, required: true }, // [Aadhaar Redacted]
   phone: { type: String, required: true },
   address: String,
   course: String,
@@ -65,17 +59,25 @@ const contactSchema = new mongoose.Schema({
   message: { type: String },
   date: { type: Date, default: Date.now }
 });
-const Contact = mongoose.model('Contact', contactSchema);
+
+// Yahan 'contacts' table name add kiya hai taaki MongoDB confuse na ho
+const Contact = mongoose.model('Contact', contactSchema, 'contacts');
 
 // --- ROUTES ---
 
 // 1. Submit Contact Form
 app.post('/api/contact', async (req, res) => {
   try {
-    const newMessage = new Contact(req.body);
+    const contactData = req.body;
+    // Data check karne ke liye console
+    console.log("New Contact Request Received:", contactData);
+    
+    const newMessage = new Contact(contactData);
     await newMessage.save();
+    
     res.status(201).json({ success: true, message: "Message sent successfully!" });
   } catch (err) {
+    console.error("Contact Save Error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
