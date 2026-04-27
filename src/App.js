@@ -18,6 +18,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import StudentList from './pages/admin/StudentList';
 import AddStudent from './pages/admin/AddStudent';
+import ManageContent from './pages/admin/ManageContent';
 
 // --- SCROLL TO TOP LOGIC ---
 // Ye component har route change par screen ko upar le jayega
@@ -66,6 +67,7 @@ function App() {
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="StudentList" element={<StudentList />} />
             <Route path="AddStudent" element={<AddStudent />} /> 
+             <Route path="ManageContent" element={<ManageContent />} />
           </Route>
         </Routes>
 
