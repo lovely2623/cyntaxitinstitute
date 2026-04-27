@@ -6,13 +6,10 @@ function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // --- AUTO LOGOUT LOGIC (15 Minutes Inactivity) ---
   useEffect(() => {
     let logoutTimer;
-
     const resetTimer = () => {
       if (logoutTimer) clearTimeout(logoutTimer);
-      // 15 minutes = 900000 ms
       logoutTimer = setTimeout(() => {
         alert("Session Expired: Security ke liye aapko logout kiya ja raha hai.");
         localStorage.removeItem('isAdminAuthenticated');
@@ -20,13 +17,11 @@ function AdminLayout() {
       }, 900000); 
     };
 
-    // Events jinse timer reset hoga
     window.addEventListener('mousemove', resetTimer);
     window.addEventListener('keypress', resetTimer);
     window.addEventListener('scroll', resetTimer);
     window.addEventListener('click', resetTimer);
-
-    resetTimer(); // Initial call
+    resetTimer(); 
 
     return () => {
       window.removeEventListener('mousemove', resetTimer);
@@ -61,6 +56,10 @@ function AdminLayout() {
           </Link>
           <Link to="/AdminLayout/AddStudent" className={`nav-item ${location.pathname.includes('AddStudent') ? 'active' : ''}`}>
             <i className="fas fa-plus-circle"></i> New Admission
+          </Link>
+          {/* NEW BUTTON: CONTENT MANAGER */}
+          <Link to="/AdminLayout/ManageContent" className={`nav-item ${location.pathname.includes('ManageContent') ? 'active' : ''}`}>
+            <i className="fas fa-edit"></i> Manage PDFs & News
           </Link>
           <Link to="/AdminLayout/results" className={`nav-item ${location.pathname.includes('results') ? 'active' : ''}`}>
             <i className="fas fa-file-invoice"></i> Result Portal

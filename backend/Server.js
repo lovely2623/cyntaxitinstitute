@@ -67,9 +67,25 @@ const contactSchema = new mongoose.Schema({
 });
 const Contact = mongoose.model('Contact', contactSchema, 'contacts');
 
+// NEW: PDF Schema
+const pdfSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  link: { type: String, required: true },
+  date: { type: Date, default: Date.now }
+});
+const Pdf = mongoose.model('Pdf', pdfSchema);
+
+// NEW: News Schema
+const newsSchema = new mongoose.Schema({
+  tag: { type: String, default: 'NEW' },
+  text: { type: String, required: true },
+  date: { type: Date, default: Date.now }
+});
+const News = mongoose.model('News', newsSchema);
+
 // --- ROUTES ---
 
-// 1. ADMIN STATS ROUTE (Dashboard ke liye)
+// 1. ADMIN STATS ROUTE
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalAdmissions = await Student.countDocuments();
@@ -80,7 +96,7 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-// 2. FETCH ALL CONTACT MESSAGES (Dashboard ke liye)
+// 2. CONTACT MESSAGES
 app.get('/api/contact/all', async (req, res) => {
   try {
     const messages = await Contact.find().sort({ date: -1 });
@@ -90,26 +106,66 @@ app.get('/api/contact/all', async (req, res) => {
   }
 });
 
-// Verification Route
+// 3. PDF MANAGEMENT ROUTES
+app.get('/api/pdfs', async (req, res) => {
+  try {
+    const pdfs = await Pdf.find().sort({ date: -1 });
+    res.json(pdfs);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/pdfs', async (req, res) => {
+  try {
+    const newPdf = new Pdf(req.body);
+    await newPdf.save();
+    res.status(201).json(newPdf);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/pdfs/:id', async (req, res) => {
+  try {
+    await Pdf.findByIdAndDelete(req.params.id);
+    res.json({ message: "PDF Deleted" });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 4. NEWS MANAGEMENT ROUTES
+app.get('/api/news', async (req, res) => {
+  try {
+    const news = await News.find().sort({ date: -1 });
+    res.json(news);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/news', async (req, res) => {
+  try {
+    const newNews = new News(req.body);
+    await newNews.save();
+    res.status(201).json(newNews);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/news/:id', async (req, res) => {
+  try {
+    await News.findByIdAndDelete(req.params.id);
+    res.json({ message: "News Deleted" });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Rest of your existing routes (Verification, Students, Visitors, etc.)
 app.get('/api/students/verify/:id', async (req, res) => {
   try {
     const student = await Student.findOne({ studentId: req.params.id.toUpperCase() });
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
+    if (!student) return res.status(404).json({ message: "Student not found" });
     res.json(student);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/api/visitors/hit', visitorLimiter, async (req, res) => {
   try {
     let visitorData = await Visitor.findOneAndUpdate({}, { $inc: { count: 1 } }, { upsert: true, new: true });
     res.json({ count: visitorData.count });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/contact', contactLimiter, async (req, res) => {
@@ -117,9 +173,7 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
     const newMessage = new Contact(req.body);
     await newMessage.save();
     res.status(201).json({ success: true, message: "Message sent successfully!" });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 app.get('/api/students', async (req, res) => {
