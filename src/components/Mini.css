@@ -4,56 +4,63 @@
     top: 0;
     left: 0;
     right: 0;
-    z-index: 10000; /* Isse sabse upar rakhne ke liye */
+    z-index: 10000;
     
-    background-color: #0000FF; /* Pure Blue color */
-    color: white; /* Sab kuch white dikhega */
+    background-color: #0000FF; 
+    color: white; 
     
     padding: 10px 20px;
     width: 100%;
+    /* Desktop layout - Jaisa aapne pehle maanga tha */
     padding-left: 50px;
-    
-    /* Left side alignment aur items ke beech gap */
     justify-content: flex-start;
     align-items: center;
-    gap: 50px; /* Inke beech ka gap yahan se kam ya zyada kar sakte ho */
+    gap: 50px; 
 }
 
 .info-item {
     display: flex;
     align-items: center;
-    gap: 8px; /* Icon aur text ke beech ka chhota gap */
+    gap: 8px;
 }
 
-/* Links (Email aur WhatsApp) ki styling */
 .info-item a {
     text-decoration: none;
-    color: white; /* Links bhi white dikhenge */
+    color: white;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: opacity 0.3s;
 }
 
-.info-item a:hover {
-    opacity: 0.8; /* Hover karne par halka sa fade effect */
-}
+.mini-one i { font-size: 16px; }
+.mini-one span { font-size: 14px; font-weight: 500; }
 
-/* Icons ka size thoda adjust karne ke liye */
-.mini-one i {
-    font-size: 16px;
-}
-
-.mini-one span {
-    font-size: 14px;
-    font-weight: 500;
-}
-
-/* Mobile responsive check */
+/* --- MOBILE RESPONSIVE (Sirf phone ke liye changes) --- */
 @media (max-width: 768px) {
     .mini-one {
-        gap: 15px;
-        font-size: 12px;
+        padding-left: 0; /* Left padding zero taaki screen space bache */
+        justify-content: center; /* Phone pe center mein dikhega professional */
+        gap: 15px; /* Elements ke beech ka gap kam kiya taaki sab fit ho jaye */
         padding: 8px 10px;
+    }
+
+    /* Email ki lambi ID mobile pe chhupa denge ya choti kar denge */
+    .info-item:nth-child(2) span {
+        display: none; /* Mobile pe email ka lamba text gayab ho jayega */
+    }
+    
+    /* Email ka icon fir bhi dikhega, ya aap 'Email' likh sakte hain */
+    .info-item:nth-child(2) a::after {
+        content: "Email";
+        font-size: 12px;
+    }
+
+    .mini-one span {
+        font-size: 12px; /* Papa ke phone ke liye perfect size */
+    }
+
+    /* Location icon/text ko mobile pe hide karna best hai taaki contact info dikhe */
+    .info-item:nth-child(1) {
+        display: none;
     }
 }
