@@ -12,32 +12,48 @@ function ManageContent() {
   }, []);
 
   const fetchData = async () => {
-    const n = await axios.get('http://localhost:5000/api/news');
-    const p = await axios.get('http://localhost:5000/api/pdfs');
-    setNews(n.data);
-    setPdfs(p.data);
+    try {
+      const n = await axios.get('http://localhost:5000/api/news');
+      const p = await axios.get('http://localhost:5000/api/pdfs');
+      setNews(n.data);
+      setPdfs(p.data);
+    } catch (err) {
+      console.error("Error fetching content:", err);
+    }
   };
 
   const addNews = async () => {
-    await axios.post('http://localhost:5000/api/news', newNews);
-    setNewNews({ tag: 'NEW', text: '' });
-    fetchData();
+    if(!newNews.text) return alert("News text likho bhai!");
+    try {
+      await axios.post('http://localhost:5000/api/news', newNews);
+      setNewNews({ tag: 'NEW', text: '' });
+      fetchData(); // List refresh
+      alert("News added successfully!");
+    } catch (err) { alert("Failed to add news"); }
   };
 
   const addPdf = async () => {
-    await axios.post('http://localhost:5000/api/pdfs', newPdf);
-    setNewPdf({ title: '', link: '' });
-    fetchData();
+    if(!newPdf.title || !newPdf.link) return alert("Title aur Link dono chahiye!");
+    try {
+      await axios.post('http://localhost:5000/api/pdfs', newPdf);
+      setNewPdf({ title: '', link: '' });
+      fetchData(); // List refresh
+      alert("PDF added successfully!");
+    } catch (err) { alert("Failed to add PDF"); }
   };
 
   const deleteNews = async (id) => {
-    await axios.delete(`http://localhost:5000/api/news/${id}`);
-    fetchData();
+    if(window.confirm("News delete karun?")) {
+      await axios.delete(`http://localhost:5000/api/news/${id}`);
+      fetchData();
+    }
   };
 
   const deletePdf = async (id) => {
-    await axios.delete(`http://localhost:5000/api/pdfs/${id}`);
-    fetchData();
+    if(window.confirm("PDF delete karun?")) {
+      await axios.delete(`http://localhost:5000/api/pdfs/${id}`);
+      fetchData();
+    }
   };
 
   return (

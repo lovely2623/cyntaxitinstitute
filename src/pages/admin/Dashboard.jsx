@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Axios import kiya
 import '../admin/AdminLayout.css';
 
 function Dashboard() {
@@ -10,6 +11,8 @@ function Dashboard() {
   });
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const BASE_URL = 'https://cyntaxitinstitute.onrender.com';
 
   // SECURITY CHECK
   const checkAuth = () => {
@@ -24,13 +27,7 @@ function Dashboard() {
   const fetchData = async () => {
     if (!checkAuth()) return;
     
-    // Refresh dikhane ke liye loading true kar sakte hain, but auto-refresh mein irritates users
-    // Isliye initial load pe hi loading state rakhi hai
-
     try {
-      const BASE_URL = 'https://cyntaxitinstitute.onrender.com';
-
-      // Promise.all use karke parallel fetch karenge efficiency ke liye
       const [statsRes, msgRes] = await Promise.all([
         fetch(`${BASE_URL}/api/admin/stats`),
         fetch(`${BASE_URL}/api/contact/all`)
@@ -53,9 +50,28 @@ function Dashboard() {
     }
   };
 
+  // DELETE ENQUIRY LOGIC
+  const deleteEnquiry = async (id) => {
+    if(window.confirm("Bhai sach mein ye enquiry delete karni hai?")) {
+      try {
+        const response = await axios.delete(`${BASE_URL}/api/contact/${id}`);
+        if(response.data.success) {
+          // UI se turant hatane ke liye filter use kiya
+          setMessages(messages.filter(msg => msg._id !== id));
+          // Stats update karne ke liye
+          setStats(prev => ({...prev, totalMessages: prev.totalMessages - 1}));
+          alert("Enquiry Gayab! (Deleted)");
+        }
+      } catch (err) { 
+        console.error(err);
+        alert("Delete nahi ho pa raha hai bhai."); 
+      }
+    }
+  };
+
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Har 1 min mein refresh
+    const interval = setInterval(fetchData, 60000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -76,7 +92,7 @@ function Dashboard() {
         <p className="text-secondary mb-0">Cyntax IT Institute - Enquiry & Admission Control</p>
       </div>
 
-      {/* Main Stats Cards */}
+      {/* Stats Cards */}
       <div className="row g-3 mb-5">
         <div className="col-6 col-md-4">
           <div className="card border-0 shadow-sm rounded-4 p-3 border-start border-primary border-5">
@@ -107,7 +123,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Contact Messages Section */}
+      {/* Enquiries Section */}
       <div className="messages-section">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4 className="fw-bold m-0"><i className="fas fa-comment-dots me-2 text-primary"></i>Student Enquiries</h4>
@@ -132,9 +148,10 @@ function Dashboard() {
                       </span>
                     </div>
                   </div>
+
                   <div className="card-body px-4">
                     <div className="message-content bg-light p-3 rounded-3 mb-3" style={{ borderLeft: '3px solid #dee2e6' }}>
-                      <p className="small mb-0 text-dark italic">"{msg.message}"</p>
+                      <p className="small mb-0 text-dark">"{msg.message}"</p>
                     </div>
                     <div className="contact-details row g-2">
                       <div className="col-sm-6">
@@ -149,15 +166,25 @@ function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="card-footer bg-white border-0 pb-3 px-4">
+
+                  <div className="card-footer bg-white border-0 pb-3 px-4 d-flex gap-2">
+                    {/* WhatsApp Button */}
                     <a 
                       href={`https://wa.me/91${msg.mobile}?text=Hi ${msg.name}, Cyntax IT Institute se Mohit Sir baat kar raha hoon...`} 
                       target="_blank" 
                       rel="noreferrer" 
-                      className="btn btn-success btn-sm w-100 rounded-pill"
+                      className="btn btn-success btn-sm flex-grow-1 rounded-pill"
                     >
-                      <i className="fab fa-whatsapp me-2"></i> WhatsApp Reply
+                      <i className="fab fa-whatsapp me-2"></i> WhatsApp
                     </a>
+                    
+                    {/* Delete Button */}
+                    <button 
+                      className="btn btn-outline-danger btn-sm rounded-pill px-3" 
+                      onClick={() => deleteEnquiry(msg._id)}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -166,7 +193,7 @@ function Dashboard() {
             <div className="col-12 text-center py-5">
               <div className="bg-white p-5 rounded-4 shadow-sm border">
                 <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
-                <p className="text-muted fw-bold">Koi enquiry nahi mili hai abhi tak.</p>
+                <p className="text-muted fw-bold">Abhi koi nayi enquiry nahi hai sir.</p>
               </div>
             </div>
           )}

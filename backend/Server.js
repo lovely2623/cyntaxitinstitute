@@ -67,7 +67,6 @@ const contactSchema = new mongoose.Schema({
 });
 const Contact = mongoose.model('Contact', contactSchema, 'contacts');
 
-// NEW: PDF Schema
 const pdfSchema = new mongoose.Schema({
   title: { type: String, required: true },
   link: { type: String, required: true },
@@ -75,7 +74,6 @@ const pdfSchema = new mongoose.Schema({
 });
 const Pdf = mongoose.model('Pdf', pdfSchema);
 
-// NEW: News Schema
 const newsSchema = new mongoose.Schema({
   tag: { type: String, default: 'NEW' },
   text: { type: String, required: true },
@@ -96,11 +94,21 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-// 2. CONTACT MESSAGES
+// 2. CONTACT MESSAGES (Get All & Delete)
 app.get('/api/contact/all', async (req, res) => {
   try {
     const messages = await Contact.find().sort({ date: -1 });
     res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE ENQUIRY ROUTE (NEWLY ADDED)
+app.delete('/api/contact/:id', async (req, res) => {
+  try {
+    await Contact.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Enquiry Deleted Successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -152,7 +160,7 @@ app.delete('/api/news/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Rest of your existing routes (Verification, Students, Visitors, etc.)
+// Verification, Students, Visitors
 app.get('/api/students/verify/:id', async (req, res) => {
   try {
     const student = await Student.findOne({ studentId: req.params.id.toUpperCase() });
