@@ -7,14 +7,17 @@ function ManageContent() {
   const [newNews, setNewNews] = useState({ tag: 'NEW', text: '' });
   const [newPdf, setNewPdf] = useState({ title: '', link: '' });
 
+  // Render Backend URL
+  const BASE_URL = 'https://cyntaxitinstitute.onrender.com';
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
-      const n = await axios.get('http://localhost:5000/api/news');
-      const p = await axios.get('http://localhost:5000/api/pdfs');
+      const n = await axios.get(`${BASE_URL}/api/news`);
+      const p = await axios.get(`${BASE_URL}/api/pdfs`);
       setNews(n.data);
       setPdfs(p.data);
     } catch (err) {
@@ -25,34 +28,44 @@ function ManageContent() {
   const addNews = async () => {
     if(!newNews.text) return alert("News text likho bhai!");
     try {
-      await axios.post('http://localhost:5000/api/news', newNews);
+      await axios.post(`${BASE_URL}/api/news`, newNews);
       setNewNews({ tag: 'NEW', text: '' });
-      fetchData(); // List refresh
+      await fetchData(); // Wait for data refresh
       alert("News added successfully!");
-    } catch (err) { alert("Failed to add news"); }
+    } catch (err) { 
+      console.error(err);
+      alert("Failed to add news. Check console!"); 
+    }
   };
 
   const addPdf = async () => {
     if(!newPdf.title || !newPdf.link) return alert("Title aur Link dono chahiye!");
     try {
-      await axios.post('http://localhost:5000/api/pdfs', newPdf);
+      await axios.post(`${BASE_URL}/api/pdfs`, newPdf);
       setNewPdf({ title: '', link: '' });
-      fetchData(); // List refresh
+      await fetchData(); // Wait for data refresh
       alert("PDF added successfully!");
-    } catch (err) { alert("Failed to add PDF"); }
+    } catch (err) { 
+      console.error(err);
+      alert("Failed to add PDF. Check console!"); 
+    }
   };
 
   const deleteNews = async (id) => {
     if(window.confirm("News delete karun?")) {
-      await axios.delete(`http://localhost:5000/api/news/${id}`);
-      fetchData();
+      try {
+        await axios.delete(`${BASE_URL}/api/news/${id}`);
+        fetchData();
+      } catch (err) { alert("Delete failed!"); }
     }
   };
 
   const deletePdf = async (id) => {
     if(window.confirm("PDF delete karun?")) {
-      await axios.delete(`http://localhost:5000/api/pdfs/${id}`);
-      fetchData();
+      try {
+        await axios.delete(`${BASE_URL}/api/pdfs/${id}`);
+        fetchData();
+      } catch (err) { alert("Delete failed!"); }
     }
   };
 

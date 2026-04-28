@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Make sure to install axios
+import axios from 'axios';
 import './InfoSection.css';
 
 function InfoSection() {
@@ -8,12 +8,14 @@ function InfoSection() {
   const [newsList, setNewsList] = useState([]);
   const [pdfList, setPdfList] = useState([]);
 
+  // Render Backend URL
+  const BASE_URL = 'https://cyntaxitinstitute.onrender.com';
+
   useEffect(() => {
-    // Fetch News and PDFs from Backend
     const fetchData = async () => {
       try {
-        const newsRes = await axios.get('http://localhost:5000/api/news');
-        const pdfRes = await axios.get('http://localhost:5000/api/pdfs');
+        const newsRes = await axios.get(`${BASE_URL}/api/news`);
+        const pdfRes = await axios.get(`${BASE_URL}/api/pdfs`);
         setNewsList(newsRes.data);
         setPdfList(pdfRes.data);
       } catch (err) {
@@ -27,7 +29,7 @@ function InfoSection() {
     <section className="info-section">
       <div className="info-container">
         
-        {/* Latest News Box (Dynamic) */}
+        {/* Latest News Box */}
         <div className="info-box">
           <div className="box-header">
             <i className="fas fa-bullhorn"></i>
@@ -35,12 +37,15 @@ function InfoSection() {
           </div>
           <div className="marquee-vertical">
             <div className="scroll-content">
-              {newsList.length > 0 ? newsList.map((news, index) => (
-                <p key={index}><span>{news.tag}</span> {news.text}</p>
-              )) : (
-                <p>Loading Latest News...</p>
+              {newsList.length > 0 ? (
+                // Original List
+                newsList.map((news, index) => (
+                  <p key={`news-${index}`}><span>{news.tag}</span> {news.text}</p>
+                ))
+              ) : (
+                <p>No News Available...</p>
               )}
-              {/* Infinite scroll ke liye loop (optional) */}
+              {/* Duplicate for smooth infinite scroll */}
               {newsList.map((news, index) => (
                 <p key={`copy-${index}`}><span>{news.tag}</span> {news.text}</p>
               ))}
@@ -48,7 +53,7 @@ function InfoSection() {
           </div>
         </div>
 
-        {/* Featured Courses Box */}
+        {/* Popular Courses */}
         <div className="info-box">
           <div className="box-header">
             <i className="fas fa-graduation-cap"></i>
@@ -65,7 +70,7 @@ function InfoSection() {
           </button>
         </div>
 
-        {/* Jobs PDF Box (Dynamic) */}
+        {/* Latest Jobs PDF */}
         <div className="info-box">
           <div className="box-header">
             <i className="fas fa-file-pdf"></i>
@@ -73,7 +78,7 @@ function InfoSection() {
           </div>
           <div className="pdf-list">
             {pdfList.length > 0 ? pdfList.map((pdf, index) => (
-              <a key={index} href={pdf.link} target="_blank" rel="noreferrer" className="pdf-item">
+              <a key={pdf._id || index} href={pdf.link} target="_blank" rel="noreferrer" className="pdf-item">
                 <div className="pdf-icon">PDF</div>
                 <div className="pdf-text">{pdf.title}</div>
               </a>
