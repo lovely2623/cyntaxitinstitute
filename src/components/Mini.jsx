@@ -4,7 +4,7 @@ import './Mini.css';
 function Mini() {
   return (
     <section className='mini-one'>
-        {/* Location - Solan */}
+        {/* Location */}
         <div className='info-item'>
           <i className="fas fa-map-marker-alt"></i>
           <span>Solan</span>

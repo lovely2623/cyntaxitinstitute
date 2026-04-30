@@ -1,155 +1,158 @@
-.hero {
-    height: 100vh;
-    min-height: 600px; /* Ensures content doesn't crush on small screens */
-    position: relative;
-    overflow: hidden;
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+
+.hero-section {
+    background-color: #f5f7f9; /* Professional Whitish Grey */
+    min-height: 90vh;
     display: flex;
-    justify-content: center;
     align-items: center;
-    text-align: center;
-    color: white;
+    font-family: 'Outfit', sans-serif;
+    padding: 60px 0;
+    overflow: hidden;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
     padding: 0 20px;
 }
 
-.hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* Modern gradient for better text pop */
-    background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.8) 100%);
-    z-index: 1;
+.hero-wrapper {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr; /* Desktop par Split Layout */
+    gap: 50px;
+    align-items: center;
 }
 
-.bg-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 200%;
-    height: 100%;
-    background: url("../assets/images/hero.jpg") center/cover no-repeat;
-    animation: slideBg 40s linear infinite;
-    z-index: 0;
-}
-
-@keyframes slideBg {
-    0% { transform: translateX(0); }
-    50% { transform: translateX(-15%); } /* Kam move kiya taaki blur na lage */
-    100% { transform: translateX(0); }
-}
-
-.hero-content {
-    z-index: 2;
-    max-width: 1000px;
-    animation: fadeInUp 1s ease-out;
-}
-
-.badge-new {
-    background: rgba(0, 0, 255, 0.2);
-    backdrop-filter: blur(10px);
-    border: 1px solid #38bdf8;
-    color: #38bdf8;
-    padding: 10px 24px;
-    border-radius: 50px;
+/* Text Styling */
+.status-badge {
+    color: #e63946;
+    font-weight: 700;
     font-size: 14px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 25px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
 }
 
-/* Red blinking dot for urgency */
-.live-icon {
-    height: 8px;
-    width: 8px;
-    background-color: #ff4d4d;
-    border-radius: 50%;
-    display: inline-block;
-    box-shadow: 0 0 0 rgba(255, 77, 77, 0.4);
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
-}
-
-.hero-content h1 {
-    font-size: clamp(32px, 5vw, 65px); /* Responsive font size */
-    font-weight: 800;
+.hero-title {
+    font-size: clamp(40px, 5vw, 70px);
+    font-weight: 900;
+    color: #1a1a1a; /* Stylish Black */
     line-height: 1.1;
     margin-bottom: 20px;
 }
 
-.hero-content h1 span {
-    background: linear-gradient(90deg, #38bdf8, #818cf8);
+/* Black to Red Gradient Text */
+.text-gradient {
+    background: linear-gradient(90deg, #1a1a1a, #e63946);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.hero-content p {
-    font-size: clamp(16px, 2vw, 22px);
-    max-width: 750px;
-    margin: 0 auto 40px;
-    color: #cbd5e1;
+.hero-subtitle {
+    font-size: 18px;
+    color: #4a4a4a;
+    line-height: 1.6;
+    margin-bottom: 35px;
+    max-width: 550px;
 }
 
-.hero-buttons {
+/* Buttons Styling */
+.hero-cta-group {
     display: flex;
     gap: 20px;
-    justify-content: center;
+    margin-bottom: 40px;
 }
 
-.primary-btn {
-    background: #0000FF;
-    padding: 18px 40px;
-    border: none;
-    border-radius: 8px;
+.enquire-btn {
+    background: #e63946; /* Red Color */
     color: white;
-    font-size: 18px;
+    text-decoration: none;
+    padding: 18px 35px;
+    border-radius: 12px;
     font-weight: 700;
-    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-size: 18px;
+    transition: 0.3s;
+    box-shadow: 0 10px 20px rgba(230, 57, 70, 0.3);
 }
 
-.primary-btn:hover {
+.enquire-btn:hover {
+    background: #1a1a1a;
+    transform: translateY(-3px);
+}
+
+.view-courses-btn {
+    border: 2px solid #1a1a1a;
+    color: #1a1a1a;
+    text-decoration: none;
+    padding: 18px 35px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.view-courses-btn:hover {
+    background: #f0f0f0;
+}
+
+/* Image Styling */
+.hero-image-area {
+    position: relative;
+}
+
+.image-card {
+    position: relative;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+}
+
+.image-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.image-card:hover img {
     transform: scale(1.05);
-    background: #1e40af;
 }
 
-/* Mobile Adjustments */
-@media (max-width: 768px) {
-    .hero {
-        height: auto;
-        padding: 120px 20px 80px; /* Mobile par upar space diya */
+.experience-tag {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: white;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-weight: 800;
+    color: #1a1a1a;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 992px) {
+    .hero-wrapper {
+        grid-template-columns: 1fr;
+        text-align: center;
     }
 
-    .bg-slider {
-        width: 100%; /* Image phone par stretch nahi hogi */
-        height: 100%;
-        background-attachment: scroll;
+    .hero-text-area {
+        order: 2; /* Mobile pe pehle image fir text dikhana hai to change karsakte ho */
     }
 
-    .hero-buttons {
+    .hero-image-area {
+        order: 1;
+        margin-bottom: 30px;
+    }
+
+    .hero-cta-group {
         flex-direction: column;
-        width: 100%;
+        align-items: center;
     }
 
-    .primary-btn, .secondary-btn {
+    .enquire-btn, .view-courses-btn {
         width: 100%;
-    }
-
-    .hero-trust {
-        flex-direction: column;
-        align-items: flex-start;
-        display: inline-block;
-        text-align: left;
-    }
-    
-    .trust-item {
-        margin-bottom: 12px;
+        max-width: 320px;
     }
 }

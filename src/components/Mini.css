@@ -9,19 +9,18 @@
     background-color: #0000FF; 
     color: white; 
     
-    padding: 10px 20px;
+    padding: 10px 50px;
     width: 100%;
-    /* Desktop layout - Jaisa aapne pehle maanga tha */
-    padding-left: 50px;
     justify-content: flex-start;
     align-items: center;
-    gap: 50px; 
+    gap: 40px; 
 }
 
 .info-item {
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap; /* Text ko ek hi line mein rakhega */
 }
 
 .info-item a {
@@ -32,35 +31,47 @@
     gap: 8px;
 }
 
-.mini-one i { font-size: 16px; }
+.mini-one i { font-size: 14px; color: #38bdf8; } /* Icons ko thoda highlight kiya */
 .mini-one span { font-size: 14px; font-weight: 500; }
 
-/* --- MOBILE RESPONSIVE (Sirf phone ke liye changes) --- */
+/* --- MOBILE RESPONSIVE --- */
 @media (max-width: 768px) {
     .mini-one {
-        padding-left: 0; /* Left padding zero taaki screen space bache */
-        justify-content: center; /* Phone pe center mein dikhega professional */
-        gap: 15px; /* Elements ke beech ka gap kam kiya taaki sab fit ho jaye */
-        padding: 8px 10px;
+        padding: 8px 5px; /* Side padding kam kar di */
+        justify-content: center;
+        gap: 12px; /* Mobile par items ke beech thoda kam gap */
+        flex-wrap: nowrap; /* Items ko ek hi line mein force karega */
+        overflow-x: auto; /* Agar screen bohot hi chhoti ho to scroll ho jaye, kate nahi */
     }
 
-    /* Email ki lambi ID mobile pe chhupa denge ya choti kar denge */
+    /* Taaki email id mobile pe fit ho jaye */
+    .mini-one span {
+        font-size: 10px; /* Font size chota kiya taaki sab dikhe */
+    }
+
+    .mini-one i {
+        font-size: 11px;
+    }
+
+    .info-item {
+        gap: 4px; /* Icon aur text ke beech ka gap kam kiya */
+    }
+
+    /* Mobile pe email ka poora text dikhane ke liye previous restriction hatayi */
     .info-item:nth-child(2) span {
-        display: none; /* Mobile pe email ka lamba text gayab ho jayega */
+        display: inline !important; 
     }
     
-    /* Email ka icon fir bhi dikhega, ya aap 'Email' likh sakte hain */
     .info-item:nth-child(2) a::after {
-        content: "Email";
-        font-size: 12px;
+        content: "" !important; /* "Email" text ko hata diya */
     }
 
-    .mini-one span {
-        font-size: 12px; /* Papa ke phone ke liye perfect size */
-    }
-
-    /* Location icon/text ko mobile pe hide karna best hai taaki contact info dikhe */
     .info-item:nth-child(1) {
-        display: none;
+        display: flex !important; /* Location ko wapis show kiya */
     }
+}
+
+/* Screen narrow ho to horizontal scrollbar na dikhe */
+.mini-one::-webkit-scrollbar {
+    display: none;
 }
