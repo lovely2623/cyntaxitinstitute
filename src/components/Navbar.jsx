@@ -36,7 +36,7 @@ function Navbar() {
       <div className="nav-container">
         <div className="logo" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>
           <img src={logo} alt="Logo" className="logo-img" />
-          <h1 className="logo-text-branding">Cyntax IT Institute</h1>
+          <h1 className="logo-text-branding">Cyntax Coding Hub</h1>
         </div>
 
         <div className="hamburger" onClick={() => setMenuOpen(!menuOpen)}> 

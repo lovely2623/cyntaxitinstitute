@@ -12,9 +12,9 @@ function Mini() {
 
         {/* Email - Clickable */}
         <div className='info-item'>
-          <a href="mailto:info@cyntaxinstitute@gmail.com">
+          <a href="mailto:info@cyntaxcodinghub@gmail.com">
             <i className="fas fa-envelope"></i>
-            <span>info@cyntaxinstitute@gmail.com</span>
+            <span>info@cyntaxcodinghub@gmail.com</span>
           </a>
         </div>
 
