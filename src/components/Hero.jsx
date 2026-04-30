@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Hero.css';
-import heroImg from '../assets/images/hero.jpg'; // Path check kar lena
+import heroImg from '../assets/images/hero.jpg';
 
 function Hero() {
   const phoneNumber = "8988199226";
@@ -34,10 +34,21 @@ function Hero() {
               </Link>
             </div>
 
-            <div className="hero-stats">
-              <div className="stat"><b>10+</b> Courses</div>
-              <div className="stat"><b>100%</b> Practical</div>
-              <div className="stat"><b>24/7</b> Support</div>
+            <div className="hero-stats-row">
+              <div className="stat-item">
+                <span className="stat-number">10+</span>
+                <span className="stat-text">Courses</span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <span className="stat-number">100%</span>
+                <span className="stat-text">Practical</span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <span className="stat-number">24/7</span>
+                <span className="stat-text">Support</span>
+              </div>
             </div>
           </div>
 
@@ -45,7 +56,7 @@ function Hero() {
           <div className="hero-image-area">
             <div className="image-card">
               <img src={heroImg} alt="Coding at Cyntax" />
-              <div className="experience-tag">Since 2018</div>
+              {/* Experience tag removed as requested */}
             </div>
           </div>
 
