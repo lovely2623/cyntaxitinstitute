@@ -69,7 +69,7 @@ function ContactUs() {
             <i className="fas fa-envelope"></i>
             <h3>Email Us</h3>
             <p>Apne documents ya query mail karein:</p>
-            <a href="mailto:info@cyntaxinstitute.com">info@cyntaxinstitute.com</a>
+            <a href="mailto:cyntaxcodinghub.com">cyntaxcodinghub.com</a>
           </div>
 
           <div className="info-card">

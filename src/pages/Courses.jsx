@@ -53,7 +53,9 @@ function Courses() {
     <div className="courses-container">
       <header className="courses-header">
         <h1>Our Professional Courses</h1>
-        <p>Advance Your Career with Cyntax IT Institute</p>
+        <p>Advance Your Career with Cyntax Coding Hub</p>
+        <b>"Zero ho? Koi baat nahi! Skills hum sikhayenge.
+Zero se HERO banne aur IT mein Career banane ke liye ab kahin aur jaane ki zaroorat nahi, Bas CYNTAX aane ki zaroorat hai!"</b>
       </header>
 
       <div className="courses-grid">

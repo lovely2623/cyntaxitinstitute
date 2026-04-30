@@ -8,7 +8,7 @@ function AboutUs() {
     <div className="about-page">
       {/* Hero Section */}
       <div className="about-header">
-        <h1>About Cyntax IT Institute</h1>
+        <h1>About Cyntax Coding Hub</h1>
         <p>Hum sirf sikhaate nahi, career banate hain.</p>
       </div>
 
@@ -18,7 +18,7 @@ function AboutUs() {
           <div className="mission-text">
             <h2>Hamara Mission 🎯</h2>
             <p>
-              Cyntax IT Institute ka maksad Himachal ke har youth ko IT sector mein expert banana hai. 
+              Cyntax Coding ka maksad Himachal ke har youth ko IT sector mein expert banana hai. 
               Aaj ke digital world mein, computer skills sirf zaroorat nahi, balki kamyabi ki chabi hain. 
               Hum provide karte hain high-quality education, advanced labs, aur wahi purana bharosa.
             </p>
@@ -42,7 +42,7 @@ function AboutUs() {
               <span className="quote-icon">“</span>
               <h2>Director's Message</h2>
               <p>
-                "Namaste! Mera naam **Mohit** hai. Maine Cyntax IT Institute ki shuruat is soch ke sath ki thi ki 
+                "Namaste! Mera naam **Mohit** hai. Maine Cyntax Coding Hub ki shuruat is soch ke sath ki thi ki 
                 Solan aur aas-paas ke ilako ke bacho ko wahi advanced level ki computer training mil sake jo bade shehro mein milti hai. 
                 Humne pichle 5 saalo mein dekha hai ki kaise sahi guidance ek bache ki life badal sakti hai. 
                 Hamare yahan hum DCA ho ya Steno, har bache pe personal dhyan dete hain. 
@@ -50,7 +50,7 @@ function AboutUs() {
               </p>
               <div className="signature">
                 <h4> Lovely Mohit Thakur</h4>
-                <p>Founder & Director, Cyntax IT Institute</p>
+                <p>Founder & Director, Cyntax Coding Hub</p>
               </div>
             </div>
           </div>
