@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import InfoSection from './components/InfoSection';
-import Mini from './components/Mini';
+// import Mini from './components/Mini';
 import Footer from './components/Footer';
 import Facilities from './components/Facilities';
 import Courses from './pages/Courses'; 
@@ -48,7 +48,7 @@ function App() {
       <ScrollToTop /> 
       
       <div>
-        <Mini />
+        {/* <Mini /> */}
         <Navbar />
         
         <Routes>
