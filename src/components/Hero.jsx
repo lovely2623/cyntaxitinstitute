@@ -6,7 +6,7 @@ import heroImg from '../assets/images/hero.jpg';
 function Hero() {
   const phoneNumber = "8988199226";
   const message = "Hi Cyntax Coding Hub, I want to enquire about the upcoming courses.";
-  const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+  const whatsappLink = `https://wa.me/${+918988199226}?text=${encodeURIComponent(message)}`;
 
   return (
     <section className="hero-section">
@@ -21,6 +21,9 @@ function Hero() {
               With Cyntax Hub.
             </h1>
             <p className="hero-subtitle">
+<b>"Zero ho? Koi baat nahi! Skills hum sikhayenge.
+Zero se HERO banne aur IT mein Career banane ke liye ab kahin aur jaane ki zaroorat nahi, Bas CYNTAX aane ki zaroorat hai!"</b>
+              <i>Stop Searching, Start Coding! Career banane ke liye Chandigarh jaane ki zaroorat nahi, Bas Cyntax aane ki zaroorat hai.</i>
               No more boring lectures. Get hands-on experience in <b>Web Dev, Steno, and DCA</b>. 
               Solan's #1 hub for the next gen of creators.
             </p>

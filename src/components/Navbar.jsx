@@ -41,14 +41,14 @@ function Navbar() {
         </div>
 
         <div className='info-item'>
-          <a href="mailto:info@cyntaxcodinghub@gmail.com">
+          <a href="mailto:cyntaxcodinghub@gmail.com">
             <i className="fas fa-envelope"></i>
-            <span>info@cyntaxcodinghub@gmail.com</span>
+            <span>cyntaxcodinghub@gmail.com</span>
           </a>
         </div>
 
         <div className='info-item'>
-          <a href="https://wa.me/918988199226" target="_blank" rel="noopener noreferrer">
+          <a href="https://wa.me/+918988199226" target="_blank" rel="noopener noreferrer">
             <i className="fab fa-whatsapp"></i>
             <span>8988199226</span>
           </a>
