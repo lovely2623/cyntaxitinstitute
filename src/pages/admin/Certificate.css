@@ -1,0 +1,119 @@
+.certificate-container {
+    padding: 20px;
+}
+
+.cert-form-card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Certificate Paper Design */
+.certificate-paper {
+    width: 1000px;
+    height: 700px;
+    background: #fff;
+    margin: 0 auto;
+    position: relative;
+    padding: 30px;
+    color: #1a202c;
+    font-family: 'Georgia', serif;
+    overflow: hidden;
+}
+
+.cert-border-outer {
+    border: 10px solid #0000FF;
+    height: 100%;
+    padding: 10px;
+    position: relative;
+}
+
+.cert-border-inner {
+    border: 2px solid #d4af37; /* Gold */
+    height: 100%;
+    padding: 40px;
+    position: relative;
+}
+
+.brand-name {
+    font-size: 45px;
+    font-weight: 900;
+    color: #0000FF;
+    margin-bottom: 0;
+    letter-spacing: 2px;
+}
+
+.brand-tagline {
+    color: #d4af37;
+    font-style: italic;
+    font-size: 18px;
+}
+
+.cert-body .title {
+    font-size: 38px;
+    margin: 40px 0;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.student-name {
+    font-size: 48px;
+    font-family: 'Brush Script MT', cursive;
+    color: #333;
+    margin: 20px 0;
+    border-bottom: 1px solid #ccc;
+    display: inline-block;
+    padding: 0 50px;
+}
+
+.course-title {
+    font-size: 28px;
+    color: #0000FF;
+    margin: 15px 0;
+}
+
+.cert-seal {
+    width: 100px;
+    height: 100px;
+    border: 4px double #d4af37;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #d4af37;
+    transform: rotate(-15deg);
+}
+
+.signature-line {
+    border-top: 2px solid #333;
+    width: 200px;
+    margin-bottom: 5px;
+}
+
+/* Decoration Corners */
+.corner-decoration {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 15px solid #0000FF;
+}
+.top-left { top: -5px; left: -5px; border-right: none; border-bottom: none; }
+.top-right { top: -5px; right: -5px; border-left: none; border-bottom: none; }
+.bottom-left { bottom: -5px; left: -5px; border-right: none; border-top: none; }
+.bottom-right { bottom: -5px; right: -5px; border-left: none; border-top: none; }
+
+/* Print Handling */
+@media print {
+    .no-print, .admin-sidebar, .admin-top-bar {
+        display: none !important;
+    }
+    .admin-main { padding: 0 !important; margin: 0 !important; }
+    .certificate-paper {
+        margin: 0;
+        box-shadow: none;
+        transform: scale(0.9); /* Adjust for paper size */
+    }
+}

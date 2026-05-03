@@ -18,6 +18,7 @@ import Dashboard from './pages/admin/Dashboard';
 import StudentList from './pages/admin/StudentList';
 import AddStudent from './pages/admin/AddStudent';
 import ManageContent from './pages/admin/ManageContent';
+import Certificate from './pages/admin/Certificate';
 
 // --- SCROLL TO TOP LOGIC ---
 // Ye component har route change par screen ko upar le jayega
@@ -66,6 +67,7 @@ function App() {
             <Route path="StudentList" element={<StudentList />} />
             <Route path="AddStudent" element={<AddStudent />} /> 
              <Route path="ManageContent" element={<ManageContent />} />
+             <Route path="Certificate" element={<Certificate />} />
           </Route>
         </Routes>
 
