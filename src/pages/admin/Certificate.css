@@ -1,119 +1,257 @@
-.certificate-container {
-    padding: 20px;
+/* Certificate Container & Form Styling (Non-Print) */
+.certificate-page-container {
+    padding: 40px;
+    background: #f4f7fe;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .cert-form-card {
     background: white;
     padding: 40px;
     border-radius: 20px;
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: 900px;
+    margin: 0 auto 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
-/* Certificate Paper Design */
-.certificate-paper {
-    width: 1000px;
-    height: 700px;
+.cert-form-card h2 {
+    color: #1a237e;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+/* --- THE A4 CERTIFICATE PAPER (REAL DESIGN) --- */
+.a4-certificate-paper {
+    width: 297mm;
+    height: 210mm;
     background: #fff;
     margin: 0 auto;
     position: relative;
-    padding: 30px;
-    color: #1a202c;
-    font-family: 'Georgia', serif;
+    box-shadow: 0 0 50px rgba(0,0,0,0.1);
+    box-sizing: border-box;
     overflow: hidden;
+    padding: 15px;
+    color: #1a202c;
 }
 
-.cert-border-outer {
-    border: 10px solid #0000FF;
+.cert-outer-border {
+    border: 12px solid #1a237e; /* Royal Blue */
     height: 100%;
-    padding: 10px;
+    padding: 8px;
+    box-sizing: border-box;
     position: relative;
 }
 
-.cert-border-inner {
-    border: 2px solid #d4af37; /* Gold */
+.cert-inner-border {
+    border: 3px solid #d4af37; /* Gold */
     height: 100%;
     padding: 40px;
     position: relative;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-.brand-name {
-    font-size: 45px;
+/* Watermark Logic */
+.watermark-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 100px;
+    color: rgba(26, 35, 126, 0.04); /* Halka Sa Blue Tint */
+    white-space: nowrap;
     font-weight: 900;
-    color: #0000FF;
-    margin-bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 10px;
+}
+
+/* Header Sections */
+.cert-top-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+    color: #444;
+    z-index: 1;
+}
+
+.inst-name {
+    font-size: 60px;
+    color: #1a237e;
+    font-weight: 900;
+    margin: 10px 0 0;
     letter-spacing: 2px;
 }
 
-.brand-tagline {
+.inst-sub {
     color: #d4af37;
+    font-weight: 800;
+    margin-bottom: 5px;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+.tagline-cert {
     font-style: italic;
+    font-family: 'Georgia', serif;
+    color: #666;
     font-size: 18px;
 }
 
-.cert-body .title {
-    font-size: 38px;
-    margin: 40px 0;
-    text-decoration: underline;
-    font-weight: bold;
-}
-
-.student-name {
-    font-size: 48px;
-    font-family: 'Brush Script MT', cursive;
-    color: #333;
-    margin: 20px 0;
-    border-bottom: 1px solid #ccc;
+/* Ribbon Title */
+.title-ribbon {
+    background: linear-gradient(45deg, #1a237e, #0d47a1);
+    color: white;
+    padding: 12px 60px;
     display: inline-block;
-    padding: 0 50px;
+    clip-path: polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%);
+    margin: 25px 0;
 }
 
-.course-title {
-    font-size: 28px;
-    color: #0000FF;
+.main-title {
+    letter-spacing: 6px;
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+/* Content Area */
+.certify-text { font-size: 20px; margin-top: 10px; }
+
+.student-name-display {
+    font-size: 55px;
+    font-family: 'Brush Script MT', cursive;
+    color: #222;
+    border-bottom: 2px solid #eee;
+    display: inline-block;
+    padding: 0 80px;
     margin: 15px 0;
 }
 
-.cert-seal {
-    width: 100px;
-    height: 100px;
+.course-name-display {
+    font-size: 32px;
+    color: #1a237e;
+    margin: 15px 0;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.info-grid-cert {
+    font-size: 18px;
+    background: #fdf9f0; /* Halka Sa Gold Tint */
+    display: inline-block;
+    padding: 10px 30px;
+    border-radius: 50px;
+    border: 1px solid #d4af37;
+    margin: 15px 0;
+}
+
+.grade-award-text {
+    font-size: 22px;
+    margin-top: 15px;
+}
+
+.grade-highlight {
+    font-size: 30px;
+    font-weight: 900;
+    color: #d4af37;
+    text-decoration: underline;
+    padding: 0 10px;
+}
+
+/* Footer & Seal */
+.cert-footer-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    z-index: 1;
+}
+
+.footer-left { text-align: left; line-height: 1.8; }
+.verification-code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    background: #f4f4f4;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+.official-seal-new {
+    width: 140px;
+    height: 140px;
     border: 4px double #d4af37;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    background: rgba(212, 175, 55, 0.05);
+    transform: rotate(-10deg);
+    margin-bottom: -10px;
+}
+
+.seal-content {
+    text-align: center;
     color: #d4af37;
-    transform: rotate(-15deg);
+    line-height: 1.2;
 }
 
-.signature-line {
-    border-top: 2px solid #333;
+.seal-content span {
+    font-size: 26px;
+    font-weight: 900;
+    display: block;
+    border-bottom: 2px solid #d4af37;
+}
+
+.signature-box { text-align: center; }
+.sign-line-new {
+    border-top: 2px solid #222;
     width: 200px;
-    margin-bottom: 5px;
+    margin: 0 auto 8px;
 }
 
-/* Decoration Corners */
-.corner-decoration {
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    border: 15px solid #0000FF;
-}
-.top-left { top: -5px; left: -5px; border-right: none; border-bottom: none; }
-.top-right { top: -5px; right: -5px; border-left: none; border-bottom: none; }
-.bottom-left { bottom: -5px; left: -5px; border-right: none; border-top: none; }
-.bottom-right { bottom: -5px; right: -5px; border-left: none; border-top: none; }
-
-/* Print Handling */
+/* --- PRINT ENGINE (CRITICAL) --- */
 @media print {
-    .no-print, .admin-sidebar, .admin-top-bar {
+    /* Hide everything except the certificate */
+    body * {
+        visibility: hidden;
+    }
+    
+    .a4-certificate-paper, .a4-certificate-paper * {
+        visibility: visible;
+    }
+
+    /* Reset background colors for printer */
+    body {
+        background: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .a4-certificate-paper {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 297mm;
+        height: 210mm;
+        margin: 0 !important;
+        padding: 10mm !important; /* Printing safety margin */
+        box-shadow: none !important;
+        -webkit-print-color-adjust: exact !important; /* Forced background colors */
+        print-color-adjust: exact !important;
+    }
+
+    .no-print {
         display: none !important;
     }
-    .admin-main { padding: 0 !important; margin: 0 !important; }
-    .certificate-paper {
+
+    /* Remove headers/footers added by browser */
+    @page {
+        size: landscape;
         margin: 0;
-        box-shadow: none;
-        transform: scale(0.9); /* Adjust for paper size */
     }
 }
