@@ -88,15 +88,15 @@ function Certificate() {
                 <div className="cert-content text-center">
                   <div className="cert-header">
                     <h1 className="brand-name">CYNTAX CODING HUB</h1>
-                    <p className="brand-tagline">Innovation Beyond Boundaries</p>
+                    <p className="brand-tagline">Hub Where Developers Learn </p>
                   </div>
 
                   <div className="cert-body">
                     <h2 className="title">CERTIFICATE OF COMPLETION</h2>
-                    <p className="subtitle">This is to certify that</p>
+                    <p className="subtitle">This is to certify that Mr./Ms./Mrs.</p>
                     
                     <h3 className="student-name">{formData.studentName}</h3>
-                    <p className="son-of">S/o Shri {formData.fatherName}</p>
+                    <p className="son-of">S/o D/o  {formData.fatherName}</p>
                     
                     <div className="course-info">
                       <p>has successfully completed the professional course in</p>
@@ -113,7 +113,9 @@ function Certificate() {
                       <p><strong>ID:</strong> {formData.certificateNo}</p>
                     </div>
                     <div className="cert-seal">
-                        <div className="seal-inner">CCH</div>
+                        <div className="seal-inner">CCH 
+                          Cyntax Codign Hub 
+                        </div>
                     </div>
                     <div className="footer-item text-end">
                       <div className="signature-line"></div>
