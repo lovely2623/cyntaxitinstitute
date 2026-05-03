@@ -62,7 +62,7 @@ function AdminLayout() {
             <i className="fas fa-edit"></i> Manage PDFs & News
           </Link>
           <Link to="/AdminLayout/results" className={`nav-item ${location.pathname.includes('results') ? 'active' : ''}`}>
-            <i className="fas fa-file-invoice"></i> Result Portal
+            <i className="fas fa-file-invoice"></i> Generate Certificate
           </Link>
         </nav>
         
