@@ -114,7 +114,7 @@ function Certificate() {
                     </div>
                     <div className="cert-seal">
                         <div className="seal-inner">CCH 
-                          Cyntax Codign Hub 
+                          Cyntax Coding Hub 
                         </div>
                     </div>
                     <div className="footer-item text-end">
