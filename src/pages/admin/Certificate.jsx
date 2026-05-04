@@ -17,12 +17,9 @@ function Certificate({ preFillData, onSuccess }) {
     issueDate: preFillData?.certificateDetails?.issueDate || new Date().toISOString().split('T')[0]
   });
 
-  // Agar pehle se issued hai toh seedha preview dikhao
   const [showCertificate, setShowCertificate] = useState(preFillData?.isCertificateIssued || false);
 
   const handleSaveAndPrint = async () => {
-    console.log("Save & Print initiated for:", preFillData._id);
-    
     try {
       const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/issue-certificate/${preFillData._id}`, {
         method: 'PUT',
@@ -31,25 +28,15 @@ function Certificate({ preFillData, onSuccess }) {
       });
 
       if (response.ok) {
-        console.log("Database updated successfully!");
-        alert("Data Saved! Ab Print khulega.");
-        
-        // Chota sa delay taaki UI stable ho jaye
+        // Sync database status then print
         setTimeout(() => {
           window.print();
-          if (onSuccess) onSuccess(); // List refresh karne ke liye
+          if (onSuccess) onSuccess(); 
         }, 500);
       } else {
-        const errorData = await response.json();
-        console.error("Server Error:", errorData);
-        alert("Server ne mana kar diya: " + (errorData.message || "Unknown error"));
-        
-        // Agar server fail bhi ho jaye, tab bhi print toh de hi do
         window.print();
       }
     } catch (err) {
-      console.error("Network Error:", err);
-      alert("Backend se connect nahi ho paya, par main print option khol raha hoon.");
       window.print();
     }
   };
@@ -79,19 +66,15 @@ function Certificate({ preFillData, onSuccess }) {
         </div>
       ) : (
         <div className="preview-wrapper">
-          {/* Action Buttons (No-Print) */}
           <div className="no-print d-flex justify-content-center gap-3 mb-4 mt-2">
-            {!preFillData.isCertificateIssued && (
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowCertificate(false)}>
-                <i className="fas fa-edit me-1"></i> Edit
-              </button>
-            )}
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowCertificate(false)}>
+              <i className="fas fa-edit me-1"></i> Edit
+            </button>
             <button className="btn btn-success btn-sm px-4 fw-bold shadow" onClick={handleSaveAndPrint}>
-              <i className="fas fa-print me-1"></i> Save & Print Now
+              <i className="fas fa-print me-1"></i> Save & Print
             </button>
           </div>
 
-          {/* Certificate Printable Area */}
           <div id="printable-area" className="cert-landscape-a4">
             <div className="cert-bg-logo-watermark"><img src={logoImg} alt="" /></div>
             <div className="master-border">
