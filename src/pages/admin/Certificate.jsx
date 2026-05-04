@@ -11,7 +11,7 @@ function Certificate() {
     toDate: '',
     duration: '',
     grade: 'A++',
-    issueDate: new Date().toISOString().split('T')[0],
+    issueDate: '', // Left blank as per request
     certificateNo: `CCH-${Math.floor(100000 + Math.random() * 900000)}`
   });
 
@@ -26,12 +26,12 @@ function Certificate() {
       {!showCertificate ? (
         <div className="form-wrapper no-print container py-5">
           <div className="form-card shadow-lg p-4 bg-white rounded-4">
-            <h2 className="fw-bold text-primary mb-4 text-center">Cyntax Coding Hub | Certificate Manager</h2>
+            <h2 className="fw-bold text-navy mb-4 text-center">Cyntax Coding Hub | Certificate Manager</h2>
             <form onSubmit={(e) => { e.preventDefault(); setShowCertificate(true); }} className="row g-3">
               <div className="col-md-6"><label className="fw-bold">Student Full Name</label><input type="text" name="studentName" className="form-control" required onChange={handleInputChange} /></div>
               <div className="col-md-6"><label className="fw-bold">Father's Name</label><input type="text" name="fatherName" className="form-control" required onChange={handleInputChange} /></div>
               <div className="col-md-4"><label className="fw-bold">Registration Number</label><input type="text" name="regNo" className="form-control" value={formData.regNo} onChange={handleInputChange} /></div>
-              <div className="col-md-5"><label className="fw-bold">Course Title</label><input type="text" name="courseName" className="form-control" placeholder="e.g. Full Stack MERN Development" required onChange={handleInputChange} /></div>
+              <div className="col-md-5"><label className="fw-bold">Course Title</label><input type="text" name="courseName" className="form-control" placeholder="e.g. MERN Stack Development" required onChange={handleInputChange} /></div>
               <div className="col-md-3">
                 <label className="fw-bold">Awarded Grade</label>
                 <select name="grade" className="form-select" onChange={handleInputChange} value={formData.grade}>
@@ -40,12 +40,11 @@ function Certificate() {
                   <option value="A">A (Good)</option>
                 </select>
               </div>
-              <div className="col-md-3"><label className="fw-bold">From Date</label><input type="date" name="fromDate" className="form-control" required onChange={handleInputChange} /></div>
-              <div className="col-md-3"><label className="fw-bold">To Date</label><input type="date" name="toDate" className="form-control" required onChange={handleInputChange} /></div>
-              <div className="col-md-3"><label className="fw-bold">Duration</label><input type="text" name="duration" className="form-control" placeholder="6 Months" required onChange={handleInputChange} /></div>
-              <div className="col-md-3"><label className="fw-bold">Date of Issue</label><input type="date" name="issueDate" className="form-control" value={formData.issueDate} onChange={handleInputChange} /></div>
+              <div className="col-md-4"><label className="fw-bold">From Date</label><input type="date" name="fromDate" className="form-control" required onChange={handleInputChange} /></div>
+              <div className="col-md-4"><label className="fw-bold">To Date</label><input type="date" name="toDate" className="form-control" required onChange={handleInputChange} /></div>
+              <div className="col-md-4"><label className="fw-bold">Duration</label><input type="text" name="duration" className="form-control" placeholder="6 Months" required onChange={handleInputChange} /></div>
               <div className="col-12 mt-4 text-center">
-                <button type="submit" className="btn btn-primary px-5 py-2 fw-bold">Preview Professional Design</button>
+                <button type="submit" className="btn btn-navy px-5 py-2 fw-bold">Generate Professional Certificate</button>
               </div>
             </form>
           </div>
@@ -53,68 +52,95 @@ function Certificate() {
       ) : (
         <div className="preview-container">
           <div className="no-print d-flex justify-content-center gap-3 py-4">
-            <button className="btn btn-secondary" onClick={() => setShowCertificate(false)}>Edit Info</button>
-            <button className="btn btn-success px-4" onClick={() => window.print()}>Print Official Copy</button>
+            <button className="btn btn-outline-secondary" onClick={() => setShowCertificate(false)}>Edit Info</button>
+            <button className="btn btn-success px-4" onClick={() => window.print()}>Print / Download PDF</button>
           </div>
 
-          <div className="cert-a4-landscape">
-             {/* THE WATERMARK GRID */}
-             <div className="watermark-overlay">
-                {[...Array(50)].map((_, i) => (
-                    <span key={i}>CYNTAX CODING HUB &nbsp;&nbsp;</span>
-                ))}
-             </div>
+          {/* START OF A4 CERTIFICATE */}
+          <div className="cert-a4-landscape shadow-lg mx-auto" id="printable-cert">
+            
+            {/* Tiled Watermark */}
+            <div className="watermark-grid">
+               {[...Array(60)].map((_, i) => (
+                   <span key={i} className="watermark-text">CYNTAX CODING HUB</span>
+               ))}
+            </div>
 
-            <div className="outer-gold-frame">
-              <div className="inner-navy-frame">
-                <div className="cert-content-box text-center">
+            <div className="outer-gold-border">
+              <div className="inner-border-design">
+                
+                {/* Header Information */}
+                <header className="cert-header d-flex justify-content-between">
+                  <div className="header-left">
+                    <p>ISO 9001:2015 CERTIFIED</p>
+                    <p>REG. NO: {formData.regNo}</p>
+                  </div>
+                  <div className="header-right text-end">
+                    <p>MSME GOVT. OF INDIA REG.</p>
+                    <p>CERTIFICATE ID: {formData.certificateNo}</p>
+                  </div>
+                </header>
+
+                {/* Institute Identity */}
+                <div className="institute-section text-center">
+                  <div className="logo-placeholder mb-2">
+                    {/* Yahan aapka Cyntax Logo aayega */}
+                    <div className="logo-circle">CCH</div>
+                  </div>
+                  <h1 className="institute-name">CYNTAX CODING HUB</h1>
+                  <p className="institute-tagline text-uppercase">Center for Advanced Software Engineering & Digital Excellence</p>
+                  <div className="divider-gold"></div>
+                </div>
+
+                {/* Certificate Body */}
+                <div className="cert-body text-center">
+                  <h2 className="cert-title">CERTIFICATE OF ACHIEVEMENT</h2>
+                  <p className="cert-intro">This is to certify that the prestigious board of examiners has awarded this certificate to</p>
                   
-                  <header className="d-flex justify-content-between align-items-start mb-2">
-                    <div className="text-start small fw-bold text-muted">ISO 9001:2015 Certified<br/>MSME Registered Institute</div>
-                    <div className="text-end small fw-bold text-muted">Reg No: {formData.regNo}<br/>ID: {formData.certificateNo}</div>
-                  </header>
-
-                  <h1 className="display-3 fw-black text-navy m-0">CYNTAX CODING HUB</h1>
-                  <p className="text-gold fw-bold letter-spacing-5 mb-1">ADVANCED CENTRE FOR SOFTWARE ENGINEERING</p>
-                  <p className="italic-text mb-3">Recognized by Global Educational Standards</p>
-
-                  <div className="title-ribbon-modern">CERTIFICATE OF ACHIEVEMENT</div>
-
-                  <div className="main-paragraph py-4">
-                    <p className="m-0 fs-5 italic-text">This document officially validates that</p>
-                    <h2 className="student-name-brush">{formData.studentName}</h2>
-                    <p className="fs-5">Son / Daughter of <strong>Shri {formData.fatherName}</strong></p>
-                    
-                    <p className="cert-desc px-5">
-                      has successfully demonstrated exceptional proficiency and completed the industrial-grade curriculum in 
-                      <span className="text-navy fw-bold fs-4"> {formData.courseName} </span> 
-                      for a duration of <strong>{formData.duration}</strong>, effective from 
-                      <strong> {formData.fromDate} </strong> to <strong> {formData.toDate} </strong>. 
-                      Based on high-performance criteria and practical project submission, the candidate has been 
-                      honored with the prestigious Grade of <span className="grade-pill">{formData.grade}</span>.
-                    </p>
+                  <div className="student-name-container">
+                    <h3 className="student-name">{formData.studentName}</h3>
+                    <div className="name-underline"></div>
                   </div>
 
-                  <footer className="footer-layout d-flex justify-content-between align-items-end mt-auto">
-                    <div className="footer-meta text-start">
-                      <p className="mb-0"><strong>Place:</strong> Shimla, H.P.</p>
-                      <p className="mb-0"><strong>Issue Date:</strong> {formData.issueDate}</p>
-                    </div>
+                  <p className="parentage">S/o / D/o <strong>Shri {formData.fatherName}</strong></p>
 
-                    <div className="maroon-official-seal">
-                        <div className="seal-border">
-                            <span className="seal-initial">CCH</span>
-                            <span className="seal-full">CYNTAX CODING HUB</span>
-                        </div>
-                    </div>
+                  <p className="course-details">
+                    for the successful completion of the intensive professional course in
+                    <br />
+                    <span className="course-highlight">{formData.courseName}</span>
+                    <br />
+                    conducted from <strong>{formData.fromDate}</strong> to <strong>{formData.toDate}</strong> for a duration of <strong>{formData.duration}</strong>.
+                  </p>
 
-                    <div className="footer-sign text-center">
-                      <div className="sign-line"></div>
-                      <p className="mb-0 fw-bold">Director</p>
-                      <p className="small text-muted m-0">Authorized Signatory</p>
-                    </div>
-                  </footer>
+                  <p className="grade-statement">
+                    Having completed all projects and assessments with merit, the candidate is awarded Grade 
+                    <span className="grade-badge">{formData.grade}</span>
+                  </p>
                 </div>
+
+                {/* Footer Section */}
+                <footer className="cert-footer d-flex justify-content-between align-items-end">
+                  <div className="footer-meta">
+                    <p><strong>Place:</strong> .........................</p>
+                    <p><strong>Date:</strong> .........................</p>
+                  </div>
+
+                  <div className="official-seal-wrapper">
+                    <div className="maroon-seal">
+                      <div className="seal-inner">
+                        <span className="seal-center-text">CCH</span>
+                        <div className="seal-circular-text">CYNTAX CODING HUB • SHIMLA • </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="signature-block text-center">
+                    <div className="sign-line"></div>
+                    <p className="mb-0 fw-bold">Director</p>
+                    <p className="small text-muted">Authorized Signatory</p>
+                  </div>
+                </footer>
+
               </div>
             </div>
           </div>
