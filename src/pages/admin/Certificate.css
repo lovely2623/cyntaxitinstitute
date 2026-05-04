@@ -1,229 +1,270 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Great+Vibes&family=Montserrat:wght@400;700&family=Playfair+Display:ital,wght@1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;800&display=swap');
 
 :root {
     --navy: #001f3f;
-    --gold: #c5a059;
+    --gold: #d4af37;
     --maroon: #800000;
 }
 
-/* Base Styles */
-.certificate-portal {
-    background: #f4f7f6;
-    min-height: 100vh;
-    font-family: 'Montserrat', sans-serif;
-}
-
 .text-navy { color: var(--navy); }
-.btn-navy { background: var(--navy); color: white; transition: 0.3s; }
-.btn-navy:hover { background: #003366; color: white; }
+.btn-navy { background: var(--navy); color: white; border-radius: 50px; }
 
-/* A4 Landscape Dimensions */
-.cert-a4-landscape {
+
+
+/* A4 Landscape Fix */
+.cert-landscape-a4 {
     width: 297mm;
     height: 210mm;
     background: #fff;
     padding: 10mm;
+    margin: 0 auto;
     position: relative;
-    overflow: hidden;
     box-sizing: border-box;
-}
-
-/* Watermark Grid */
-.watermark-grid {
-    position: absolute;
-    top: -10%;
-    left: -10%;
-    width: 120%;
-    height: 120%;
     display: flex;
-    flex-wrap: wrap;
-    gap: 80px;
-    transform: rotate(-30deg);
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.05;
+    flex-direction: column;
 }
 
-.watermark-text {
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--navy);
-    white-space: nowrap;
-}
-
-/* Borders */
-.outer-gold-border {
-    border: 8px double var(--gold);
+/* Luxury Border Design */
+.master-border {
+    border: 15px solid var(--navy);
     height: 100%;
-    width: 100%;
     padding: 5px;
     position: relative;
     z-index: 2;
 }
 
-.inner-border-design {
-    border: 2px solid var(--navy);
+.inner-gold-frame {
+    border: 3px solid var(--gold);
     height: 100%;
-    width: 100%;
-    padding: 25px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
+    background: white;
 }
 
-/* Header */
-.cert-header p {
-    margin: 0;
-    font-size: 10px;
-    font-weight: bold;
-    color: #666;
+/* Header & Badges */
+.header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 11px;
+    color: #555;
 }
 
-/* Institute Styles */
-.institute-name {
+.gov-badges-container {
+    display: flex;
+    gap: 30px;
+}
+
+.badge-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 60px;
+}
+
+.mini-badge {
+    height: 25px; /* Shrunk as requested */
+    margin-bottom: 2px;
+    object-fit: contain;
+}
+
+.badge-box span { font-size: 8px; font-weight: bold; text-transform: uppercase; }
+
+/* Branding */
+.main-cert-logo {
+    height: 70px; /* Elegant smaller size */
+    margin-bottom: 10px;
+}
+
+.main-title {
     font-family: 'Cinzel', serif;
-    font-size: 45px;
+    font-size: 38px;
     color: var(--navy);
-    margin: 5px 0;
+    margin: 0;
     letter-spacing: 2px;
 }
 
-.institute-tagline {
-    font-size: 12px;
+.sub-title {
+    font-size: 10px;
     letter-spacing: 4px;
     color: var(--gold);
-    font-weight: 700;
+    font-weight: 800;
 }
 
-.divider-gold {
-    width: 60%;
-    height: 2px;
-    background: linear-gradient(to right, transparent, var(--gold), transparent);
-    margin: 15px auto;
-}
-
-.logo-circle {
-    width: 60px;
-    height: 60px;
-    border: 3px solid var(--navy);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    font-weight: 900;
-    color: var(--navy);
-    background: #fff;
-}
-
-/* Body Content */
-.cert-title {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 900;
-    font-size: 28px;
-    background: var(--navy);
-    color: white;
-    display: inline-block;
-    padding: 5px 40px;
-    margin: 15px 0;
-    clip-path: polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%);
-}
-
-.student-name {
-    font-family: 'Great Vibes', cursive;
-    font-size: 55px;
-    color: var(--navy);
-    margin: 10px 0;
-}
-
-.name-underline {
-    width: 300px;
+.divider-line {
+    width: 40%;
     height: 1px;
-    background: #ccc;
-    margin: -10px auto 15px;
-}
-
-.course-highlight {
-    font-family: 'Playfair Display', serif;
-    font-size: 24px;
-    color: var(--navy);
-    font-style: italic;
-    font-weight: bold;
-}
-
-.grade-badge {
     background: var(--gold);
-    color: white;
-    padding: 2px 15px;
-    border-radius: 50px;
-    margin-left: 10px;
-    font-weight: bold;
+    margin: 10px auto;
+    position: relative;
 }
+
+.dot {
+    width: 6px; height: 6px; background: var(--gold);
+    position: absolute; top: -3px; left: 50%;
+    transform: translateX(-50%); border-radius: 50%;
+}
+
+/* Content Area */
+.title-ribbon {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--navy);
+    border-bottom: 2px solid var(--gold);
+    display: inline-block;
+    padding: 5px 20px;
+    margin-bottom: 20px;
+}
+
+.pro-narrative {
+    font-family: 'Lora', serif;
+    font-size: 19px;
+    line-height: 1.8;
+    color: #222;
+    padding: 0 80px;
+    text-align: justify;
+}
+
+.grade-pill {
+    color: var(--maroon);
+    font-weight: 700;
+    border: 1px solid var(--gold);
+    padding: 2px 12px;
+    border-radius: 4px;
+    background: #fdfaf0;
+}
+
+/* Background Watermark */
+.cert-bg-logo-watermark {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.05;
+    z-index: 1;
+}
+.cert-bg-logo-watermark img { width: 300px; }
 
 /* Footer & Seal */
 .cert-footer {
-    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
 }
 
-.footer-meta p { margin: 5px 0; font-size: 14px; }
+.footer-col { width: 30%; font-size: 14px; }
 
-.sign-line {
-    width: 180px;
-    height: 1px;
-    background: var(--navy);
-    margin-bottom: 5px;
-}
-
-/* Maroon Official Seal */
-.maroon-seal {
-    width: 100px;
-    height: 100px;
+.official-maroon-seal {
+    width: 80px;
+    height: 80px;
     background: var(--maroon);
     border-radius: 50%;
-    border: 4px double #ffffff55;
+    border: 4px double #ffffff88;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.seal-text { color: white; font-weight: 900; font-size: 18px; }
+
+.signature-line {
+    width: 150px;
+    height: 1.5px;
+    background: var(--navy);
+    margin: 0 auto 5px;
+}
+
+/* PRINT OPTIMIZATION */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;800&display=swap');
+
+:root {
+    --navy: #001f3f;
+    --gold: #d4af37;
+    --maroon: #800000;
+}
+
+/* Certificate Layout */
+.cert-landscape-a4 {
+    width: 297mm;
+    height: 210mm;
+    background: #fff !important;
+    padding: 10mm;
+    margin: 0 auto;
     position: relative;
+    box-sizing: border-box;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    flex-direction: column;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
 }
 
-.seal-inner {
-    width: 80%;
-    height: 80%;
-    border: 1px dashed white;
+.master-border {
+    border: 15px solid var(--navy) !important;
+    height: 100%;
+    padding: 5px;
+    position: relative;
+    z-index: 2;
+}
+
+.inner-gold-frame {
+    border: 3px solid var(--gold) !important;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: white !important;
+}
+
+/* Typography */
+.main-title { font-family: 'Cinzel', serif; font-size: 42px; color: var(--navy) !important; margin: 0; }
+.sub-title { font-size: 11px; letter-spacing: 4px; color: var(--gold) !important; font-weight: 800; }
+.pro-narrative { font-family: 'Lora', serif; font-size: 20px; line-height: 1.8; color: #222 !important; padding: 0 60px; text-align: center; }
+
+/* Elements */
+.official-maroon-seal {
+    width: 85px; height: 85px;
+    background: var(--maroon) !important;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
 }
+.seal-text { color: white !important; font-weight: 900; }
+.mini-badge { height: 30px; object-fit: contain; }
+.cert-bg-logo-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.06; z-index: 1; }
 
-.seal-center-text {
-    color: white;
-    font-weight: 900;
-    font-size: 20px;
-}
-
-/* Print Handling */
+/* --- CRITICAL PRINT FIX --- */
 @media print {
-    @page {
-        size: A4 landscape;
-        margin: 0;
+    @page { 
+        size: A4 landscape; 
+        margin: 0; 
     }
-    body { background: none; }
-    .no-print { display: none !important; }
-    .cert-a4-landscape {
-        box-shadow: none;
-        margin: 0;
-        width: 100%;
+    html, body {
         height: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
     }
-    .certificate-portal { padding: 0; }
-}
-
-/* Responsive Form */
-@media (max-width: 768px) {
-    .cert-a4-landscape {
-        transform: scale(0.3); /* For mobile preview */
-        transform-origin: top center;
+    /* Hide everything except printable area */
+    body * { 
+        visibility: hidden !important; 
+    }
+    .no-print, .no-print * {
+        display: none !important;
+    }
+    #printable-area, #printable-area * { 
+        visibility: visible !important; 
+    }
+    #printable-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 297mm;
+        height: 210mm;
+        visibility: visible !important;
+        z-index: 99999;
     }
 }

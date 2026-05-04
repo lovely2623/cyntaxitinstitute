@@ -53,7 +53,10 @@ const studentSchema = new mongoose.Schema({
   courseDuration: String,
   joiningDate: { type: Date, default: Date.now },
   photo: String, 
-  status: { type: String, default: 'Active' }
+  status: { type: String, default: 'Active' },
+  // NEW FIELDS
+  isCertificateIssued: { type: Boolean, default: false },
+  certificateDetails: { type: Object, default: null }
 });
 const Student = mongoose.model('Student', studentSchema, 'students');
 
@@ -83,38 +86,28 @@ const News = mongoose.model('News', newsSchema);
 
 // --- ROUTES ---
 
-// 1. ADMIN STATS ROUTE
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const totalAdmissions = await Student.countDocuments();
     const totalMessages = await Contact.countDocuments();
     res.json({ totalAdmissions, totalMessages });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. CONTACT MESSAGES (Get All & Delete)
 app.get('/api/contact/all', async (req, res) => {
   try {
     const messages = await Contact.find().sort({ date: -1 });
     res.json(messages);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE ENQUIRY ROUTE (NEWLY ADDED)
 app.delete('/api/contact/:id', async (req, res) => {
   try {
     await Contact.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: "Enquiry Deleted Successfully" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json({ success: true, message: "Deleted" });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 3. PDF MANAGEMENT ROUTES
 app.get('/api/pdfs', async (req, res) => {
   try {
     const pdfs = await Pdf.find().sort({ date: -1 });
@@ -137,7 +130,6 @@ app.delete('/api/pdfs/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 4. NEWS MANAGEMENT ROUTES
 app.get('/api/news', async (req, res) => {
   try {
     const news = await News.find().sort({ date: -1 });
@@ -160,7 +152,6 @@ app.delete('/api/news/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Verification, Students, Visitors
 app.get('/api/students/verify/:id', async (req, res) => {
   try {
     const student = await Student.findOne({ studentId: req.params.id.toUpperCase() });
@@ -180,7 +171,7 @@ app.post('/api/contact', contactLimiter, async (req, res) => {
   try {
     const newMessage = new Contact(req.body);
     await newMessage.save();
-    res.status(201).json({ success: true, message: "Message sent successfully!" });
+    res.status(201).json({ success: true, message: "Sent!" });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
@@ -195,15 +186,33 @@ app.post('/api/students', async (req, res) => {
   try {
     const newStudent = new Student(req.body);
     await newStudent.save();
-    res.status(201).json({ message: "Student added successfully!" });
+    res.status(201).json({ message: "Success" });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Update Student
 app.put('/api/students/:id', async (req, res) => {
   try {
     const updated = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// NEW: Issue Certificate Route
+app.put('/api/students/issue-certificate/:id', async (req, res) => {
+  try {
+    const updated = await Student.findByIdAndUpdate(
+      req.params.id, 
+      { 
+        $set: {
+          isCertificateIssued: true, 
+          certificateDetails: req.body.certificateDetails 
+        }
+      }, 
+      { new: true }
+    );
+    res.json({ success: true, data: updated });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 app.delete('/api/students/:id', async (req, res) => {
