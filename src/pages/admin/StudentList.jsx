@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../admin/AdminLayout.css';
-import Certificate from './Certificate'; // Path check kar lena apne hisab se
+import Certificate from './Certificate'; 
 
 function StudentList() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [editStudent, setEditStudent] = useState(null);
-  const [certStudent, setCertStudent] = useState(null); // Certificate popup ke liye
+  const [certStudent, setCertStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchStudents = useCallback(async () => {
     try {
-      const response = await fetch('https://cyntaxitinstitute.onrender.com/api/students', {
-        cache: 'no-cache'
-      });
+      const response = await fetch('https://cyntaxitinstitute.onrender.com/api/students', { cache: 'no-cache' });
       const data = await response.json();
       setStudents(data);
       setLoading(false);
@@ -33,12 +31,11 @@ function StudentList() {
   );
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bhai, pakka delete karna hai? Ye data wapas nahi aayega!")) {
+    if (window.confirm("Bhai, pakka delete karna hai?")) {
       const originalStudents = [...students];
       setStudents(students.filter(s => s._id !== id));
       try {
-        const res = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error();
+        await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${id}`, { method: 'DELETE' });
       } catch (error) {
         setStudents(originalStudents);
         alert("Delete fail ho gaya!");
@@ -57,6 +54,7 @@ function StudentList() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
       });
+      alert("Database Updated Successfully!");
     } catch (error) {
       alert("Update fail!");
       fetchStudents();
@@ -68,6 +66,7 @@ function StudentList() {
   return (
     <div className="container-fluid mt-4 fade-in pb-5">
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden">
+        {/* HEADER */}
         <div className="card-header bg-dark py-3 px-4">
           <div className="d-flex flex-column flex-md-row align-items-center justify-content-between">
             <h4 className="text-white mb-3 mb-md-0 fw-bold">Student List</h4>
@@ -75,19 +74,20 @@ function StudentList() {
               <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
               <input
                 type="text"
-                className="form-control ps-5 border-0 text-white"
+                className="form-control ps-5 border-0 text-white shadow-none"
                 placeholder="Search by name..."
                 style={{ backgroundColor: '#2c3e50', borderRadius: '10px', height: '40px' }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="btn btn-warning btn-sm rounded-pill px-4 fw-bold ms-md-3 mt-3 mt-md-0" onClick={fetchStudents}>
+            <button className="btn btn-warning btn-sm rounded-pill px-4 fw-bold ms-md-3" onClick={fetchStudents}>
               <i className="fas fa-sync-alt"></i> Sync
             </button>
           </div>
         </div>
 
+        {/* TABLE */}
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light text-uppercase small">
@@ -95,7 +95,7 @@ function StudentList() {
                 <th className="ps-4">Student</th>
                 <th>Course</th>
                 <th>Reg ID</th>
-                <th>Issued Cert.</th> {/* Naya Column */}
+                <th>Issued</th>
                 <th className="text-center pe-4">Actions</th>
               </tr>
             </thead>
@@ -111,32 +111,19 @@ function StudentList() {
                       </div>
                     </div>
                   </td>
-                  <td><span className="badge bg-info text-dark">{s.course}</span></td>
-                  <td className="font-monospace text-muted small">{s.studentId}</td>
-                  
-                  {/* --- ISSUED CERTIFICATE STATUS --- */}
+                  <td><span className="badge bg-info text-dark px-3">{s.course}</span></td>
+                  <td className="font-monospace text-muted">{s.studentId}</td>
                   <td>
-                    {s.isCertificateIssued ? (
-                      <span className="badge bg-success-subtle text-success border border-success-subtle px-3 cursor-pointer" onClick={() => setCertStudent(s)}>
-                        <i className="fas fa-check-circle me-1"></i> Yes
-                      </span>
-                    ) : (
-                      <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-3">
-                        <i className="fas fa-times-circle me-1"></i> No
-                      </span>
-                    )}
+                    <span className={`badge px-3 ${s.isCertificateIssued ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
+                      {s.isCertificateIssued ? 'Yes' : 'No'}
+                    </span>
                   </td>
-
                   <td className="text-center pe-4">
-                    <div className="btn-group">
-                      <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedStudent(s)} title="View Profile"><i className="fas fa-eye"></i></button>
-                      <button className="btn btn-sm btn-outline-warning" onClick={() => setEditStudent(s)} title="Edit Info"><i className="fas fa-edit"></i></button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)} title="Delete"><i className="fas fa-trash"></i></button>
-                      
-                      {/* --- CERTIFICATE BUTTON --- */}
-                      <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)} title="Certificate">
-                        <i className="fas fa-certificate text-dark"></i>
-                      </button>
+                    <div className="btn-group shadow-sm">
+                      <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedStudent(s)}><i className="fas fa-eye"></i></button>
+                      <button className="btn btn-sm btn-outline-warning" onClick={() => setEditStudent(s)}><i className="fas fa-edit"></i></button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)}><i className="fas fa-trash"></i></button>
+                      <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)}><i className="fas fa-certificate"></i></button>
                     </div>
                   </td>
                 </tr>
@@ -146,75 +133,39 @@ function StudentList() {
         </div>
       </div>
 
-      {/* --- 🎓 CERTIFICATE POPUP --- */}
-      {certStudent && (
-        <div className="modal-overlay" style={{ paddingTop: '100px', alignItems: 'flex-start', zIndex: 1050 }}>
-          <div className="modal-content-custom bg-white animate__animated animate__zoomIn p-0" style={{ maxWidth: '90%', width: '1200px', borderRadius: '15px' }}>
-            <div className="no-print d-flex justify-content-between align-items-center p-3 border-bottom bg-dark text-white rounded-top-4">
-              <h5 className="mb-0 fw-bold">Certificate Management</h5>
-              <button className="btn-close btn-close-white" onClick={() => setCertStudent(null)}></button>
-            </div>
-            <div className="p-2" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-              <Certificate 
-                preFillData={certStudent} 
-                onSuccess={() => {
-                  fetchStudents(); // Sync data after issuance
-                  setCertStudent(null);
-                }} 
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- VIEW MODAL --- */}
-      {selectedStudent && (
-        <div className="modal-overlay" style={{ paddingTop: '100px', alignItems: 'flex-start' }} onClick={() => setSelectedStudent(null)}>
-          <div className="modal-content-custom animate__animated animate__fadeInDown p-0 shadow-lg" style={{ maxWidth: '700px', borderRadius: '15px' }} onClick={e => e.stopPropagation()}>
-            <div className="bg-primary p-3 text-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0 fw-bold">Full Student Profile</h5>
-              <button className="btn-close btn-close-white" onClick={() => setSelectedStudent(null)}></button>
-            </div>
-            <div className="p-4 bg-white">
-              <div className="row">
-                <div className="col-md-4 text-center border-end">
-                  <img src={selectedStudent.photo || 'https://via.placeholder.com/150'} className="img-fluid rounded shadow-sm mb-3" style={{ border: '3px solid #f8f9fa' }} alt="Student" />
-                  <h5 className="fw-bold text-dark">{selectedStudent.name}</h5>
-                  <span className="badge bg-dark mb-3">{selectedStudent.studentId}</span>
-                </div>
-                <div className="col-md-8">
-                  <div className="row g-3">
-                    <div className="col-6"><small className="text-muted d-block">Father's Name</small><strong>{selectedStudent.fatherName}</strong></div>
-                    <div className="col-6"><small className="text-muted d-block">Mother's Name</small><strong>{selectedStudent.motherName}</strong></div>
-                    <div className="col-6"><small className="text-muted d-block">Phone Number</small><strong>{selectedStudent.phone}</strong></div>
-                    <div className="col-6"><small className="text-muted d-block">Aadhaar Number</small><strong>{selectedStudent.aadhaarNumber}</strong></div>
-                    <div className="col-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob}</strong></div>
-                    <div className="col-12"><small className="text-muted d-block">Course</small><strong className="text-primary">{selectedStudent.course}</strong></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- EDIT MODAL --- */}
+      {/* --- 📝 FULL EDIT MODAL (AB SAB KUCH HAI ISME) --- */}
       {editStudent && (
-        <div className="modal-overlay" style={{ paddingTop: '100px', alignItems: 'flex-start' }}>
-          <div className="modal-content-custom animate__animated animate__fadeInUp p-4" style={{ maxWidth: '800px', borderRadius: '15px' }}>
+        <div className="modal-overlay" style={{ paddingTop: '90px', alignItems: 'flex-start', overflowY: 'auto' }}>
+          <div className="modal-content-custom animate__animated animate__fadeInUp p-4" style={{ maxWidth: '850px', borderRadius: '15px' }}>
             <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-4">
-              <h4 className="fw-bold text-warning mb-0">Update Student Data</h4>
+              <h4 className="fw-bold text-dark mb-0">Update Admission Info</h4>
               <button className="btn-close" onClick={() => setEditStudent(null)}></button>
             </div>
             <form onSubmit={handleUpdate}>
               <div className="row g-3">
                 <div className="col-md-4">
-                  <label className="small fw-bold">Full Name</label>
+                  <label className="small fw-bold">Student Name</label>
                   <input type="text" className="form-control" value={editStudent.name} onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })} />
                 </div>
                 <div className="col-md-4">
                   <label className="small fw-bold">Father's Name</label>
                   <input type="text" className="form-control" value={editStudent.fatherName} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Mother's Name</label>
+                  <input type="text" className="form-control" value={editStudent.motherName} onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Aadhaar Number</label>
+                  <input type="text" className="form-control" value={editStudent.aadhaarNumber} onChange={(e) => setEditStudent({ ...editStudent, aadhaarNumber: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Phone Number</label>
+                  <input type="text" className="form-control" value={editStudent.phone} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Date of Birth</label>
+                  <input type="date" className="form-control" value={editStudent.dob} onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} />
                 </div>
                 <div className="col-md-4">
                   <label className="small fw-bold">Course</label>
@@ -224,13 +175,70 @@ function StudentList() {
                     <option value="Steno">Steno</option>
                   </select>
                 </div>
-                {/* ... existing edit fields ... */}
-                <div className="col-12 mt-3 text-end">
-                  <button type="button" className="btn btn-light me-2" onClick={() => setEditStudent(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-warning px-4">Save Changes</button>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Duration</label>
+                  <input type="text" className="form-control" value={editStudent.courseDuration} onChange={(e) => setEditStudent({ ...editStudent, courseDuration: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Status</label>
+                  <select className="form-select" value={editStudent.status} onChange={(e) => setEditStudent({ ...editStudent, status: e.target.value })}>
+                    <option value="Active">Active</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
+                <div className="col-12">
+                  <label className="small fw-bold">Full Address</label>
+                  <textarea className="form-control" rows="2" value={editStudent.address} onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })} />
                 </div>
               </div>
+              <div className="mt-4 text-end">
+                <button type="button" className="btn btn-light me-2 rounded-pill px-4" onClick={() => setEditStudent(null)}>Cancel</button>
+                <button type="submit" className="btn btn-dark rounded-pill px-5 shadow">Update Record</button>
+              </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- VIEW MODAL --- */}
+      {selectedStudent && (
+        <div className="modal-overlay" style={{ paddingTop: '90px', alignItems: 'flex-start' }} onClick={() => setSelectedStudent(null)}>
+          <div className="modal-content-custom bg-white animate__animated animate__zoomIn p-0" style={{ maxWidth: '700px', borderRadius: '15px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div className="bg-primary p-3 text-white d-flex justify-content-between align-items-center">
+              <h5 className="mb-0 fw-bold">Full Student Profile</h5>
+              <button className="btn-close btn-close-white" onClick={() => setSelectedStudent(null)}></button>
+            </div>
+            <div className="p-4">
+              <div className="row">
+                <div className="col-md-4 text-center border-end">
+                  <img src={selectedStudent.photo || 'https://via.placeholder.com/150'} className="img-fluid rounded mb-3 shadow-sm" alt="Student" />
+                  <h5 className="fw-bold">{selectedStudent.name}</h5>
+                  <span className="badge bg-dark">{selectedStudent.studentId}</span>
+                </div>
+                <div className="col-md-8">
+                  <div className="row g-3 small">
+                    <div className="col-6"><strong>Father:</strong> {selectedStudent.fatherName}</div>
+                    <div className="col-6"><strong>Phone:</strong> {selectedStudent.phone}</div>
+                    <div className="col-12"><strong>Address:</strong> {selectedStudent.address}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CERTIFICATE MODAL --- */}
+      {certStudent && (
+        <div className="modal-overlay" style={{ paddingTop: '90px', alignItems: 'flex-start', zIndex: 1100 }}>
+          <div className="modal-content-custom bg-white p-0 shadow-lg" style={{ maxWidth: '95%', width: '1250px', borderRadius: '15px' }}>
+            <div className="no-print d-flex justify-content-between align-items-center p-3 bg-dark text-white">
+              <h5 className="mb-0 fw-bold">Certificate Generator</h5>
+              <button className="btn-close btn-close-white" onClick={() => setCertStudent(null)}></button>
+            </div>
+            <div className="p-2" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+              <Certificate preFillData={certStudent} onSuccess={() => { fetchStudents(); setCertStudent(null); }} />
+            </div>
           </div>
         </div>
       )}

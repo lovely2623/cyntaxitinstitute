@@ -238,33 +238,23 @@
 
 /* --- CRITICAL PRINT FIX --- */
 @media print {
-    @page { 
-        size: A4 landscape; 
-        margin: 0; 
-    }
-    html, body {
-        height: 100%;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: hidden;
-    }
-    /* Hide everything except printable area */
+    /* Pure page ki baki cheeje chupa do */
     body * { 
         visibility: hidden !important; 
     }
-    .no-print, .no-print * {
-        display: none !important;
-    }
+    /* Sirf Certificate area dikhao */
     #printable-area, #printable-area * { 
         visibility: visible !important; 
     }
     #printable-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 297mm;
-        height: 210mm;
-        visibility: visible !important;
-        z-index: 99999;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .no-print { 
+        display: none !important; 
     }
 }
