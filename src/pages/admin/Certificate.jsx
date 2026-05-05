@@ -21,22 +21,18 @@ function Certificate({ preFillData, onSuccess }) {
 
   const handleSaveAndPrint = async () => {
     try {
-      // Pehle API call karke status update karo
       const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/issue-certificate/${preFillData._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ certificateDetails: formData })
       });
 
-      // Status update hone ke baad ya fail hone par bhi print option do
+      // Blank Screen Fix: Use a slight delay to ensure UI is ready
       setTimeout(() => {
         window.print();
-        if (response.ok && onSuccess) {
-            onSuccess(); // Yeh StudentList refresh karega
-        }
-      }, 500);
+        if (response.ok && onSuccess) onSuccess();
+      }, 700);
     } catch (err) {
-      console.error("Print Error:", err);
       window.print();
     }
   };
@@ -44,8 +40,7 @@ function Certificate({ preFillData, onSuccess }) {
   return (
     <div className="certificate-portal">
       {!showCertificate ? (
-        <div className="container py-2 no-print">
-          <div className="alert alert-info py-2 small">Finalize details before generating certificate.</div>
+        <div className="container py-3 no-print">
           <form onSubmit={(e) => { e.preventDefault(); setShowCertificate(true); }} className="row g-2 bg-light p-3 rounded-3 border">
              <div className="col-md-6"><label className="small fw-bold">Full Name</label><input type="text" className="form-control form-control-sm" value={formData.studentName} onChange={e => setFormData({...formData, studentName: e.target.value})} required /></div>
              <div className="col-md-6"><label className="small fw-bold">Father's Name</label><input type="text" className="form-control form-control-sm" value={formData.fatherName} onChange={e => setFormData({...formData, fatherName: e.target.value})} required /></div>
@@ -59,20 +54,14 @@ function Certificate({ preFillData, onSuccess }) {
              </div>
              <div className="col-md-6"><label className="small fw-bold">From Date</label><input type="date" className="form-control form-control-sm" value={formData.fromDate} onChange={e => setFormData({...formData, fromDate: e.target.value})} required /></div>
              <div className="col-md-6"><label className="small fw-bold">To Date</label><input type="date" className="form-control form-control-sm" value={formData.toDate} onChange={e => setFormData({...formData, toDate: e.target.value})} required /></div>
-             <div className="col-12 text-center mt-3">
-                <button type="submit" className="btn btn-primary btn-sm px-4 fw-bold">Preview Certificate</button>
-             </div>
+             <div className="col-12 text-center mt-3"><button type="submit" className="btn btn-primary btn-sm px-4 fw-bold">Generate Preview</button></div>
           </form>
         </div>
       ) : (
         <div className="preview-wrapper">
           <div className="no-print d-flex justify-content-center gap-3 mb-4 mt-2">
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowCertificate(false)}>
-              <i className="fas fa-edit me-1"></i> Edit
-            </button>
-            <button className="btn btn-success btn-sm px-4 fw-bold shadow" onClick={handleSaveAndPrint}>
-              <i className="fas fa-print me-1"></i> Save & Print
-            </button>
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowCertificate(false)}>Edit Details</button>
+            <button className="btn btn-success btn-sm px-4 fw-bold shadow" onClick={handleSaveAndPrint}><i className="fas fa-print me-1"></i> Save & Print PDF</button>
           </div>
 
           <div id="printable-area" className="cert-landscape-a4">
@@ -109,20 +98,9 @@ function Certificate({ preFillData, onSuccess }) {
                 </div>
 
                 <footer className="cert-footer">
-                  <div className="footer-col text-start">
-                    <p><strong>Place:</strong> Shimla, HP</p>
-                    <p><strong>Date:</strong> {new Date(formData.issueDate).toLocaleDateString()}</p>
-                  </div>
-                  <div className="seal-center">
-                    <div className="official-maroon-seal">
-                      <span className="seal-text">CCH</span>
-                    </div>
-                  </div>
-                  <div className="footer-col text-center">
-                    <div className="signature-line"></div>
-                    <p className="m-0 fw-bold">Director</p>
-                    <p className="tiny-text m-0">Authorized Signatory</p>
-                  </div>
+                  <div className="footer-col text-start"><p><strong>Place:</strong> Shimla, HP</p><p><strong>Date:</strong> {new Date(formData.issueDate).toLocaleDateString()}</p></div>
+                  <div className="seal-center"><div className="official-maroon-seal"><span className="seal-text">CCH</span></div></div>
+                  <div className="footer-col text-center"><div className="signature-line"></div><p className="m-0 fw-bold">Director</p><p className="tiny-text m-0">Authorized Signatory</p></div>
                 </footer>
               </div>
             </div>

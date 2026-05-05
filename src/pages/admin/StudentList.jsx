@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../admin/AdminLayout.css';
-import Certificate from './Certificate'; // Path check kar lena apne hisab se
+import Certificate from './Certificate';
 
 function StudentList() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [editStudent, setEditStudent] = useState(null);
-  const [certStudent, setCertStudent] = useState(null); // Certificate popup ke liye
+  const [certStudent, setCertStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -113,7 +113,6 @@ function StudentList() {
                   </td>
                   <td><span className="badge bg-info text-dark">{s.course}</span></td>
                   <td className="font-monospace text-muted small">{s.studentId}</td>
-                  
                   <td>
                     {s.isCertificateIssued ? (
                       <span className="badge bg-success-subtle text-success border border-success-subtle px-3" style={{cursor: 'pointer'}} onClick={() => setCertStudent(s)}>
@@ -125,16 +124,12 @@ function StudentList() {
                       </span>
                     )}
                   </td>
-
                   <td className="text-center pe-4">
                     <div className="btn-group">
-                      <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedStudent(s)} title="View Profile"><i className="fas fa-eye"></i></button>
-                      <button className="btn btn-sm btn-outline-warning" onClick={() => setEditStudent(s)} title="Edit Info"><i className="fas fa-edit"></i></button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)} title="Delete"><i className="fas fa-trash"></i></button>
-                      
-                      <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)} title="Certificate">
-                        <i className="fas fa-certificate text-dark"></i>
-                      </button>
+                      <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedStudent(s)}><i className="fas fa-eye"></i></button>
+                      <button className="btn btn-sm btn-outline-warning" onClick={() => setEditStudent(s)}><i className="fas fa-edit"></i></button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)}><i className="fas fa-trash"></i></button>
+                      <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)}><i className="fas fa-certificate text-dark"></i></button>
                     </div>
                   </td>
                 </tr>
@@ -146,21 +141,13 @@ function StudentList() {
 
       {/* --- 🎓 CERTIFICATE POPUP --- */}
       {certStudent && (
-        <div className="modal-overlay no-print-bg" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.8)', zIndex: 1050, overflowY:'auto' }}>
-          <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '95%', width: '1250px', borderRadius: '15px', marginTop: '20px', marginBottom: '20px' }}>
+        <div className="modal-overlay no-print-bg" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.8)', zIndex: 9999, overflowY:'auto' }}>
+          <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', marginTop: '90px' }}>
             <div className="no-print d-flex justify-content-between align-items-center p-3 border-bottom bg-dark text-white rounded-top-4">
-              <h5 className="mb-0 fw-bold">Certificate Management</h5>
+              <h5 className="mb-0 fw-bold">Certificate Portal</h5>
               <button className="btn-close btn-close-white" onClick={() => setCertStudent(null)}></button>
             </div>
-            <div className="p-2">
-              <Certificate 
-                preFillData={certStudent} 
-                onSuccess={() => {
-                  fetchStudents(); 
-                  setCertStudent(null);
-                }} 
-              />
-            </div>
+            <Certificate preFillData={certStudent} onSuccess={() => { fetchStudents(); setCertStudent(null); }} />
           </div>
         </div>
       )}
@@ -196,10 +183,10 @@ function StudentList() {
         </div>
       )}
 
-      {/* --- EDIT MODAL --- */}
+      {/* --- EDIT MODAL (Sari Fields Restore Kar di Hain) --- */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.7)', zIndex: 1050, display:'flex', justifyContent:'center', alignItems:'center' }}>
-          <div className="modal-content-custom p-4 bg-white" style={{ maxWidth: '800px', width:'90%', borderRadius: '15px' }}>
+          <div className="modal-content-custom p-4 bg-white shadow-lg" style={{ maxWidth: '850px', width:'95%', borderRadius: '15px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-4">
               <h4 className="fw-bold text-warning mb-0">Update Student Data</h4>
               <button className="btn-close" onClick={() => setEditStudent(null)}></button>
@@ -215,16 +202,38 @@ function StudentList() {
                   <input type="text" className="form-control" value={editStudent.fatherName} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
                 </div>
                 <div className="col-md-4">
+                  <label className="small fw-bold">Mother's Name</label>
+                  <input type="text" className="form-control" value={editStudent.motherName} onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Phone Number</label>
+                  <input type="text" className="form-control" value={editStudent.phone} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Aadhaar Number</label>
+                  <input type="text" className="form-control" value={editStudent.aadhaarNumber || ''} onChange={(e) => setEditStudent({ ...editStudent, aadhaarNumber: e.target.value })} />
+                </div>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Date of Birth</label>
+                  <input type="date" className="form-control" value={editStudent.dob} onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} />
+                </div>
+                <div className="col-md-6">
                   <label className="small fw-bold">Course</label>
                   <select className="form-select" value={editStudent.course} onChange={(e) => setEditStudent({ ...editStudent, course: e.target.value })}>
                     <option value="DCA">DCA</option>
                     <option value="ADCA">ADCA</option>
                     <option value="Steno">Steno</option>
+                    <option value="Tally">Tally</option>
+                    <option value="Web Development">Web Development</option>
                   </select>
                 </div>
-                <div className="col-12 mt-3 text-end">
-                  <button type="button" className="btn btn-light me-2" onClick={() => setEditStudent(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-warning px-4">Save Changes</button>
+                <div className="col-md-6">
+                  <label className="small fw-bold">Registration ID</label>
+                  <input type="text" className="form-control bg-light" value={editStudent.studentId} disabled />
+                </div>
+                <div className="col-12 mt-4 text-end border-top pt-3">
+                  <button type="button" className="btn btn-light me-2 px-4" onClick={() => setEditStudent(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-warning px-4 fw-bold">Save Changes</button>
                 </div>
               </div>
             </form>
