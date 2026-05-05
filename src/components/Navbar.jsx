@@ -6,9 +6,18 @@ import logo from '../assets/images/logo.png';
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date()); // Time State
   const navigate = useNavigate();
 
   const isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
+
+  // Live Time Update Logic
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,27 +40,40 @@ function Navbar() {
 
   const closeMenu = () => setMenuOpen(false);
 
+  // Time format function (09:24 PM)
+  const formatTime = (date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
   return (
     <header className={`main-header ${scrolled ? "header-scrolled" : ""}`}>
       {/* --- MINI TOP BAR --- */}
       <section className='mini-top-bar'>
-        <div className='info-item'>
-          <i className="fas fa-map-marker-alt"></i>
-          <span>Solan</span>
+        <div className="top-bar-left-content">
+            <div className='info-item'>
+              <i className="fas fa-map-marker-alt"></i>
+              <span>Solan</span>
+            </div>
+
+            <div className='info-item'>
+              <a href="mailto:cyntaxcodinghub@gmail.com">
+                <i className="fas fa-envelope"></i>
+                <span>cyntaxcodinghub@gmail.com</span>
+              </a>
+            </div>
+
+            <div className='info-item'>
+              <a href="https://wa.me/+918988199226" target="_blank" rel="noopener noreferrer">
+                <i className="fab fa-whatsapp"></i>
+                <span>8988199226</span>
+              </a>
+            </div>
         </div>
 
-        <div className='info-item'>
-          <a href="mailto:cyntaxcodinghub@gmail.com">
-            <i className="fas fa-envelope"></i>
-            <span>cyntaxcodinghub@gmail.com</span>
-          </a>
-        </div>
-
-        <div className='info-item'>
-          <a href="https://wa.me/+918988199226" target="_blank" rel="noopener noreferrer">
-            <i className="fab fa-whatsapp"></i>
-            <span>8988199226</span>
-          </a>
+        {/* Live Time - Hamesha Right End mein rahega */}
+        <div className='live-time'>
+          <i className="far fa-clock"></i>
+          <span>{formatTime(currentTime)}</span>
         </div>
       </section>
 

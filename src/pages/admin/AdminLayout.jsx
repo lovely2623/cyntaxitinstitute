@@ -61,9 +61,7 @@ function AdminLayout() {
           <Link to="/AdminLayout/ManageContent" className={`nav-item ${location.pathname.includes('ManageContent') ? 'active' : ''}`}>
             <i className="fas fa-edit"></i> Manage PDFs & News
           </Link>
-          <Link to="/AdminLayout/Certificate" className={`nav-item ${location.pathname.includes('results') ? 'active' : ''}`}>
-            <i className="fas fa-file-invoice"></i> Generate Certificate
-          </Link>
+       
         </nav>
         
         <div className="sidebar-footer p-3">
