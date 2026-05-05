@@ -35,7 +35,7 @@ function ContactUs() {
       console.log("Render Server Response:", result);
 
       if (response.ok && result.success) {
-        alert("Shukriya Mohit Sir! Aapka message database mein save ho gaya hai. 🚀");
+        alert("Thank You ! jldi hi apse contact hoga. 🚀");
         setFormData({ name: '', email: '', mobile: '', course: '', message: '' });
       } else {
         alert("Oops! Server Error: " + (result.error || "Data save nahi hua."));
