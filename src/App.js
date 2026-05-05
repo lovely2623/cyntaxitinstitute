@@ -21,7 +21,6 @@ import ManageContent from './pages/admin/ManageContent';
 import Certificate from './pages/admin/Certificate';
 
 // --- SCROLL TO TOP LOGIC ---
-// Ye component har route change par screen ko upar le jayega
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -42,9 +41,40 @@ function Home() {
 }
 
 function App() {
+  // --- AUTO UPDATE LOGIC ---
+  useEffect(() => {
+    const checkUpdates = async () => {
+      try {
+        // manifest.json ya index.html ko check karte hain
+        const response = await fetch(`/index.html?nocache=${new Date().getTime()}`, { 
+          method: 'HEAD' 
+        });
+        const etag = response.headers.get('ETag') || response.headers.get('Last-Modified');
+        
+        const lastEtag = localStorage.getItem('app-version-etag');
+
+        if (lastEtag && lastEtag !== etag) {
+          console.log("Naya update mila hai! Reloading...");
+          localStorage.setItem('app-version-etag', etag);
+          window.location.reload();
+        } else if (etag) {
+          localStorage.setItem('app-version-etag', etag);
+        }
+      } catch (error) {
+        console.log("Update check failed", error);
+      }
+    };
+
+    // Har 5 second mein check karega (5000ms)
+    const interval = setInterval(() => {
+      checkUpdates();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Router>
-      {/* ScrollToTop ko Router ke andar rakhna zaroori hai */}
       <ScrollToTop /> 
       
       <div>
@@ -61,13 +91,12 @@ function App() {
           <Route path="/Verification" element={<Verification />} />
 
           {/* ADMIN PANEL ROUTES */}
-          {/* Admin routes ko thoda short kar diya hai */}
           <Route path="/AdminLayout" element={<AdminLayout />}>
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="StudentList" element={<StudentList />} />
             <Route path="AddStudent" element={<AddStudent />} /> 
-             <Route path="ManageContent" element={<ManageContent />} />
-             <Route path="Certificate" element={<Certificate />} />
+            <Route path="ManageContent" element={<ManageContent />} />
+            <Route path="Certificate" element={<Certificate />} />
           </Route>
         </Routes>
 
