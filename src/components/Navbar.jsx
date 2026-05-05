@@ -55,7 +55,7 @@ function Navbar() {
               <span>Solan</span>
             </div>
 
-            <div className='info-item'>
+            <div className='info-item hide-on-mobile'>
               <a href="mailto:cyntaxcodinghub@gmail.com">
                 <i className="fas fa-envelope"></i>
                 <span>cyntaxcodinghub@gmail.com</span>
