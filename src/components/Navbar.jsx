@@ -63,9 +63,9 @@ function Navbar() {
             </div>
 
             <div className='info-item'>
-              <a href="https://wa.me/+918988199225" target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/+918988199226" target="_blank" rel="noopener noreferrer">
                 <i className="fab fa-whatsapp"></i>
-                <span>8988199226</span>
+                <span>8988199225</span>
               </a>
             </div>
         </div>
