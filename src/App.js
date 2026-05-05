@@ -65,10 +65,10 @@ function App() {
       }
     };
 
-    // Har 5 second mein check karega (5000ms)
+    // Har 1 second mein check karega (1000ms)
     const interval = setInterval(() => {
       checkUpdates();
-    }, 5000);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
