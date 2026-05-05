@@ -21,22 +21,22 @@ function Certificate({ preFillData, onSuccess }) {
 
   const handleSaveAndPrint = async () => {
     try {
+      // Pehle API call karke status update karo
       const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/issue-certificate/${preFillData._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ certificateDetails: formData })
       });
 
-      if (response.ok) {
-        // Sync database status then print
-        setTimeout(() => {
-          window.print();
-          if (onSuccess) onSuccess(); 
-        }, 500);
-      } else {
+      // Status update hone ke baad ya fail hone par bhi print option do
+      setTimeout(() => {
         window.print();
-      }
+        if (response.ok && onSuccess) {
+            onSuccess(); // Yeh StudentList refresh karega
+        }
+      }, 500);
     } catch (err) {
+      console.error("Print Error:", err);
       window.print();
     }
   };

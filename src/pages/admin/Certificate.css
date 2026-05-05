@@ -6,41 +6,43 @@
     --maroon: #800000;
 }
 
+/* Base UI Styles */
 .text-navy { color: var(--navy); }
 .btn-navy { background: var(--navy); color: white; border-radius: 50px; }
 
-
-
-/* A4 Landscape Fix */
+/* A4 Landscape Definition */
 .cert-landscape-a4 {
     width: 297mm;
     height: 210mm;
-    background: #fff;
-    padding: 10mm;
+    background: #fff !important;
+    padding: 8mm; /* Reduced to fit better */
     margin: 0 auto;
     position: relative;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    page-break-after: always;
 }
 
 /* Luxury Border Design */
 .master-border {
-    border: 15px solid var(--navy);
+    border: 15px solid var(--navy) !important;
     height: 100%;
     padding: 5px;
     position: relative;
     z-index: 2;
+    box-sizing: border-box;
 }
 
 .inner-gold-frame {
-    border: 3px solid var(--gold);
+    border: 3px solid var(--gold) !important;
     height: 100%;
     padding: 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: white;
+    background: white !important;
+    box-sizing: border-box;
 }
 
 /* Header & Badges */
@@ -65,7 +67,7 @@
 }
 
 .mini-badge {
-    height: 25px; /* Shrunk as requested */
+    height: 25px;
     margin-bottom: 2px;
     object-fit: contain;
 }
@@ -74,14 +76,14 @@
 
 /* Branding */
 .main-cert-logo {
-    height: 70px; /* Elegant smaller size */
+    height: 70px;
     margin-bottom: 10px;
 }
 
 .main-title {
     font-family: 'Cinzel', serif;
     font-size: 38px;
-    color: var(--navy);
+    color: var(--navy) !important;
     margin: 0;
     letter-spacing: 2px;
 }
@@ -89,20 +91,20 @@
 .sub-title {
     font-size: 10px;
     letter-spacing: 4px;
-    color: var(--gold);
+    color: var(--gold) !important;
     font-weight: 800;
 }
 
 .divider-line {
     width: 40%;
     height: 1px;
-    background: var(--gold);
+    background: var(--gold) !important;
     margin: 10px auto;
     position: relative;
 }
 
 .dot {
-    width: 6px; height: 6px; background: var(--gold);
+    width: 6px; height: 6px; background: var(--gold) !important;
     position: absolute; top: -3px; left: 50%;
     transform: translateX(-50%); border-radius: 50%;
 }
@@ -112,8 +114,8 @@
     font-family: 'Montserrat', sans-serif;
     font-weight: 800;
     font-size: 22px;
-    color: var(--navy);
-    border-bottom: 2px solid var(--gold);
+    color: var(--navy) !important;
+    border-bottom: 2px solid var(--gold) !important;
     display: inline-block;
     padding: 5px 20px;
     margin-bottom: 20px;
@@ -123,21 +125,21 @@
     font-family: 'Lora', serif;
     font-size: 19px;
     line-height: 1.8;
-    color: #222;
+    color: #222 !important;
     padding: 0 80px;
     text-align: justify;
 }
 
 .grade-pill {
-    color: var(--maroon);
+    color: var(--maroon) !important;
     font-weight: 700;
-    border: 1px solid var(--gold);
+    border: 1px solid var(--gold) !important;
     padding: 2px 12px;
     border-radius: 4px;
-    background: #fdfaf0;
+    background: #fdfaf0 !important;
 }
 
-/* Background Watermark */
+/* Watermark */
 .cert-bg-logo-watermark {
     position: absolute;
     top: 50%; left: 50%;
@@ -159,106 +161,59 @@
 .official-maroon-seal {
     width: 80px;
     height: 80px;
-    background: var(--maroon);
+    background: var(--maroon) !important;
     border-radius: 50%;
-    border: 4px double #ffffff88;
+    border: 4px double #ffffff88 !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-.seal-text { color: white; font-weight: 900; font-size: 18px; }
+.seal-text { color: white !important; font-weight: 900; font-size: 18px; }
 
 .signature-line {
     width: 150px;
     height: 1.5px;
-    background: var(--navy);
+    background: var(--navy) !important;
     margin: 0 auto 5px;
 }
 
-/* PRINT OPTIMIZATION */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;800&display=swap');
-
-:root {
-    --navy: #001f3f;
-    --gold: #d4af37;
-    --maroon: #800000;
-}
-
-/* Certificate Layout */
-.cert-landscape-a4 {
-    width: 297mm;
-    height: 210mm;
-    background: #fff !important;
-    padding: 10mm;
-    margin: 0 auto;
-    position: relative;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-}
-
-.master-border {
-    border: 15px solid var(--navy) !important;
-    height: 100%;
-    padding: 5px;
-    position: relative;
-    z-index: 2;
-}
-
-.inner-gold-frame {
-    border: 3px solid var(--gold) !important;
-    height: 100%;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: white !important;
-}
-
-/* Typography */
-.main-title { font-family: 'Cinzel', serif; font-size: 42px; color: var(--navy) !important; margin: 0; }
-.sub-title { font-size: 11px; letter-spacing: 4px; color: var(--gold) !important; font-weight: 800; }
-.pro-narrative { font-family: 'Lora', serif; font-size: 20px; line-height: 1.8; color: #222 !important; padding: 0 60px; text-align: center; }
-
-/* Elements */
-.official-maroon-seal {
-    width: 85px; height: 85px;
-    background: var(--maroon) !important;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-}
-.seal-text { color: white !important; font-weight: 900; }
-.mini-badge { height: 30px; object-fit: contain; }
-.cert-bg-logo-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.06; z-index: 1; }
-
-/* ... baki pura CSS same hai ... */
-
+/* --- PRINT ENGINE OPTIMIZATION --- */
 @media print {
+    /* Hide everything first */
     body * {
         visibility: hidden !important;
     }
+
+    /* Target specific container and its children */
     #printable-area, #printable-area * {
         visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
+
+    /* Force the printable area to take over the screen */
     #printable-area {
-        position: fixed !important;
+        position: absolute !important;
         left: 0 !important;
         top: 0 !important;
         width: 297mm !important;
         height: 210mm !important;
-        background: white !important;
-        z-index: 9999999 !important;
+        margin: 0 !important;
+        padding: 8mm !important;
+        box-shadow: none !important;
     }
-    .no-print, .modal-overlay, .modal-content-custom {
-        display: none !important;
-    }
+
+    /* Remove extra space/headers/footers */
     @page {
         size: A4 landscape;
         margin: 0;
+    }
+
+    /* Disable sticky navbars/overlays from interfering */
+    .admin-sidebar, .admin-top-bar, .no-print, .modal-overlay {
+        display: none !important;
+        height: 0 !important;
+        overflow: hidden !important;
     }
 }

@@ -66,8 +66,8 @@ function StudentList() {
   if (loading) return <div className="text-center p-5"><h4>🔄 Loading Cyntax Records...</h4></div>;
 
   return (
-    <div className="container-fluid mt-4 fade-in pb-5">
-      <div className="card shadow-lg border-0 rounded-4 overflow-hidden">
+    <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
+      <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
         <div className="card-header bg-dark py-3 px-4">
           <div className="d-flex flex-column flex-md-row align-items-center justify-content-between">
             <h4 className="text-white mb-3 mb-md-0 fw-bold">Student List</h4>
@@ -95,7 +95,7 @@ function StudentList() {
                 <th className="ps-4">Student</th>
                 <th>Course</th>
                 <th>Reg ID</th>
-                <th>Issued Cert.</th> {/* Naya Column */}
+                <th>Issued Cert.</th>
                 <th className="text-center pe-4">Actions</th>
               </tr>
             </thead>
@@ -114,7 +114,6 @@ function StudentList() {
                   <td><span className="badge bg-info text-dark">{s.course}</span></td>
                   <td className="font-monospace text-muted small">{s.studentId}</td>
                   
-                  {/* --- ISSUED CERTIFICATE STATUS --- */}
                   <td>
                     {s.isCertificateIssued ? (
                       <span className="badge bg-success-subtle text-success border border-success-subtle px-3" style={{cursor: 'pointer'}} onClick={() => setCertStudent(s)}>
@@ -133,7 +132,6 @@ function StudentList() {
                       <button className="btn btn-sm btn-outline-warning" onClick={() => setEditStudent(s)} title="Edit Info"><i className="fas fa-edit"></i></button>
                       <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)} title="Delete"><i className="fas fa-trash"></i></button>
                       
-                      {/* --- CERTIFICATE BUTTON --- */}
                       <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)} title="Certificate">
                         <i className="fas fa-certificate text-dark"></i>
                       </button>
@@ -148,8 +146,8 @@ function StudentList() {
 
       {/* --- 🎓 CERTIFICATE POPUP --- */}
       {certStudent && (
-        <div className="modal-overlay no-print" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.8)', paddingTop: '50px', zIndex: 1050, overflowY:'auto' }}>
-          <div className="modal-content-custom bg-white animate__animated animate__zoomIn p-0 mx-auto" style={{ maxWidth: '95%', width: '1250px', borderRadius: '15px' }}>
+        <div className="modal-overlay no-print-bg" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.8)', zIndex: 1050, overflowY:'auto' }}>
+          <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '95%', width: '1250px', borderRadius: '15px', marginTop: '20px', marginBottom: '20px' }}>
             <div className="no-print d-flex justify-content-between align-items-center p-3 border-bottom bg-dark text-white rounded-top-4">
               <h5 className="mb-0 fw-bold">Certificate Management</h5>
               <button className="btn-close btn-close-white" onClick={() => setCertStudent(null)}></button>
@@ -158,7 +156,7 @@ function StudentList() {
               <Certificate 
                 preFillData={certStudent} 
                 onSuccess={() => {
-                  fetchStudents(); // Status Sync Update
+                  fetchStudents(); 
                   setCertStudent(null);
                 }} 
               />
@@ -169,8 +167,8 @@ function StudentList() {
 
       {/* --- VIEW MODAL --- */}
       {selectedStudent && (
-        <div className="modal-overlay" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.7)', zIndex: 1050, display:'flex', justifyContent:'center', alignItems:'center' }} onClick={() => setSelectedStudent(null)}>
-          <div className="modal-content-custom animate__animated animate__fadeInDown p-0 shadow-lg bg-white" style={{ maxWidth: '700px', width:'90%', borderRadius: '15px', overflow:'hidden' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay no-print" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.7)', zIndex: 1050, display:'flex', justifyContent:'center', alignItems:'center' }} onClick={() => setSelectedStudent(null)}>
+          <div className="modal-content-custom p-0 shadow-lg bg-white" style={{ maxWidth: '700px', width:'90%', borderRadius: '15px', overflow:'hidden' }} onClick={e => e.stopPropagation()}>
             <div className="bg-primary p-3 text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0 fw-bold">Full Student Profile</h5>
               <button className="btn-close btn-close-white" onClick={() => setSelectedStudent(null)}></button>
@@ -198,10 +196,10 @@ function StudentList() {
         </div>
       )}
 
-      {/* --- EDIT MODAL (Pura Original Code) --- */}
+      {/* --- EDIT MODAL --- */}
       {editStudent && (
-        <div className="modal-overlay" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.7)', zIndex: 1050, display:'flex', justifyContent:'center', alignItems:'center' }}>
-          <div className="modal-content-custom animate__animated animate__fadeInUp p-4 bg-white" style={{ maxWidth: '800px', width:'90%', borderRadius: '15px' }}>
+        <div className="modal-overlay no-print" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.7)', zIndex: 1050, display:'flex', justifyContent:'center', alignItems:'center' }}>
+          <div className="modal-content-custom p-4 bg-white" style={{ maxWidth: '800px', width:'90%', borderRadius: '15px' }}>
             <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-4">
               <h4 className="fw-bold text-warning mb-0">Update Student Data</h4>
               <button className="btn-close" onClick={() => setEditStudent(null)}></button>
@@ -224,7 +222,6 @@ function StudentList() {
                     <option value="Steno">Steno</option>
                   </select>
                 </div>
-                {/* --- Yaha aapne aur fields add kiye honge toh wo aise hi rahenge --- */}
                 <div className="col-12 mt-3 text-end">
                   <button type="button" className="btn btn-light me-2" onClick={() => setEditStudent(null)}>Cancel</button>
                   <button type="submit" className="btn btn-warning px-4">Save Changes</button>
