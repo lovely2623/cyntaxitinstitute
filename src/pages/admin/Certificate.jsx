@@ -27,22 +27,20 @@ function Certificate({ preFillData, onSuccess }) {
       body: JSON.stringify({ certificateDetails: formData })
     });
 
-    // ✅ FIX: Ensure DOM fully rendered before print
-    setTimeout(() => {
-      const printArea = document.getElementById("printable-area");
+    // ✅ React render complete hone do
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          window.print();
+          if (response.ok && onSuccess) onSuccess();
+        }, 500);
+      });
+    });
 
-      if (printArea) {
-        printArea.style.display = "block";
-      }
-
-      window.print();
-
-      if (response.ok && onSuccess) onSuccess();
-    }, 1200); // delay badha diya
   } catch (err) {
-    setTimeout(() => {
-      window.print();
-    }, 1200);
+    requestAnimationFrame(() => {
+      setTimeout(() => window.print(), 500);
+    });
   }
 };
 

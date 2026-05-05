@@ -142,7 +142,7 @@ function StudentList() {
       {/* --- 🎓 CERTIFICATE POPUP --- */}
       {certStudent && (
         <div className="modal-overlay no-print-bg" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.8)', zIndex: 9999, overflowY:'auto' }}>
-          <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', marginTop: '130px' }}>
+          <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', position:'relative', top:'160px' }}>
             <div className="no-print d-flex justify-content-between align-items-center p-3 border-bottom bg-dark text-white rounded-top-4">
               <h5 className="mb-0 fw-bold">Certificate Portal</h5>
               <button className="btn-close btn-close-white" onClick={() => setCertStudent(null)}></button>

@@ -9,8 +9,6 @@
 .text-navy { color: var(--navy); }
 .btn-navy { background: var(--navy); color: white; border-radius: 50px; }
 
-
-
 /* A4 Landscape Fix */
 .cert-landscape-a4 {
     width: 297mm;
@@ -65,7 +63,7 @@
 }
 
 .mini-badge {
-    height: 25px; /* Shrunk as requested */
+    height: 25px;
     margin-bottom: 2px;
     object-fit: contain;
 }
@@ -74,7 +72,7 @@
 
 /* Branding */
 .main-cert-logo {
-    height: 70px; /* Elegant smaller size */
+    height: 70px;
     margin-bottom: 10px;
 }
 
@@ -177,155 +175,71 @@
     margin: 0 auto 5px;
 }
 
-/* PRINT OPTIMIZATION */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;800&display=swap');
+/* ================== 🔥 NEW FIXES ADDED ================== */
 
-:root {
-    --navy: #001f3f;
-    --gold: #d4af37;
-    --maroon: #800000;
-}
-
-/* Certificate Layout */
-.cert-landscape-a4 {
-    width: 297mm;
-    height: 210mm;
-    background: #fff !important;
-    padding: 10mm;
-    margin: 0 auto;
-    position: relative;
-    box-sizing: border-box;
+/* ✅ Navbar overlap FIX (real) */
+.modal-overlay {
+    padding-top: 140px !important;
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    align-items: flex-start !important;
+    justify-content: center;
 }
 
-.master-border {
-    border: 15px solid var(--navy) !important;
-    height: 100%;
-    padding: 5px;
-    position: relative;
-    z-index: 2;
-}
-
-.inner-gold-frame {
-    border: 3px solid var(--gold) !important;
-    height: 100%;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: white !important;
-}
-
-/* Typography */
-.main-title { font-family: 'Cinzel', serif; font-size: 42px; color: var(--navy) !important; margin: 0; }
-.sub-title { font-size: 11px; letter-spacing: 4px; color: var(--gold) !important; font-weight: 800; }
-.pro-narrative { font-family: 'Lora', serif; font-size: 20px; line-height: 1.8; color: #222 !important; padding: 0 60px; text-align: center; }
-
-/* Elements */
-.official-maroon-seal {
-    width: 85px; height: 85px;
-    background: var(--maroon) !important;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-}
-.seal-text { color: white !important; font-weight: 900; }
-.mini-badge { height: 30px; object-fit: contain; }
-.cert-bg-logo-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.06; z-index: 1; }
-
-/* ... baki pura CSS same hai ... */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;800&display=swap');
-
-:root { --navy: #001f3f; --gold: #d4af37; --maroon: #800000; }
-
-/* Sticky Navbar Fix: Certificate popup ko niche push kar diya */
 .modal-content-custom {
-    margin-top: 90px !important; /* Navbar ke niche se start hoga */
-}
-
-/* Base A4 Setup */
-.cert-landscape-a4 {
-    width: 297mm;
-    height: 210mm;
-    background: #fff !important;
-    padding: 10mm;
-    margin: 0 auto;
+    margin-top: 0 !important;
     position: relative;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    top: 0 !important;
 }
 
-/* Responsive Scaling for Laptop/Mobile screen viewing (not print) */
-@media screen and (max-width: 1250px) {
-    .cert-landscape-a4 {
-        transform: scale(0.8);
-        transform-origin: top center;
-    }
-}
-@media screen and (max-width: 768px) {
-    .cert-landscape-a4 {
-        transform: scale(0.4);
-        transform-origin: top center;
+/* Mobile fix */
+@media (max-width: 768px) {
+    .modal-overlay {
+        padding-top: 160px !important;
     }
 }
 
-/* Luxury Elements */
-.master-border { border: 15px solid var(--navy) !important; height: 100%; padding: 5px; position: relative; z-index: 2; }
-.inner-gold-frame { border: 3px solid var(--gold) !important; height: 100%; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; background: white !important; }
-.main-title { font-family: 'Cinzel', serif; font-size: 38px; color: var(--navy) !important; margin: 0; }
-.pro-narrative { font-family: 'Lora', serif; font-size: 19px; line-height: 1.8; color: #222 !important; padding: 0 80px; text-align: justify; }
-.official-maroon-seal { width: 80px; height: 80px; background: var(--maroon) !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-.seal-text { color: white !important; font-weight: 900; }
+/* ================== PRINT FIX ================== */
 
-/* --- 🛑 CRITICAL PRINT FIX (No Blank Pages / No White Screen) --- */
 @media print {
-   html, body {
+
+    html, body {
         width: 297mm !important;
         height: 210mm !important;
         overflow: hidden !important;
-    }
-    /* Hide EVERYTHING else including navbar, sidebars, and overlays */
-    body * {
-        visibility: hidden !important;
+        background: white !important;
     }
 
-    /* Only show the certificate area */
-    #printable-area, #printable-area * {
+    /* ❌ OLD bug remove effect */
+    body * {
         visibility: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+    }
+
+    /* ✅ Hide everything except certificate */
+    body > *:not(#printable-area) {
+        display: none !important;
     }
 
     #printable-area {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+        display: block !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
         width: 297mm !important;
         height: 210mm !important;
         margin: 0 !important;
         padding: 10mm !important;
         z-index: 999999 !important;
-        visibility: visible !important;
-        display: block !important;
+        background: white !important;
+
         page-break-after: avoid !important;
         page-break-before: avoid !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
- .cert-landscape-a4 {
+
+    .cert-landscape-a4 {
         page-break-after: avoid !important;
         page-break-inside: avoid !important;
-    }
-
-    /* Force background colors and images in PDF */
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
     }
 
     @page {
@@ -333,20 +247,8 @@
         margin: 0 !important;
     }
 
-    /* Remove extra white pages */
-    .no-print, .admin-sidebar, .admin-top-bar, .modal-overlay, .modal-content-custom {
-        display: none !important;
-        height: 0 !important;
-        margin: 0 !important;
-    }
-}
-/* ✅ Navbar overlap fix (responsive) */
-.modal-content-custom {
-    margin-top: 120px !important;
-}
-
-@media (max-width: 768px) {
-    .modal-content-custom {
-        margin-top: 140px !important;
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 }
