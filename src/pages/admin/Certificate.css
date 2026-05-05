@@ -284,12 +284,11 @@
 
 /* --- 🛑 CRITICAL PRINT FIX (No Blank Pages / No White Screen) --- */
 @media print {
-    body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background: white !important;
+   html, body {
+        width: 297mm !important;
+        height: 210mm !important;
+        overflow: hidden !important;
     }
-
     /* Hide EVERYTHING else including navbar, sidebars, and overlays */
     body * {
         visibility: hidden !important;
@@ -313,6 +312,14 @@
         z-index: 999999 !important;
         visibility: visible !important;
         display: block !important;
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+ .cert-landscape-a4 {
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
     }
 
     /* Force background colors and images in PDF */
@@ -331,5 +338,15 @@
         display: none !important;
         height: 0 !important;
         margin: 0 !important;
+    }
+}
+/* ✅ Navbar overlap fix (responsive) */
+.modal-content-custom {
+    margin-top: 120px !important;
+}
+
+@media (max-width: 768px) {
+    .modal-content-custom {
+        margin-top: 140px !important;
     }
 }

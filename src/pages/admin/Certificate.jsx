@@ -19,23 +19,32 @@ function Certificate({ preFillData, onSuccess }) {
 
   const [showCertificate, setShowCertificate] = useState(preFillData?.isCertificateIssued || false);
 
-  const handleSaveAndPrint = async () => {
-    try {
-      const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/issue-certificate/${preFillData._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ certificateDetails: formData })
-      });
+ const handleSaveAndPrint = async () => {
+  try {
+    const response = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/issue-certificate/${preFillData._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ certificateDetails: formData })
+    });
 
-      // Blank Screen Fix: Use a slight delay to ensure UI is ready
-      setTimeout(() => {
-        window.print();
-        if (response.ok && onSuccess) onSuccess();
-      }, 700);
-    } catch (err) {
+    // ✅ FIX: Ensure DOM fully rendered before print
+    setTimeout(() => {
+      const printArea = document.getElementById("printable-area");
+
+      if (printArea) {
+        printArea.style.display = "block";
+      }
+
       window.print();
-    }
-  };
+
+      if (response.ok && onSuccess) onSuccess();
+    }, 1200); // delay badha diya
+  } catch (err) {
+    setTimeout(() => {
+      window.print();
+    }, 1200);
+  }
+};
 
   return (
     <div className="certificate-portal">
