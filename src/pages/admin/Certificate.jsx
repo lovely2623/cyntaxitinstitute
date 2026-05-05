@@ -3,6 +3,7 @@ import './Certificate.css';
 import logoImg from '../../assets/images/logo.png';
 import msmeImg from '../../assets/images/msme.jpg';
 import isoImg from '../../assets/images/iso.jpg';
+import html2pdf from 'html2pdf.js';
 
 function Certificate({ preFillData, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -43,6 +44,39 @@ function Certificate({ preFillData, onSuccess }) {
     });
   }
 };
+const handleDownloadPDF = async () => {
+  try {
+    await fetch(`https://cyntaxitinstitute.onrender.com/api/students/issue-certificate/${preFillData._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ certificateDetails: formData })
+    });
+
+    const element = document.getElementById('printable-area');
+
+    const opt = {
+      margin: 0,
+      filename: `${formData.studentName}_certificate.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: {
+        scale: 3,   // 🔥 HD quality
+        useCORS: true
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'landscape'
+      }
+    };
+
+    html2pdf().set(opt).from(element).save();
+
+    if (onSuccess) onSuccess();
+
+  } catch (err) {
+    alert("PDF generate fail!");
+  }
+};
 
   return (
     <div className="certificate-portal">
@@ -68,7 +102,8 @@ function Certificate({ preFillData, onSuccess }) {
         <div className="preview-wrapper">
           <div className="no-print d-flex justify-content-center gap-3 mb-4 mt-2">
             <button className="btn btn-secondary btn-sm" onClick={() => setShowCertificate(false)}>Edit Details</button>
-            <button className="btn btn-success btn-sm px-4 fw-bold shadow" onClick={handleSaveAndPrint}><i className="fas fa-print me-1"></i> Save & Print PDF</button>
+<button className="btn btn-success btn-sm px-4 fw-bold shadow" onClick={handleDownloadPDF}>   
+             <i className="fas fa-print me-1"></i> Save & Print PDF</button>
           </div>
 
           <div id="printable-area" className="cert-landscape-a4">
