@@ -1,7 +1,7 @@
 import React from 'react';
 import './AboutUs.css';
 // Apni photo assets folder mein daal kar yahan import kar lena
- import me from '../assets/images/me.jpg'; 
+ import me from '../assets/images/me.jpeg'; 
 
 function AboutUs() {
   return (
