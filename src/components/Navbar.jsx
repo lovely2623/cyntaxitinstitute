@@ -96,6 +96,13 @@ function Navbar() {
             <li><NavLink to="/ContactUs" onClick={closeMenu}>Contact Us</NavLink></li>
             <li><NavLink to="/Gallery" onClick={closeMenu}>Gallery</NavLink></li>
             <li><NavLink to="/Verification" onClick={closeMenu}>Verification</NavLink></li>
+            
+            {/* NEW TEST BUTTON JUST AFTER VERIFICATION */}
+            <li>
+              <NavLink to="/Login" onClick={closeMenu} className="nav-test-link">
+                <i className="fas fa-file-signature me-1"></i> Test
+              </NavLink>
+            </li>
 
             {isAuthenticated ? (
               <li className="nav-item-special">

@@ -165,6 +165,31 @@ function StudentList() {
 
   return (
     <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
+      {/* Print Style Fix: White Screen Problem Solver */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          .printable-response-paper, .printable-response-paper * {
+            visibility: visible !important;
+          }
+          .printable-response-paper {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 20px !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+          }
+          .no-print-area {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
         <div className="card-header bg-dark py-3 px-4">
           <div className="d-flex flex-column flex-md-row align-items-center justify-content-between">
@@ -214,6 +239,7 @@ function StudentList() {
                 filteredStudents.map((s) => {
                   const testDone = isStudentTestDone(s);
                   const paper = getExamPaper(s);
+                  const totalCount = paper?.totalQuestions || (s.testScore !== undefined ? 2 : 0);
 
                   return (
                     <tr key={s._id}>
@@ -229,7 +255,7 @@ function StudentList() {
                       <td><span className="badge bg-info text-dark">{s.course}</span></td>
                       <td className="font-monospace text-muted small">{s.studentId}</td>
 
-                      {/* TEST STATUS */}
+                      {/* TEST STATUS (DYNAMIC QUESTIONS COUNT) */}
                       <td>
                         {testDone ? (
                           <div>
@@ -237,7 +263,7 @@ function StudentList() {
                               <i className="fas fa-check-circle me-1"></i> Done
                             </span>
                             <div className="small fw-bold text-dark mt-1">
-                              {s.testScore ?? s.certificateDetails?.testScore ?? 0}/50 ({s.testGrade || 'A'})
+                              {s.testScore ?? s.certificateDetails?.testScore ?? 0}/{totalCount} ({s.testGrade || paper?.grade || 'C (Fail)'})
                             </div>
                           </div>
                         ) : (
@@ -319,12 +345,12 @@ function StudentList() {
           backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 10000,
           overflowY: 'auto', padding: '20px 10px'
         }}>
-          <div style={{
+          <div className="printable-response-paper" style={{
             maxWidth: '850px', margin: '0 auto', backgroundColor: '#ffffff',
             borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
           }}>
             {/* Header Toolbar (No-Print) */}
-            <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
+            <div className="no-print-area d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
               <div>
                 <h5 className="mb-0 fw-bold">Candidate Exam Response Sheet</h5>
                 <small className="text-white-50">Cyntax IT Institute &bull; Official Submission Copy</small>
@@ -371,11 +397,15 @@ function StudentList() {
                   </div>
                   <div className="col-sm-6">
                     <span className="text-muted small d-block">Total Score:</span>
-                    <span className="badge bg-success fs-6">{viewPaperStudent.student.testScore ?? 0} / 50</span>
+                    <span className="badge bg-success fs-6">
+                      {viewPaperStudent.student.testScore ?? 0} / {viewPaperStudent.paper?.totalQuestions || 2}
+                    </span>
                   </div>
                   <div className="col-sm-6">
                     <span className="text-muted small d-block">Final Grade:</span>
-                    <span className="badge bg-primary fs-6">{viewPaperStudent.student.testGrade || 'A'}</span>
+                    <span className="badge bg-primary fs-6">
+                      {viewPaperStudent.student.testGrade || viewPaperStudent.paper?.grade || 'C (Fail)'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -508,7 +538,7 @@ function StudentList() {
                     {isStudentTestDone(selectedStudent) && (
                       <div className="col-12 p-2 bg-light rounded">
                         <small className="text-muted d-block">Exam Result</small>
-                        <strong className="text-success">{selectedStudent.testScore ?? 0} / 50 (Grade: {selectedStudent.testGrade || 'A'}) on {selectedStudent.testDate || 'Completed'}</strong>
+                        <strong className="text-success">{selectedStudent.testScore ?? 0} Marks (Grade: {selectedStudent.testGrade || 'C (Fail)'}) on {selectedStudent.testDate || 'Completed'}</strong>
                       </div>
                     )}
                   </div>

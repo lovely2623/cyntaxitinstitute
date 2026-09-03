@@ -120,6 +120,12 @@
     font-weight: 700;
 }
 
+/* New Test link styling */
+.nav-test-link {
+    color: #0000FF !important;
+    font-weight: 700 !important;
+}
+
 /* --- ADMIN BUTTONS --- */
 .nav-login-btn-premium, .nav-logout-btn-premium {
     background: #0000FF;
@@ -132,6 +138,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 .nav-logout-btn-premium { background: #ff4d4d; }
@@ -166,12 +173,37 @@
         background: white;
         padding: 20px;
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        align-items: center; /* Center menu items */
     }
 
     .nav-menu.active { display: flex; }
 
-    .nav-menu li { width: 100%; text-align: center; padding: 10px 0; }
+    .nav-menu li { 
+        width: 100%; 
+        text-align: center; 
+        padding: 10px 0; 
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
     
+    /* Center admin & logout buttons on mobile under verification */
+    .nav-item-special {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding-top: 15px !important;
+    }
+
+    .nav-login-btn-premium, .nav-logout-btn-premium {
+        margin: 0 auto !important;
+        display: inline-flex !important;
+        justify-content: center !important;
+        width: auto !important;
+        min-width: 160px !important;
+    }
+
     .logo-text-branding { font-size: 18px; }
     .logo-img { height: 40px; }
 }
@@ -220,6 +252,7 @@
         gap: 15px;
         overflow-x: auto;
         display: flex;
+        align-items: center;
         -ms-overflow-style: none;  /* IE and Edge */
         scrollbar-width: none;  /* Firefox */
     }
@@ -260,4 +293,3 @@
         padding: 0;
     }
 }
-

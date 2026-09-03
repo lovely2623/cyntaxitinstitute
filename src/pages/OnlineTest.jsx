@@ -100,7 +100,7 @@ function OnlineTest() {
     navigate('/');
   }, [navigate]);
 
-  // 3. COMPLETE SUBMISSION LOGIC (Dynamic Score Calculation Fix)
+  // 3. COMPLETE SUBMISSION LOGIC (Dynamic Score & Grade Calculation)
   const executeFinalSubmission = useCallback(async () => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
@@ -113,8 +113,8 @@ function OnlineTest() {
     const detailedResponses = questions.map((q, idx) => {
       const selectedOption = userAnswersRef.current[q.id];
       const isAttempted = selectedOption !== undefined && selectedOption !== null;
-      
-      // Type-safe matching: String conversion prevents "0" !== 0 issues
+
+      // Type-safe matching
       const isCorrect = isAttempted && String(selectedOption) === String(q.a);
 
       if (isAttempted) {
@@ -132,13 +132,14 @@ function OnlineTest() {
       };
     });
 
-    let grade = "A";
+    // Dynamic Grade based on percentage
+    let grade = "C (Fail)";
     const percentage = actualTotalQuestions > 0 ? (correctCount / actualTotalQuestions) * 100 : 0;
     if (percentage >= 85) grade = "A++";
     else if (percentage >= 70) grade = "A+";
-    else if (percentage >= 50) grade = "A";
+    else if (percentage >= 55) grade = "A";
     else if (percentage >= 40) grade = "B";
-    else grade = "C";
+    else grade = "C (Fail)";
 
     const currentDate = new Date().toISOString().split('T')[0];
 

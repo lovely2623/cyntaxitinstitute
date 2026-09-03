@@ -58,14 +58,13 @@ function AdminLayout() {
             <i className="fas fa-plus-circle"></i> New Admission
           </Link>
           {/* Manage Content link ke neeche ye add karein */}
-<Link to="/AdminLayout/ManageQuestions" className={`nav-item ${location.pathname.includes('ManageQuestions') ? 'active' : ''}`}>
-  <i className="fas fa-question-circle"></i> Exam Question Bank
-</Link>
+          <Link to="/AdminLayout/ManageQuestions" className={`nav-item ${location.pathname.includes('ManageQuestions') ? 'active' : ''}`}>
+            <i className="fas fa-question-circle"></i> Exam Question Bank
+          </Link>
           {/* NEW BUTTON: CONTENT MANAGER */}
           <Link to="/AdminLayout/ManageContent" className={`nav-item ${location.pathname.includes('ManageContent') ? 'active' : ''}`}>
             <i className="fas fa-edit"></i> Manage PDFs & News
           </Link>
-       
         </nav>
         
         <div className="sidebar-footer p-3">
