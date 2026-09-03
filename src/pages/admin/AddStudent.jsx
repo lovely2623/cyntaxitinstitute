@@ -26,19 +26,22 @@ function AddStudent() {
 
   const [loading, setLoading] = useState(false);
   const [fetchingId, setFetchingId] = useState(true);
+  const [existingStudents, setExistingStudents] = useState([]);
 
-  // 1. Auto Serial ID: CYN-2601, CYN-2602...
+  // 1. Auto Serial Suggestion + Existing List Cache
   useEffect(() => {
-    const generateNextSerialId = async () => {
+    const fetchStudentsAndGenerateId = async () => {
       try {
         const res = await fetch(`${BASE_URL}/api/students`);
         const students = await res.json();
-
-        const currentYearShort = new Date().getFullYear().toString().slice(-2);
-        const prefix = `CYN-${currentYearShort}`;
-
-        let maxSerial = 0;
+        
         if (Array.isArray(students)) {
+          setExistingStudents(students);
+
+          const currentYearShort = new Date().getFullYear().toString().slice(-2);
+          const prefix = `CYN-${currentYearShort}`;
+
+          let maxSerial = 0;
           students.forEach(s => {
             const sid = (s.studentId || s.rollNo || s.regNo || "").trim().toUpperCase();
             if (sid.includes(`CYN-${currentYearShort}`) || sid.includes(`CYN${currentYearShort}`)) {
@@ -49,11 +52,10 @@ function AddStudent() {
               }
             }
           });
-        }
 
-        const nextNum = (maxSerial + 1).toString().padStart(2, '0');
-        const nextId = `${prefix}${nextNum}`;
-        setFormData(prev => ({ ...prev, studentId: nextId }));
+          const nextNum = (maxSerial + 1).toString().padStart(2, '0');
+          setFormData(prev => ({ ...prev, studentId: `${prefix}${nextNum}` }));
+        }
       } catch (err) {
         console.error("Auto ID fetch error:", err);
         const fallbackYear = new Date().getFullYear().toString().slice(-2);
@@ -63,7 +65,7 @@ function AddStudent() {
       }
     };
 
-    generateNextSerialId();
+    fetchStudentsAndGenerateId();
   }, [BASE_URL]);
 
   // 2. Client-side Image Compression
@@ -104,9 +106,16 @@ function AddStudent() {
     }
   };
 
-  // 3. Submission Engine With All Aadhaar Spellings
+  // 3. Form Submission Engine
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const targetId = formData.studentId.trim().toUpperCase();
+
+    if (!targetId) {
+      alert("Registration ID khali nahi ho sakti!");
+      return;
+    }
 
     if (!formData.name.trim() || !formData.phone.trim() || !formData.dob.trim()) {
       alert("Student Name, Mobile Number aur DOB bharna zaroori hai!");
@@ -118,14 +127,23 @@ function AddStudent() {
       return;
     }
 
+    // Safety Duplicate Check (Agar user manually kisi active bache ka roll number daal de)
+    const isDuplicate = existingStudents.some(s => 
+      (s.studentId && s.studentId.trim().toUpperCase() === targetId) ||
+      (s.rollNo && s.rollNo.trim().toUpperCase() === targetId) ||
+      (s.regNo && s.regNo.trim().toUpperCase() === targetId)
+    );
+
+    if (isDuplicate) {
+      alert(`⚠️ Registration ID Conflict!\n"${targetId}" pehle se kisi active student ke paas allot hai. Kripya alag roll number enter karein.`);
+      return;
+    }
+
     setLoading(true);
 
-    const generatedId = (formData.studentId || `CYN-${new Date().getFullYear().toString().slice(-2)}01`).trim();
     const cleanAadhaar = formData.aadhaar.trim();
 
-    // Universal Matcher: Sabhi possible spellings bhejo taaki backend reject na kare
     const cleanPayload = {
-      // Aadhaar variations
       adaharNumber: cleanAadhaar,
       adharNumber: cleanAadhaar,
       aadharNumber: cleanAadhaar,
@@ -135,12 +153,10 @@ function AddStudent() {
       adhar: cleanAadhaar,
       adahar: cleanAadhaar,
 
-      // Registration ID variations
-      studentId: generatedId,
-      rollNo: generatedId,
-      regNo: generatedId,
+      studentId: targetId,
+      rollNo: targetId,
+      regNo: targetId,
 
-      // Core Details
       name: formData.name.trim(),
       fatherName: formData.fatherName.trim() || "N/A",
       fatherOccupation: formData.fatherOccupation.trim() || "N/A",
@@ -157,7 +173,6 @@ function AddStudent() {
       address: formData.address.trim() || "N/A",
       photo: formData.photo || "https://via.placeholder.com/150",
 
-      // Details Sub-object (Agar schema me nested object ho)
       details: {
         adaharNumber: cleanAadhaar,
         aadhaar: cleanAadhaar,
@@ -170,7 +185,6 @@ function AddStudent() {
         gender: formData.gender
       },
 
-      // Default Exam States
       hasGivenTest: false,
       testScore: 0,
       testGrade: "N/A",
@@ -216,7 +230,7 @@ function AddStudent() {
             <small className="text-white-50">Institute Academic & Verification Record</small>
           </div>
           <span className="badge bg-warning text-dark px-3 py-2 fw-bold font-monospace fs-6 align-self-start align-self-md-center">
-            {fetchingId ? "Generating ID..." : `Assigned: ${formData.studentId}`}
+            {fetchingId ? "Generating ID..." : `Assigned ID: ${formData.studentId}`}
           </span>
         </div>
 
@@ -229,16 +243,28 @@ function AddStudent() {
               <i className="fas fa-graduation-cap me-2"></i> 1. Course & Registration Details
             </h6>
             <div className="row g-3 mb-4">
+              
+              {/* CUSTOMIZABLE REGISTRATION ID */}
               <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Registration ID *</label>
-                <input 
-                  type="text" 
-                  className="form-control bg-light fw-bold font-monospace text-primary" 
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                  required
-                />
-                <small className="text-muted" style={{ fontSize: '11px' }}>* Auto-serial format: CYN-YY##</small>
+                <label className="form-label small fw-bold text-dark">
+                  Registration ID * <span className="text-primary fw-normal">(Auto / Custom Editable)</span>
+                </label>
+                <div className="input-group">
+                  <span className="input-group-text bg-white border-end-0">
+                    <i className="fas fa-edit text-primary"></i>
+                  </span>
+                  <input 
+                    type="text" 
+                    className="form-control border-start-0 fw-bold font-monospace text-primary"
+                    placeholder="e.g. CYN-2601"
+                    value={formData.studentId}
+                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value.toUpperCase() })}
+                    required
+                  />
+                </div>
+                <small className="text-muted" style={{ fontSize: '11px' }}>
+                  * Auto-generated hai, par aap purana ya custom roll no bhi type kar sakte hain.
+                </small>
               </div>
 
               <div className="col-md-4">
