@@ -7,12 +7,12 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  
+
   // Student Portal Inputs
   const [rollNo, setRollNo] = useState('');
   const [studentPassword, setStudentPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const navigate = useNavigate();
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
 
@@ -38,6 +38,75 @@ function Login() {
     }
   };
 
+  // Helper: Date of Birth matching engine
+  const checkDobMatch = (dbDobRaw, userPassRaw) => {
+    if (!dbDobRaw || !userPassRaw) return false;
+
+    const inputClean = String(userPassRaw).trim();
+    const inputDigits = inputClean.replace(/[^0-9]/g, '');
+
+    // Master Bypass for urgent login/testing
+    if (inputClean === "123456") return true;
+
+    // Direct Exact String Match
+    const dbClean = String(dbDobRaw).trim();
+    if (inputClean.toLowerCase() === dbClean.toLowerCase()) return true;
+
+    // ISO timestamp clean (e.g., "2004-11-04T00:00:00.000Z" -> "2004-11-04")
+    const normalizedDb = dbClean.split('T')[0];
+    if (inputClean === normalizedDb) return true;
+
+    // Extract Day, Month, Year from Database
+    let d = '', m = '', y = '';
+    const parts = normalizedDb.split(/[-/.]/);
+
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        // Format: YYYY-MM-DD
+        y = parts[0];
+        m = parts[1];
+        d = parts[2];
+      } else {
+        // Format: DD-MM-YYYY
+        d = parts[0];
+        m = parts[1];
+        y = parts[2];
+      }
+    } else {
+      // Direct 8 digit string in DB (YYYYMMDD or DDMMYYYY)
+      const digitsOnlyDb = dbClean.replace(/[^0-9]/g, '');
+      if (digitsOnlyDb === inputDigits) return true;
+      if (digitsOnlyDb.length === 8) {
+        y = digitsOnlyDb.substring(0, 4);
+        m = digitsOnlyDb.substring(4, 6);
+        d = digitsOnlyDb.substring(6, 8);
+      }
+    }
+
+    if (d && m && y) {
+      const dPadded = d.padStart(2, '0');
+      const mPadded = m.padStart(2, '0');
+      const dSingle = String(parseInt(d, 10));
+      const mSingle = String(parseInt(m, 10));
+
+      const matchPatterns = [
+        `${dPadded}${mPadded}${y}`,       // 04112004
+        `${y}${mPadded}${dPadded}`,       // 20041104
+        `${dSingle}${mSingle}${y}`,       // 4112004
+        `${dPadded}-${mPadded}-${y}`,     // 04-11-2004
+        `${dPadded}/${mPadded}/${y}`,     // 04/11/2004
+        `${y}-${mPadded}-${dPadded}`,     // 2004-11-04
+        `${y}/${mPadded}/${dPadded}`      // 2004/11/04
+      ];
+
+      if (matchPatterns.includes(inputClean) || matchPatterns.includes(inputDigits)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const handleStudentLogin = async (e) => {
     e.preventDefault();
     if (!rollNo.trim() || !studentPassword.trim()) {
@@ -50,6 +119,7 @@ function Login() {
       const response = await fetch(`${BASE_URL}/api/students`, { cache: 'no-cache' });
       const students = await response.json();
 
+      // Find student by case-insensitive Reg ID / Roll Number
       const matchedStudent = students.find(
         (s) => s.studentId && s.studentId.trim().toUpperCase() === rollNo.trim().toUpperCase()
       );
@@ -60,85 +130,42 @@ function Login() {
         return;
       }
 
-      // 1. Check if already appeared in test
+      // Check if student already gave the test
       if (matchedStudent.hasGivenTest === true) {
         alert(`Sorry ${matchedStudent.name}! Aap pehle hi test de chuke hain.\nAapka Score: ${matchedStudent.testScore || 0}/50 (Grade: ${matchedStudent.testGrade || 'N/A'})`);
         setLoading(false);
         return;
       }
 
-      // 2. Bulletproof DOB Extraction
-      const rawDob = String(matchedStudent.dob || '').trim();
-      const inputPass = studentPassword.trim();
-      const cleanInputDigits = inputPass.replace(/[^0-9]/g, '');
+      // Console logging for verification
+      console.log("DB DOB:", matchedStudent.dob);
+      console.log("Entered Password:", studentPassword);
 
-      let isMatch = false;
+      const isValidPassword = checkDobMatch(matchedStudent.dob, studentPassword);
 
-      // Master Key for testing
-      if (inputPass === "123456") {
-        isMatch = true;
-      }
-
-      // Exact string match
-      if (inputPass === rawDob) {
-        isMatch = true;
-      }
-
-      // Parse date components safely
-      if (!isMatch && rawDob) {
-        const cleanDbDigits = rawDob.replace(/[^0-9]/g, '');
-        if (cleanInputDigits && cleanInputDigits === cleanDbDigits) {
-          isMatch = true;
-        }
-
-        // Check if database has YYYY-MM-DD
-        const dateParts = rawDob.split(/[-/]/);
-        if (dateParts.length === 3) {
-          let y, m, d;
-          if (dateParts[0].length === 4) {
-            [y, m, d] = dateParts;
-          } else {
-            [d, m, y] = dateParts;
-          }
-          // Pad 0 if single digit
-          m = m.padStart(2, '0');
-          d = d.padStart(2, '0');
-
-          const validCombos = [
-            `${d}${m}${y}`,       // 18052004
-            `${y}${m}${d}`,       // 20040518
-            `${d}-${m}-${y}`,     // 18-05-2004
-            `${d}/${m}/${y}`,     // 18/05/2004
-            `${y}-${m}-${d}`      // 2004-05-18
-          ];
-
-          if (validCombos.includes(inputPass) || validCombos.includes(cleanInputDigits)) {
-            isMatch = true;
-          }
-        }
-      }
-
-      if (!isMatch) {
-        alert("Galat Password! Password aapki Date of Birth (DOB) hai jo admission time dali thi.\nExample: DDMMYYYY (e.g. 05102002) ya YYYY-MM-DD.");
+      if (!isValidPassword) {
+        alert(
+          `Galat Password!\nPassword aapki Date of Birth (DOB) hai jo admission form me dali thi.\nExample: DDMMYYYY (jaise 04112004) ya YYYY-MM-DD (jaise 2004-11-04)`
+        );
         setLoading(false);
         return;
       }
 
-      // Login Successful: Save session & redirect
+      // Success: Save active session and start test
       sessionStorage.setItem('activeExamStudent', JSON.stringify(matchedStudent));
       navigate('/online-test');
 
     } catch (err) {
-      console.error(err);
-      alert("Server error! Check karein backend connect hai ya nahi.");
+      console.error("Login verification error:", err);
+      alert("Server se connection nahi ho paa raha hai! Render backend active hai ya nahi check karein.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-wrapper d-flex align-items-center justify-content-center" style={{minHeight: '100vh', background: '#f0f2f5'}}>
-      <div className="login-card shadow-lg border-0 bg-white overflow-hidden" style={{maxWidth: '450px', width: '90%', borderRadius: '20px'}}>
+    <div className="login-wrapper d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+      <div className="login-card shadow-lg border-0 bg-white overflow-hidden" style={{ maxWidth: '450px', width: '90%', borderRadius: '20px' }}>
         <div className="auth-toggle d-flex bg-light p-2 m-3 rounded-pill">
           <button className={`btn flex-fill rounded-pill ${!isAdmin ? "btn-dark" : ""}`} onClick={() => setIsAdmin(false)}>Student</button>
           <button className={`btn flex-fill rounded-pill ${isAdmin ? "btn-dark" : ""}`} onClick={() => setIsAdmin(true)}>Administrator</button>
@@ -149,8 +176,8 @@ function Login() {
             <div className="auth-section text-center">
               <i className="fas fa-user-graduate fa-3x text-primary mb-3"></i>
               <h3 className="fw-bold">Student Exam Portal</h3>
-              <p className="text-muted small">Roll Number aur Date of Birth (Password) daalein.</p>
-              
+              <p className="text-muted small">Apna Roll Number aur Date of Birth (DOB) enter karein.</p>
+
               <form onSubmit={handleStudentLogin}>
                 <input 
                   type="text" 
@@ -160,16 +187,16 @@ function Login() {
                   onChange={(e) => setRollNo(e.target.value)}
                   required
                 />
-                
+
                 <input 
                   type="text" 
                   className="form-control rounded-pill mb-3 py-2 text-center" 
-                  placeholder="Password (DOB e.g. 15082003)" 
+                  placeholder="DOB Password (e.g. 04112004)" 
                   value={studentPassword}
                   onChange={(e) => setStudentPassword(e.target.value)}
                   required
                 />
-                
+
                 <button 
                   type="submit" 
                   className="btn btn-primary w-100 rounded-pill py-2 shadow-sm fw-bold"
@@ -186,7 +213,7 @@ function Login() {
                 <h3 className="fw-bold">Admin Login</h3>
                 <p className="text-muted small">Cyntax Management Access</p>
               </div>
-              
+
               <div className="mb-3">
                 <label className="small fw-bold text-muted ps-2">Email Address</label>
                 <input 
@@ -209,7 +236,7 @@ function Login() {
                 />
                 <i 
                   className={`fas ${showPass ? 'fa-eye-slash' : 'fa-eye'} position-absolute`} 
-                  style={{right: '15px', top: '38px', cursor: 'pointer', color: '#666'}} 
+                  style={{ right: '15px', top: '38px', cursor: 'pointer', color: '#666' }} 
                   onClick={() => setShowPass(!showPass)} 
                 ></i>
               </div>
