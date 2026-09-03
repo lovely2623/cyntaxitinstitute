@@ -43,19 +43,17 @@ function StudentList() {
     fetchStudents();
   }, [fetchStudents]);
 
-  // STRICT BATCH RULE: Only from 2025 up to CURRENT CALENDAR YEAR
+  // Batch Filter (2025 onwards)
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const startYear = 2025;
     const years = [];
-
     for (let yr = currentYear; yr >= startYear; yr--) {
       years.push(yr.toString());
     }
     return years;
   }, []);
 
-  // Filter logic
   const filteredStudents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return students.filter(s => {
@@ -137,32 +135,36 @@ function StudentList() {
     }
   };
 
-  // COMPLETE UPDATE LOGIC (With All Institute Fields & Details Wrapper Sync)
+  // 100% Comprehensive Update Handler
   const handleUpdate = async (e) => {
     e.preventDefault();
     const { _id, __v, createdAt, updatedAt, ...cleanUpdateData } = editStudent;
     const targetId = _id;
 
-    const aadhaarVal = (editStudent.aadhaar || editStudent.adaharNumber || editStudent.adharNumber || "").trim();
+    const targetRegId = (editStudent.studentId || "").trim().toUpperCase();
+    const aadhaarVal = (editStudent.aadhaar || editStudent.adaharNumber || editStudent.adharNumber || editStudent.aadharNumber || "").trim();
 
     const fullPayload = {
       ...cleanUpdateData,
+      studentId: targetRegId,
+      rollNo: targetRegId,
+      regNo: targetRegId,
+      aadhaar: aadhaarVal,
       adaharNumber: aadhaarVal,
       adharNumber: aadhaarVal,
       aadharNumber: aadhaarVal,
       aadhaarNumber: aadhaarVal,
-      aadhaar: aadhaarVal,
       details: {
         ...(editStudent.details || {}),
         aadhaar: aadhaarVal,
         adaharNumber: aadhaarVal,
         fatherOccupation: editStudent.fatherOccupation || "",
-        familyIncome: editStudent.familyIncome || "",
-        qualification: editStudent.qualification || "",
-        bloodGroup: editStudent.bloodGroup || "",
+        familyIncome: editStudent.familyIncome || "Below 1 Lakh",
+        qualification: editStudent.qualification || "12th Pass",
+        bloodGroup: editStudent.bloodGroup || "Unknown",
         address: editStudent.address || "",
         email: editStudent.email || "",
-        gender: editStudent.gender || ""
+        gender: editStudent.gender || "Male"
       }
     };
 
@@ -178,9 +180,9 @@ function StudentList() {
         body: JSON.stringify(fullPayload)
       });
       if (!res.ok) throw new Error();
-      alert("Student record successfully update ho gaya!");
+      alert("Student ka poora record successfully update ho gaya!");
     } catch (error) {
-      alert("Update fail! Purana record restore kiya ja raha hai.");
+      alert("Update fail hua! Purana record restore kiya ja raha hai.");
       fetchStudents();
     }
   };
@@ -294,11 +296,28 @@ function StudentList() {
     }, 450);
   };
 
+  // Helper function to safely extract fields from top-level or details object
+  const extractStudentData = (s) => {
+    if (!s) return {};
+    const d = s.details || {};
+    return {
+      ...s,
+      gender: s.gender || d.gender || "Male",
+      email: s.email || d.email || "",
+      aadhaar: s.aadhaar || s.adaharNumber || s.adharNumber || s.aadharNumber || d.aadhaar || d.adaharNumber || "",
+      fatherOccupation: s.fatherOccupation || d.fatherOccupation || "",
+      familyIncome: s.familyIncome || d.familyIncome || "Below 1 Lakh",
+      qualification: s.qualification || d.qualification || "12th Pass",
+      bloodGroup: s.bloodGroup || d.bloodGroup || "Unknown",
+      address: s.address || d.address || ""
+    };
+  };
+
   return (
     <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
         
-        {/* Card Header: Title + Year Selector + Search */}
+        {/* Card Header */}
         <div className="card-header bg-dark py-3 px-4">
           <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
             <div className="d-flex align-items-center gap-3">
@@ -439,22 +458,24 @@ function StudentList() {
                       </td>
                       <td className="text-center pe-4">
                         <div className="btn-group">
-                          <button className="btn btn-sm btn-outline-primary" title="View Full Biodata" onClick={() => setSelectedStudent(s)}><i className="fas fa-eye"></i></button>
-                          <button className="btn btn-sm btn-outline-warning" title="Edit All Details" onClick={() => {
-                            // Populate existing or nested fields into state
-                            const d = s.details || {};
-                            setEditStudent({
-                              ...s,
-                              gender: s.gender || d.gender || "Male",
-                              email: s.email || d.email || "",
-                              aadhaar: s.aadhaar || s.adaharNumber || s.adharNumber || d.aadhaar || d.adaharNumber || "",
-                              fatherOccupation: s.fatherOccupation || d.fatherOccupation || "",
-                              familyIncome: s.familyIncome || d.familyIncome || "Below 1 Lakh",
-                              qualification: s.qualification || d.qualification || "12th Pass",
-                              bloodGroup: s.bloodGroup || d.bloodGroup || "Unknown",
-                              address: s.address || d.address || ""
-                            });
-                          }}><i className="fas fa-edit"></i></button>
+                          {/* 1. VIEW BUTTON */}
+                          <button 
+                            className="btn btn-sm btn-outline-primary" 
+                            title="View Full Biodata" 
+                            onClick={() => setSelectedStudent(extractStudentData(s))}
+                          >
+                            <i className="fas fa-eye"></i>
+                          </button>
+
+                          {/* 2. EDIT BUTTON */}
+                          <button 
+                            className="btn btn-sm btn-outline-warning" 
+                            title="Edit All Details" 
+                            onClick={() => setEditStudent(extractStudentData(s))}
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+
                           <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)}><i className="fas fa-trash"></i></button>
                           <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)}><i className="fas fa-certificate text-dark"></i></button>
                         </div>
@@ -648,95 +669,83 @@ function StudentList() {
       )}
 
       {/* ============================================================== */}
-      {/* 1. FULL VIEW MODAL: ALL INSTITUTE ADMISSION FIELDS SHOWN      */}
+      {/* 1. VIEW MODAL: ALL ADMISSION FIELDS DISPLAYED                  */}
       {/* ============================================================== */}
-      {selectedStudent && (() => {
-        const d = selectedStudent.details || {};
-        const aadhaarNum = selectedStudent.aadhaar || selectedStudent.adaharNumber || selectedStudent.adharNumber || d.aadhaar || d.adaharNumber || "Not Provided";
-        const occupation = selectedStudent.fatherOccupation || d.fatherOccupation || "Not Provided";
-        const income = selectedStudent.familyIncome || d.familyIncome || "Not Provided";
-        const qual = selectedStudent.qualification || d.qualification || "Not Provided";
-        const blood = selectedStudent.bloodGroup || d.bloodGroup || "Not Provided";
-        const addr = selectedStudent.address || d.address || "Not Provided";
-        const mail = selectedStudent.email || d.email || "Not Provided";
-        const gndr = selectedStudent.gender || d.gender || "Male";
+      {selectedStudent && (
+        <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: '20px 10px' }} onClick={() => setSelectedStudent(null)}>
+          <div className="modal-content-custom p-0 shadow-lg bg-white" style={{ maxWidth: '900px', width: '95%', borderRadius: '18px', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            
+            <div className="bg-primary p-3 text-white d-flex justify-content-between align-items-center">
+              <h5 className="mb-0 fw-bold"><i className="fas fa-id-card me-2"></i> Student Complete Bio-Data & Admission Record</h5>
+              <button className="btn-close btn-close-white" onClick={() => setSelectedStudent(null)}></button>
+            </div>
 
-        return (
-          <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: '20px 10px' }} onClick={() => setSelectedStudent(null)}>
-            <div className="modal-content-custom p-0 shadow-lg bg-white" style={{ maxWidth: '850px', width: '95%', borderRadius: '18px', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-              
-              <div className="bg-primary p-3 text-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 fw-bold"><i className="fas fa-id-card me-2"></i> Comprehensive Student Dossier</h5>
-                <button className="btn-close btn-close-white" onClick={() => setSelectedStudent(null)}></button>
-              </div>
+            <div className="p-4" style={{ overflowY: 'auto' }}>
+              <div className="row g-4">
+                
+                {/* Photo & Core Badge */}
+                <div className="col-md-3 text-center border-end">
+                  <img 
+                    src={selectedStudent.photo || 'https://via.placeholder.com/150'} 
+                    className="img-fluid rounded-4 shadow-sm mb-3" 
+                    style={{ border: '3px solid #0000FF', width: '140px', height: '140px', objectFit: 'cover' }} 
+                    alt="Student" 
+                  />
+                  <h5 className="fw-bold text-dark mb-1">{selectedStudent.name}</h5>
+                  <span className="badge bg-dark font-monospace mb-2">{selectedStudent.studentId}</span>
+                  <div><span className="badge bg-info text-dark">{selectedStudent.course}</span></div>
+                  <small className="text-muted d-block mt-1">Duration: {selectedStudent.courseDuration || "6 Months"}</small>
+                </div>
 
-              <div className="p-4" style={{ overflowY: 'auto' }}>
-                <div className="row g-4">
+                {/* All Sections */}
+                <div className="col-md-9">
                   
-                  {/* Photo & Primary ID */}
-                  <div className="col-md-3 text-center border-end">
-                    <img 
-                      src={selectedStudent.photo || 'https://via.placeholder.com/150'} 
-                      className="img-fluid rounded-4 shadow-sm mb-3" 
-                      style={{ border: '3px solid #0000FF', width: '130px', height: '130px', objectFit: 'cover' }} 
-                      alt="Student" 
-                    />
-                    <h5 className="fw-bold text-dark mb-1">{selectedStudent.name}</h5>
-                    <span className="badge bg-dark font-monospace mb-2">{selectedStudent.studentId}</span>
-                    <div><span className="badge bg-info text-dark">{selectedStudent.course}</span></div>
-                    <small className="text-muted d-block mt-1">Duration: {selectedStudent.courseDuration || "6 Months"}</small>
+                  {/* Section 1: Personal & Identity */}
+                  <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Personal & Identity Details</h6>
+                  <div className="row g-2 mb-3">
+                    <div className="col-sm-6"><small className="text-muted d-block">Gender</small><strong>{selectedStudent.gender || "Male"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Mobile Number</small><strong>{selectedStudent.phone}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Email Address</small><strong>{selectedStudent.email || "Not Provided"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar || "Not Provided"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Blood Group</small><strong>{selectedStudent.bloodGroup || "Unknown"}</strong></div>
+                    <div className="col-sm-12"><small className="text-muted d-block">Highest Qualification</small><strong>{selectedStudent.qualification || "12th Pass"}</strong></div>
                   </div>
 
-                  {/* Complete Bio-data */}
-                  <div className="col-md-9">
-                    
-                    {/* 1. Identity & Personal Details */}
-                    <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Personal & Identity Details</h6>
-                    <div className="row g-2 mb-3">
-                      <div className="col-sm-6"><small className="text-muted d-block">Gender</small><strong>{gndr}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Phone Number</small><strong>{selectedStudent.phone}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Email Address</small><strong>{mail}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{aadhaarNum}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Blood Group</small><strong>{blood}</strong></div>
-                      <div className="col-sm-12"><small className="text-muted d-block">Highest Qualification</small><strong>{qual}</strong></div>
-                    </div>
-
-                    {/* 2. Family & Financial Profile */}
-                    <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Parental & Financial Profile</h6>
-                    <div className="row g-2 mb-3">
-                      <div className="col-sm-6"><small className="text-muted d-block">Father's Name</small><strong>{selectedStudent.fatherName || "N/A"}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Father's Occupation</small><strong>{occupation}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Mother's Name</small><strong>{selectedStudent.motherName || "N/A"}</strong></div>
-                      <div className="col-sm-6"><small className="text-muted d-block">Annual Family Income</small><strong className="text-success">{income}</strong></div>
-                      <div className="col-sm-12"><small className="text-muted d-block">Residential Address</small><strong>{addr}</strong></div>
-                    </div>
-
-                    {/* 3. Examination Status */}
-                    {isStudentTestDone(selectedStudent) && (
-                      <div className="p-3 bg-light rounded-3 border">
-                        <small className="text-muted d-block fw-bold text-uppercase">Assessment Outcome</small>
-                        <strong className="text-success fs-6">
-                          Score: {selectedStudent.testScore ?? 0} Marks | Grade: {selectedStudent.testGrade || 'A'} | Date: {selectedStudent.testDate || 'Completed'}
-                        </strong>
-                      </div>
-                    )}
-
+                  {/* Section 2: Family & Socio-Economic */}
+                  <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Family Background & Occupation</h6>
+                  <div className="row g-2 mb-3">
+                    <div className="col-sm-6"><small className="text-muted d-block">Father's Name</small><strong>{selectedStudent.fatherName || "N/A"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Father's Occupation</small><strong>{selectedStudent.fatherOccupation || "Not Provided"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Mother's Name</small><strong>{selectedStudent.motherName || "N/A"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Annual Family Income</small><strong className="text-success">{selectedStudent.familyIncome || "Below 1 Lakh"}</strong></div>
+                    <div className="col-sm-12"><small className="text-muted d-block">Permanent Address</small><strong>{selectedStudent.address || "Not Provided"}</strong></div>
                   </div>
+
+                  {/* Section 3: Assessment Result */}
+                  {isStudentTestDone(selectedStudent) && (
+                    <div className="p-3 bg-light rounded-3 border mt-2">
+                      <small className="text-muted d-block fw-bold text-uppercase">Examination Result</small>
+                      <strong className="text-success fs-6">
+                        Score: {selectedStudent.testScore ?? 0} Marks | Grade: {selectedStudent.testGrade || 'A'} | Date: {selectedStudent.testDate || 'Completed'}
+                      </strong>
+                    </div>
+                  )}
+
                 </div>
               </div>
-
-              <div className="p-3 bg-light border-top text-end">
-                <button className="btn btn-secondary btn-sm px-4 rounded-pill" onClick={() => setSelectedStudent(null)}>Close</button>
-              </div>
-
             </div>
+
+            <div className="p-3 bg-light border-top text-end">
+              <button className="btn btn-secondary btn-sm px-4 rounded-pill" onClick={() => setSelectedStudent(null)}>Close</button>
+            </div>
+
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* ============================================================== */}
-      {/* 2. EDIT MODAL: ALL INSTITUTE ADMISSION FIELDS FULLY EDITABLE  */}
+      {/* 2. EDIT MODAL: EVERY SINGLE FIELD IS PRE-FILLED & EDITABLE     */}
       {/* ============================================================== */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: '20px 10px' }}>
@@ -744,8 +753,8 @@ function StudentList() {
             
             <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
               <div>
-                <h4 className="fw-bold text-warning mb-0"><i className="fas fa-user-edit me-2"></i> Update Comprehensive Student Record</h4>
-                <small className="text-muted">Modifying Registration: <strong className="text-dark">{editStudent.studentId}</strong></small>
+                <h4 className="fw-bold text-warning mb-0"><i className="fas fa-user-edit me-2"></i> Update Complete Student Record</h4>
+                <small className="text-muted">Student: <strong className="text-dark">{editStudent.name}</strong></small>
               </div>
               <button className="btn-close" onClick={() => setEditStudent(null)}></button>
             </div>
@@ -754,14 +763,27 @@ function StudentList() {
               <div className="row g-3">
                 
                 {/* 1. Academic Information */}
-                <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Academic & Registration</h6></div>
+                <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Academic & Registration Details</h6></div>
+                
+                {/* REGISTRATION ID EDITABLE */}
                 <div className="col-md-4">
-                  <label className="small fw-bold">Registration ID</label>
-                  <input type="text" className="form-control bg-light font-monospace fw-bold" value={editStudent.studentId} readOnly />
+                  <label className="small fw-bold text-dark">Registration ID * (Custom Editable)</label>
+                  <input 
+                    type="text" 
+                    className="form-control font-monospace fw-bold text-primary" 
+                    value={editStudent.studentId || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, studentId: e.target.value.toUpperCase() })} 
+                    required 
+                  />
                 </div>
+
                 <div className="col-md-4">
-                  <label className="small fw-bold">Course</label>
-                  <select className="form-select" value={editStudent.course} onChange={(e) => setEditStudent({ ...editStudent, course: e.target.value })}>
+                  <label className="small fw-bold">Course Enrolled *</label>
+                  <select 
+                    className="form-select" 
+                    value={editStudent.course || "DCA"} 
+                    onChange={(e) => setEditStudent({ ...editStudent, course: e.target.value })}
+                  >
                     <option value="DCA">DCA</option>
                     <option value="ADCA">ADCA</option>
                     <option value="Steno">Stenography & Shorthand</option>
@@ -770,44 +792,96 @@ function StudentList() {
                     <option value="Basic">Basic Computer</option>
                   </select>
                 </div>
+
                 <div className="col-md-4">
                   <label className="small fw-bold">Course Duration</label>
-                  <input type="text" className="form-control" value={editStudent.courseDuration || ""} onChange={(e) => setEditStudent({ ...editStudent, courseDuration: e.target.value })} />
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={editStudent.courseDuration || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, courseDuration: e.target.value })} 
+                  />
                 </div>
 
-                {/* 2. Identity & Personal Details */}
+                {/* 2. Personal & Identity Details */}
                 <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Personal & Identity Details</h6></div>
+                
                 <div className="col-md-4">
                   <label className="small fw-bold">Student Full Name *</label>
-                  <input type="text" className="form-control" value={editStudent.name} onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })} required />
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={editStudent.name || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })} 
+                    required 
+                  />
                 </div>
+
                 <div className="col-md-4">
                   <label className="small fw-bold">Gender</label>
-                  <select className="form-select" value={editStudent.gender || "Male"} onChange={(e) => setEditStudent({ ...editStudent, gender: e.target.value })}>
+                  <select 
+                    className="form-select" 
+                    value={editStudent.gender || "Male"} 
+                    onChange={(e) => setEditStudent({ ...editStudent, gender: e.target.value })}
+                  >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
+
                 <div className="col-md-4">
                   <label className="small fw-bold">Date of Birth (Password) *</label>
-                  <input type="date" className="form-control" value={editStudent.dob} onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} required />
+                  <input 
+                    type="date" 
+                    className="form-control" 
+                    value={editStudent.dob || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} 
+                    required 
+                  />
                 </div>
+
                 <div className="col-md-4">
-                  <label className="small fw-bold text-danger">Aadhaar Card Number</label>
-                  <input type="text" className="form-control font-monospace" maxLength="12" value={editStudent.aadhaar || ""} onChange={(e) => setEditStudent({ ...editStudent, aadhaar: e.target.value.replace(/[^0-9]/g, '') })} />
+                  <label className="small fw-bold text-danger">Aadhaar Card Number *</label>
+                  <input 
+                    type="text" 
+                    className="form-control font-monospace border-danger" 
+                    maxLength="12" 
+                    value={editStudent.aadhaar || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, aadhaar: e.target.value.replace(/[^0-9]/g, '') })} 
+                    required 
+                  />
                 </div>
+
                 <div className="col-md-4">
-                  <label className="small fw-bold">Phone Number *</label>
-                  <input type="text" className="form-control" value={editStudent.phone} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value })} required />
+                  <label className="small fw-bold">Mobile Phone Number *</label>
+                  <input 
+                    type="tel" 
+                    className="form-control" 
+                    maxLength="10" 
+                    value={editStudent.phone || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value.replace(/[^0-9]/g, '') })} 
+                    required 
+                  />
                 </div>
+
                 <div className="col-md-4">
                   <label className="small fw-bold">Email Address</label>
-                  <input type="email" className="form-control" value={editStudent.email || ""} onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} />
+                  <input 
+                    type="email" 
+                    className="form-control" 
+                    value={editStudent.email || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} 
+                  />
                 </div>
+
                 <div className="col-md-6">
                   <label className="small fw-bold">Highest Qualification</label>
-                  <select className="form-select" value={editStudent.qualification || "12th Pass"} onChange={(e) => setEditStudent({ ...editStudent, qualification: e.target.value })}>
+                  <select 
+                    className="form-select" 
+                    value={editStudent.qualification || "12th Pass"} 
+                    onChange={(e) => setEditStudent({ ...editStudent, qualification: e.target.value })}
+                  >
                     <option value="10th Pass">10th Matriculation</option>
                     <option value="12th Pass">12th Intermediate</option>
                     <option value="Undergraduate">Undergraduate</option>
@@ -816,9 +890,14 @@ function StudentList() {
                     <option value="Other">Other Diploma</option>
                   </select>
                 </div>
+
                 <div className="col-md-6">
                   <label className="small fw-bold">Blood Group</label>
-                  <select className="form-select" value={editStudent.bloodGroup || "Unknown"} onChange={(e) => setEditStudent({ ...editStudent, bloodGroup: e.target.value })}>
+                  <select 
+                    className="form-select" 
+                    value={editStudent.bloodGroup || "Unknown"} 
+                    onChange={(e) => setEditStudent({ ...editStudent, bloodGroup: e.target.value })}
+                  >
                     <option value="Unknown">Don't Know / NA</option>
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
@@ -831,45 +910,78 @@ function StudentList() {
                   </select>
                 </div>
 
-                {/* 3. Family & Financial Profile */}
+                {/* 3. Family Background & Socio-Economic */}
                 <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Family Background & Occupation</h6></div>
+                
                 <div className="col-md-6">
                   <label className="small fw-bold">Father's Name</label>
-                  <input type="text" className="form-control" value={editStudent.fatherName || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={editStudent.fatherName || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} 
+                  />
                 </div>
+
                 <div className="col-md-6">
                   <label className="small fw-bold">Father's Occupation</label>
-                  <input type="text" className="form-control" value={editStudent.fatherOccupation || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherOccupation: e.target.value })} />
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={editStudent.fatherOccupation || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, fatherOccupation: e.target.value })} 
+                  />
                 </div>
+
                 <div className="col-md-6">
                   <label className="small fw-bold">Mother's Name</label>
-                  <input type="text" className="form-control" value={editStudent.motherName || ""} onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} />
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={editStudent.motherName || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} 
+                  />
                 </div>
+
                 <div className="col-md-6">
                   <label className="small fw-bold">Annual Family Income</label>
-                  <select className="form-select" value={editStudent.familyIncome || "Below 1 Lakh"} onChange={(e) => setEditStudent({ ...editStudent, familyIncome: e.target.value })}>
+                  <select 
+                    className="form-select" 
+                    value={editStudent.familyIncome || "Below 1 Lakh"} 
+                    onChange={(e) => setEditStudent({ ...editStudent, familyIncome: e.target.value })}
+                  >
                     <option value="Below 1 Lakh">Below ₹1,00,000 / annum</option>
                     <option value="1 Lakh - 2.5 Lakhs">₹1,00,000 - ₹2,50,000 / annum</option>
                     <option value="2.5 Lakhs - 5 Lakhs">₹2,50,000 - ₹5,00,000 / annum</option>
                     <option value="Above 5 Lakhs">Above ₹5,00,000 / annum</option>
                   </select>
                 </div>
+
                 <div className="col-12">
                   <label className="small fw-bold">Permanent Address</label>
-                  <textarea className="form-control" rows="2" value={editStudent.address || ""} onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })}></textarea>
+                  <textarea 
+                    className="form-control" 
+                    rows="2" 
+                    value={editStudent.address || ""} 
+                    onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })}
+                  ></textarea>
                 </div>
 
-                {/* 4. Examination Reset Override */}
+                {/* 4. Test Attempt Status Control */}
                 <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Examination Status Override</h6></div>
                 <div className="col-md-4">
                   <label className="small fw-bold">Test Status</label>
-                  <select className="form-select" value={isStudentTestDone(editStudent) ? "yes" : "no"} onChange={(e) => setEditStudent({ ...editStudent, hasGivenTest: e.target.value === "yes" })}>
+                  <select 
+                    className="form-select" 
+                    value={isStudentTestDone(editStudent) ? "yes" : "no"} 
+                    onChange={(e) => setEditStudent({ ...editStudent, hasGivenTest: e.target.value === "yes" })}
+                  >
                     <option value="no">Allow Test (Pending)</option>
                     <option value="yes">Block Test (Done)</option>
                   </select>
                 </div>
 
-                {/* Submit Controls */}
+                {/* Controls */}
                 <div className="col-12 mt-4 text-end border-top pt-3">
                   <button type="button" className="btn btn-light me-2 px-4 rounded-pill" onClick={() => setEditStudent(null)}>Cancel</button>
                   <button type="submit" className="btn btn-warning px-5 fw-bold rounded-pill shadow-sm">Save All Changes</button>
