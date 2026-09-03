@@ -28,7 +28,7 @@ function AddStudent() {
   const [fetchingId, setFetchingId] = useState(true);
   const [existingStudents, setExistingStudents] = useState([]);
 
-  // 1. Auto Serial Suggestion + Existing List Cache
+  // 1. Auto Serial Generator (CYN-2601, CYN-2602...)
   useEffect(() => {
     const fetchStudentsAndGenerateId = async () => {
       try {
@@ -106,7 +106,7 @@ function AddStudent() {
     }
   };
 
-  // 3. Form Submission Engine
+  // 3. Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -123,11 +123,10 @@ function AddStudent() {
     }
 
     if (!formData.aadhaar.trim()) {
-      alert("Aadhaar Number bharna anivarya (required) hai!");
+      alert("Aadhaar Number bharna zaroori hai!");
       return;
     }
 
-    // Safety Duplicate Check (Agar user manually kisi active bache ka roll number daal de)
     const isDuplicate = existingStudents.some(s => 
       (s.studentId && s.studentId.trim().toUpperCase() === targetId) ||
       (s.rollNo && s.rollNo.trim().toUpperCase() === targetId) ||
@@ -135,7 +134,7 @@ function AddStudent() {
     );
 
     if (isDuplicate) {
-      alert(`⚠️ Registration ID Conflict!\n"${targetId}" pehle se kisi active student ke paas allot hai. Kripya alag roll number enter karein.`);
+      alert(`Registration ID "${targetId}" pehle se allot hai. Kripya alag roll number enter karein.`);
       return;
     }
 
@@ -208,11 +207,9 @@ function AddStudent() {
         localStorage.removeItem("cyntax_cached_students_list");
         window.location.reload();
       } else {
-        console.error("Backend Validation Error:", responseData);
         alert(`Registration Fail: ${responseData.message || responseData.error || "Server validation error"}`);
       }
     } catch (error) {
-      console.error("Submission Error:", error);
       alert("Server connection fail! Internet check karein.");
     } finally {
       setLoading(false);
@@ -220,13 +217,38 @@ function AddStudent() {
   };
 
   return (
-    <div className="container-fluid py-4">
+    <div className="container-fluid py-3 px-2 px-md-4">
+      <style>{`
+        .custom-form-input {
+          width: 100% !important;
+          height: 48px !important;
+          background-color: #ffffff !important;
+          border: 1.5px solid #cbd5e1 !important;
+          border-radius: 10px !important;
+          padding: 0 14px !important;
+          font-size: 16px !important;
+          font-weight: 600 !important;
+          color: #0f172a !important;
+          outline: none !important;
+          box-sizing: border-box !important;
+        }
+        .custom-form-input:focus {
+          border-color: #0000FF !important;
+          box-shadow: 0 0 0 3px rgba(0, 0, 255, 0.12) !important;
+        }
+        .custom-form-input::placeholder {
+          color: #94a3b8 !important;
+          font-weight: 400 !important;
+          opacity: 1 !important;
+        }
+      `}</style>
+
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden" style={{ maxWidth: '1050px', margin: '0 auto' }}>
         
         {/* Header */}
-        <div className="card-header bg-dark text-white py-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+        <div className="card-header bg-dark text-white py-3 px-3 px-md-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
           <div>
-            <h4 className="mb-0 fw-bold">Comprehensive Student Admission</h4>
+            <h4 className="mb-0 fw-bold">Student Admission</h4>
             <small className="text-white-50">Institute Academic & Verification Record</small>
           </div>
           <span className="badge bg-warning text-dark px-3 py-2 fw-bold font-monospace fs-6 align-self-start align-self-md-center">
@@ -235,47 +257,43 @@ function AddStudent() {
         </div>
 
         {/* Form Body */}
-        <div className="card-body p-4 p-md-5 bg-white">
+        <div className="card-body p-3 p-md-5 bg-white">
           <form onSubmit={handleSubmit}>
 
-            {/* SECTION 1: REGISTRATION & COURSE DETAILS */}
+            {/* SECTION 1: COURSE & REGISTRATION */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
-              <i className="fas fa-graduation-cap me-2"></i> 1. Course & Registration Details
+              1. Course & Registration Details
             </h6>
             <div className="row g-3 mb-4">
               
-              {/* CUSTOMIZABLE REGISTRATION ID */}
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-dark">
-                  Registration ID * <span className="text-primary fw-normal">(Auto / Custom Editable)</span>
+              {/* REGISTRATION ID INPUT (Full width on mobile, clearly visible) */}
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-dark d-block">
+                  Registration ID * <span className="text-primary fw-normal">(Editable)</span>
                 </label>
-                <div className="input-group">
-                  <span className="input-group-text bg-white border-end-0">
-                    <i className="fas fa-edit text-primary"></i>
-                  </span>
-                  <input 
-                    type="text" 
-                    className="form-control border-start-0 fw-bold font-monospace text-primary"
-                    placeholder="e.g. CYN-2601"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value.toUpperCase() })}
-                    required
-                  />
-                </div>
-                <small className="text-muted" style={{ fontSize: '11px' }}>
-                  * Auto-generated hai, par aap purana ya custom roll no bhi type kar sakte hain.
+                <input 
+                  type="text" 
+                  className="custom-form-input font-monospace text-primary"
+                  placeholder="e.g. CYN-2601"
+                  value={formData.studentId}
+                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value.toUpperCase() })}
+                  autoCapitalize="characters"
+                  required
+                />
+                <small className="text-muted d-block mt-1" style={{ fontSize: '11px' }}>
+                  * Auto-generated hai, zarurat padne par change karein.
                 </small>
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Course Enrolled *</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-muted d-block">Course Enrolled *</label>
                 <select 
-                  className="form-select"
+                  className="custom-form-input"
                   value={formData.course}
                   onChange={(e) => setFormData({ ...formData, course: e.target.value })}
                 >
                   <option value="DCA">DCA (Diploma in Computer Applications)</option>
-                  <option value="ADCA">ADCA (Advanced Diploma in Computer Applications)</option>
+                  <option value="ADCA">ADCA (Advanced Diploma)</option>
                   <option value="Steno">Stenography & Shorthand</option>
                   <option value="Short Term">Short Term / Web Development</option>
                   <option value="Tally">Tally Prime & Accounting</option>
@@ -283,11 +301,11 @@ function AddStudent() {
                 </select>
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Course Duration</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-muted d-block">Course Duration</label>
                 <input 
                   type="text" 
-                  className="form-control" 
+                  className="custom-form-input" 
                   placeholder="e.g. 6 Months / 1 Year"
                   value={formData.courseDuration}
                   onChange={(e) => setFormData({ ...formData, courseDuration: e.target.value })}
@@ -295,27 +313,27 @@ function AddStudent() {
               </div>
             </div>
 
-            {/* SECTION 2: PERSONAL IDENTITY & BIODATA */}
+            {/* SECTION 2: PERSONAL BIODATA */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
-              <i className="fas fa-user me-2"></i> 2. Personal Information & Identity
+              2. Personal Information & Identity
             </h6>
             <div className="row g-3 mb-4">
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Student Full Name *</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-muted d-block">Student Full Name *</label>
                 <input 
                   type="text" 
-                  className="form-control" 
-                  placeholder="Full Name"
+                  className="custom-form-input" 
+                  placeholder="e.g. Rahul Sharma"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Gender *</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-muted d-block">Gender *</label>
                 <select 
-                  className="form-select"
+                  className="custom-form-input"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 >
@@ -325,22 +343,22 @@ function AddStudent() {
                 </select>
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Date of Birth (Password) *</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-muted d-block">Date of Birth (Password) *</label>
                 <input 
                   type="date" 
-                  className="form-control" 
+                  className="custom-form-input" 
                   value={formData.dob}
                   onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-danger">Aadhaar Card Number * (Required)</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-danger d-block">Aadhaar Card Number *</label>
                 <input 
                   type="text" 
-                  className="form-control border-danger" 
+                  className="custom-form-input border-danger font-monospace" 
                   placeholder="12-digit Aadhaar Number"
                   maxLength="12"
                   value={formData.aadhaar}
@@ -349,11 +367,11 @@ function AddStudent() {
                 />
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Primary Phone Number *</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-muted d-block">Primary Phone Number *</label>
                 <input 
                   type="tel" 
-                  className="form-control" 
+                  className="custom-form-input" 
                   placeholder="10-digit Mobile No."
                   maxLength="10"
                   value={formData.phone}
@@ -362,21 +380,21 @@ function AddStudent() {
                 />
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Email Address</label>
+              <div className="col-12 col-md-4">
+                <label className="form-label small fw-bold text-muted d-block">Email Address</label>
                 <input 
                   type="email" 
-                  className="form-control" 
+                  className="custom-form-input" 
                   placeholder="student@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Highest Qualification</label>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-bold text-muted d-block">Highest Qualification</label>
                 <select 
-                  className="form-select"
+                  className="custom-form-input"
                   value={formData.qualification}
                   onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
                 >
@@ -389,10 +407,10 @@ function AddStudent() {
                 </select>
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Blood Group</label>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-bold text-muted d-block">Blood Group</label>
                 <select 
-                  className="form-select"
+                  className="custom-form-input"
                   value={formData.bloodGroup}
                   onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
                 >
@@ -409,48 +427,48 @@ function AddStudent() {
               </div>
             </div>
 
-            {/* SECTION 3: PARENTAL & SOCIO-ECONOMIC BACKGROUND */}
+            {/* SECTION 3: PARENTAL & FINANCIAL */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
-              <i className="fas fa-home me-2"></i> 3. Family Background & Occupation
+              3. Family Background & Occupation
             </h6>
             <div className="row g-3 mb-4">
-              <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Father's Name</label>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-bold text-muted d-block">Father's Name</label>
                 <input 
                   type="text" 
-                  className="form-control" 
+                  className="custom-form-input" 
                   placeholder="Father's Name"
                   value={formData.fatherName}
                   onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
                 />
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Father's Occupation</label>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-bold text-muted d-block">Father's Occupation</label>
                 <input 
                   type="text" 
-                  className="form-control" 
-                  placeholder="e.g. Govt Employee, Agriculture, Business, Private Job"
+                  className="custom-form-input" 
+                  placeholder="e.g. Govt Job, Business, Private"
                   value={formData.fatherOccupation}
                   onChange={(e) => setFormData({ ...formData, fatherOccupation: e.target.value })}
                 />
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Mother's Name</label>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-bold text-muted d-block">Mother's Name</label>
                 <input 
                   type="text" 
-                  className="form-control" 
+                  className="custom-form-input" 
                   placeholder="Mother's Name"
                   value={formData.motherName}
                   onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
                 />
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Annual Family Income</label>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-bold text-muted d-block">Annual Family Income</label>
                 <select 
-                  className="form-select"
+                  className="custom-form-input"
                   value={formData.familyIncome}
                   onChange={(e) => setFormData({ ...formData, familyIncome: e.target.value })}
                 >
@@ -462,10 +480,11 @@ function AddStudent() {
               </div>
 
               <div className="col-12">
-                <label className="form-label small fw-bold text-muted">Permanent / Residential Address</label>
+                <label className="form-label small fw-bold text-muted d-block">Permanent / Residential Address</label>
                 <textarea 
                   className="form-control" 
                   rows="2"
+                  style={{ borderRadius: '10px', fontSize: '15px' }}
                   placeholder="Village / Ward, Post Office, Tehsil, District, PIN Code"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -475,7 +494,7 @@ function AddStudent() {
 
             {/* SECTION 4: PHOTO UPLOAD */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
-              <i className="fas fa-camera me-2"></i> 4. Student Photograph
+              4. Student Photograph
             </h6>
             <div className="row g-3 mb-4">
               <div className="col-12">
@@ -486,13 +505,13 @@ function AddStudent() {
                   onChange={handlePhotoUpload}
                 />
                 <small className="text-muted d-block mt-1" style={{ fontSize: '11px' }}>
-                  * Image browser mein hi auto-compress ho jayegi.
+                  * Image auto-compress ho jayegi.
                 </small>
                 {formData.photo && (
                   <div className="mt-3">
                     <img 
                       src={formData.photo} 
-                      alt="Student Preview" 
+                      alt="Preview" 
                       style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '12px', border: '2px solid #0000FF' }} 
                     />
                   </div>
@@ -504,9 +523,9 @@ function AddStudent() {
             <div className="text-end border-top pt-4">
               <button 
                 type="submit" 
-                className="btn btn-warning px-5 py-3 fw-bold rounded-pill shadow"
+                className="btn btn-warning w-100 w-md-auto px-5 py-3 fw-bold rounded-pill shadow"
                 disabled={loading || fetchingId}
-                style={{ fontSize: '15px' }}
+                style={{ fontSize: '16px' }}
               >
                 {loading ? (
                   <>
