@@ -46,6 +46,37 @@ function StudentList() {
     }
   };
 
+  // 🔥 ONE-CLICK RESET TEST FUNCTION 🔥
+  const handleResetTest = async (studentToReset) => {
+    if (window.confirm(`Kya aap ${studentToReset.name} ka test RESET karna chahte hain? Bacha dubara test de payega.`)) {
+      const resetPayload = {
+        ...studentToReset,
+        hasGivenTest: false,
+        testScore: 0,
+        testGrade: null,
+        testDate: null
+      };
+
+      try {
+        const res = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${studentToReset._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(resetPayload)
+        });
+
+        if (res.ok) {
+          alert(`${studentToReset.name} ka test reset ho gaya! Status ab 'Pending' hai.`);
+          setStudents(prev => prev.map(s => s._id === studentToReset._id ? resetPayload : s));
+        } else {
+          alert("Reset fail hua!");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Server error aayi hai reset ke time.");
+      }
+    }
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     const updatedData = editStudent;
@@ -96,6 +127,7 @@ function StudentList() {
                 <th>Course</th>
                 <th>Reg ID</th>
                 <th>Test Status</th>
+                <th>Reset Exam</th>
                 <th>Issued Cert.</th>
                 <th className="text-center pe-4">Actions</th>
               </tr>
@@ -115,21 +147,36 @@ function StudentList() {
                   <td><span className="badge bg-info text-dark">{s.course}</span></td>
                   <td className="font-monospace text-muted small">{s.studentId}</td>
 
-                  {/* 🔥 NEW TEST STATUS COLUMN 🔥 */}
+                  {/* TEST STATUS (DONE / PENDING) */}
                   <td>
                     {s.hasGivenTest ? (
                       <div>
-                        <span className="badge bg-success-subtle text-success border border-success px-2 py-1">
-                          <i className="fas fa-check-double me-1"></i> Completed
+                        <span className="badge bg-success text-white px-2 py-1">
+                          <i className="fas fa-check-circle me-1"></i> Done
                         </span>
                         <div className="small fw-bold text-dark mt-1">
                           {s.testScore}/50 ({s.testGrade})
                         </div>
                       </div>
                     ) : (
-                      <span className="badge bg-secondary-subtle text-secondary border px-2 py-1">
-                        Pending
+                      <span className="badge bg-warning text-dark px-2 py-1">
+                        <i className="fas fa-clock me-1"></i> Pending
                       </span>
+                    )}
+                  </td>
+
+                  {/* RESET BUTTON */}
+                  <td>
+                    {s.hasGivenTest ? (
+                      <button 
+                        className="btn btn-sm btn-outline-danger rounded-pill fw-bold"
+                        onClick={() => handleResetTest(s)}
+                        title="Re-attempt test allow karein"
+                      >
+                        <i className="fas fa-redo-alt me-1"></i> Reset
+                      </button>
+                    ) : (
+                      <span className="text-muted small">Not required</span>
                     )}
                   </td>
 
@@ -237,8 +284,8 @@ function StudentList() {
                 <div className="col-md-4">
                   <label className="small fw-bold">Reset Test Attempt</label>
                   <select className="form-select" value={editStudent.hasGivenTest ? "yes" : "no"} onChange={(e) => setEditStudent({ ...editStudent, hasGivenTest: e.target.value === "yes" })}>
-                    <option value="no">Allow Test (Not Attempted)</option>
-                    <option value="yes">Block Test (Already Attempted)</option>
+                    <option value="no">Allow Test (Pending)</option>
+                    <option value="yes">Block Test (Done)</option>
                   </select>
                 </div>
                 <div className="col-12 mt-4 text-end border-top pt-3">
