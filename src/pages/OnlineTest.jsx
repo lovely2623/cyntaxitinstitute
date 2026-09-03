@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Demo 50 questions default seed (agar custom questions backend se nahi milte)
 const defaultBank = {
   DCA: Array.from({ length: 50 }, (_, i) => ({
     id: i + 1,
-    q: `[DCA Q${i + 1}] Which part of the computer is responsible for processing calculations?`,
-    o: ["Arithmetic Logic Unit (ALU)", "Monitor Display", "Keyboard Controller", "Secondary Storage"],
+    q: `[DCA Q${i + 1}] Which part of the computer system is primarily known as the brain?`,
+    o: ["Central Processing Unit (CPU)", "Arithmetic Unit", "Monitor", "Hard Disk Drive"],
     a: 0
   })),
   Steno: Array.from({ length: 50 }, (_, i) => ({
     id: i + 1,
     q: `[Steno Q${i + 1}] Pitman Shorthand system is primarily based on which principle?`,
-    o: ["Phonetic Sounds", "Alphabetical Spellings", "Grammar Syntax", "Punctuation Rules"],
+    o: ["Phonetic Sounds", "Grammar Rules", "Alphabetical Spellings", "Punctuation Signs"],
     a: 0
   })),
   "Short Term": Array.from({ length: 50 }, (_, i) => ({
     id: i + 1,
-    q: `[Short Term Q${i + 1}] Which technology is standard for structuring web pages?`,
-    o: ["HTML5", "Photoshop", "Notepad", "MySQL"],
+    q: `[Short Term Q${i + 1}] What is the primary language used to structure web pages?`,
+    o: ["HTML5", "CSS3", "Photoshop", "Notepad"],
     a: 0
   }))
 };
@@ -27,31 +26,28 @@ function OnlineTest() {
   const navigate = useNavigate();
   const student = JSON.parse(sessionStorage.getItem('activeExamStudent') || '{}');
 
-  // Blue Screen Countdown States (3... 2... 1...)
   const [countdown, setCountdown] = useState(3);
   const [isTestReady, setIsTestReady] = useState(false);
-
-  // Exam States
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 Minutes
+  const [timeLeft, setTimeLeft] = useState(30 * 60);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [warnings, setWarnings] = useState(0);
   const [resultData, setResultData] = useState(null);
+  const [showPaletteMobile, setShowPaletteMobile] = useState(false);
 
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const userAnswersRef = useRef(userAnswers);
   userAnswersRef.current = userAnswers;
 
-  // 1. Check Auth & Load Questions
+  // Load Questions
   useEffect(() => {
     if (!student._id) {
       navigate('/Login');
       return;
     }
 
-    // Try to load custom questions from localStorage first, else default
     const savedCustom = localStorage.getItem(`cyntax_questions_${student.course}`);
     if (savedCustom) {
       try {
@@ -73,14 +69,13 @@ function OnlineTest() {
     }
   }, [student, navigate]);
 
-  // 2. 3-Second Blue Splash Timer
+  // 3-Second Blue Countdown
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
       return () => clearTimeout(timer);
     } else {
       setIsTestReady(true);
-      // Request Fullscreen immediately
       const elem = document.documentElement;
       if (elem.requestFullscreen) {
         elem.requestFullscreen().catch(() => {});
@@ -88,7 +83,7 @@ function OnlineTest() {
     }
   }, [countdown]);
 
-  // 3. Final Submit Handler
+  // Final Submit Handler
   const handleFinalSubmit = useCallback(async () => {
     if (isSubmitted) return;
     setIsSubmitted(true);
@@ -100,9 +95,7 @@ function OnlineTest() {
       const ans = userAnswersRef.current[q.id];
       if (ans !== undefined) {
         attemptedCount += 1;
-        if (ans === q.a) {
-          score += 1;
-        }
+        if (ans === q.a) score += 1;
       }
     });
 
@@ -116,6 +109,7 @@ function OnlineTest() {
 
     const currentDate = new Date().toISOString().split('T')[0];
 
+    // Update Student in Backend DB
     const updatedPayload = {
       ...student,
       hasGivenTest: true,
@@ -141,7 +135,7 @@ function OnlineTest() {
         body: JSON.stringify(updatedPayload)
       });
     } catch (e) {
-      console.error(e);
+      console.error("Update DB error:", e);
     }
 
     setResultData({
@@ -154,70 +148,66 @@ function OnlineTest() {
     sessionStorage.removeItem('activeExamStudent');
   }, [BASE_URL, isSubmitted, questions, student]);
 
-  // 4. Strict Keyboard Lock, Escape Blocker & Anti-Tab Switch
+  // Mobile Back Button Trap & Fullscreen/Keyboard Lockdown
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
 
-    // Completely prevent mouse right click
-    const blockContext = (e) => e.preventDefault();
+    // Mobile hardware back lock
+    window.history.pushState(null, null, window.location.href);
+    const trapBack = () => {
+      window.history.pushState(null, null, window.location.href);
+    };
 
-    // Absolute Keyboard Lock: Mouse clicks only
-    const blockKeyboard = (e) => {
-      // Block Escape, Backspace, Tab, Function keys, and Ctrl/Alt combos
+    const blockAllKeys = (e) => {
       e.preventDefault();
       e.stopPropagation();
       return false;
     };
 
-    // Tab Switch Detect
-    const handleVisibilityChange = () => {
+    const blockContextMenu = (e) => e.preventDefault();
+
+    // Prevent pull to refresh and notification swipe down on mobile
+    const blockTouchMove = (e) => {
+      if (e.touches.length > 1 || e.pageY < 25) {
+        e.preventDefault();
+      }
+    };
+
+    const handleVisibility = () => {
       if (document.hidden && !isSubmitted) {
         setWarnings(prev => {
-          const nextW = prev + 1;
-          alert(`⚠️ ALERT ${nextW}/3: Tab switch karna sakht mana hai! 3 warnings par test auto-submit ho jayega.`);
-          if (nextW >= 3) {
-            handleFinalSubmit();
-          }
-          return nextW;
+          const next = prev + 1;
+          alert(`⚠️ ALERT ${next}/3: Screen chhod kar bahar jana mana hai! 3 warnings par test submit ho jayega.`);
+          if (next >= 3) handleFinalSubmit();
+          return next;
         });
       }
     };
 
-    // Block back navigation
-    window.history.pushState(null, null, window.location.href);
-    const blockBackNav = () => {
-      window.history.pushState(null, null, window.location.href);
-    };
-
-    const blockBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
-
-    window.addEventListener('contextmenu', blockContext);
-    window.addEventListener('keydown', blockKeyboard, true);
-    window.addEventListener('popstate', blockBackNav);
-    window.addEventListener('beforeunload', blockBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('popstate', trapBack);
+    window.addEventListener('keydown', blockAllKeys, true);
+    window.addEventListener('contextmenu', blockContextMenu);
+    document.addEventListener('touchmove', blockTouchMove, { passive: false });
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
-      window.removeEventListener('contextmenu', blockContext);
-      window.removeEventListener('keydown', blockKeyboard, true);
-      window.removeEventListener('popstate', blockBackNav);
-      window.removeEventListener('beforeunload', blockBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('popstate', trapBack);
+      window.removeEventListener('keydown', blockAllKeys, true);
+      window.removeEventListener('contextmenu', blockContextMenu);
+      document.removeEventListener('touchmove', blockTouchMove);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [isTestReady, isSubmitted, handleFinalSubmit]);
 
-  // 5. Reverse Timer 30 Mins
+  // 30 Minutes Timer
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
     if (timeLeft <= 0) {
       handleFinalSubmit();
       return;
     }
-    const interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    return () => clearInterval(interval);
+    const t = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(t);
   }, [isTestReady, isSubmitted, timeLeft, handleFinalSubmit]);
 
   const formatTimer = (secs) => {
@@ -226,75 +216,66 @@ function OnlineTest() {
     return `${m}:${s}`;
   };
 
-  // -------------------------------------------------------------
-  // SCREEN 1: 3-SECOND BLUE COUNTDOWN
-  // -------------------------------------------------------------
+  // 1. Blue Splash Countdown
   if (!isTestReady) {
     return (
       <div style={{
-        position: 'fixed', inset: 0,
-        backgroundColor: '#0000FF',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        color: '#ffffff', zIndex: 99999999,
-        fontFamily: "'Poppins', sans-serif"
+        position: 'fixed', inset: 0, backgroundColor: '#0000FF',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', color: '#fff', zIndex: 99999999,
+        padding: '20px', textAlign: 'center'
       }}>
-        <h1 style={{ fontSize: '45px', fontWeight: '800', letterSpacing: '2px', marginBottom: '20px' }}>
-          CYNTAX EXAMINATION ENGINE
-        </h1>
-        <p style={{ fontSize: '20px', color: '#cbd5e1' }}>Strict Mode Initializing... Lock all windows</p>
+        <h2 style={{ fontWeight: '800', marginBottom: '15px' }}>CYNTAX EXAM PORTAL</h2>
+        <p style={{ color: '#cbd5e1', fontSize: '15px' }}>Exam Mode Initializing... Please wait</p>
         <div style={{
-          width: '180px', height: '180px', borderRadius: '50%',
-          border: '6px solid white', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: '90px', fontWeight: '900',
-          margin: '30px 0', boxShadow: '0 0 40px rgba(255,255,255,0.4)'
+          width: '130px', height: '130px', borderRadius: '50%',
+          border: '5px solid white', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: '65px', fontWeight: '900',
+          margin: '25px 0'
         }}>
           {countdown}
         </div>
-        <h3 style={{ fontWeight: '700', letterSpacing: '1px' }}>READY... GET SET!</h3>
+        <h4>READY... GET SET!</h4>
       </div>
     );
   }
 
-  // -------------------------------------------------------------
-  // SCREEN 2: TCS PROFESSIONAL SUBMISSION MESSAGE SCREEN
-  // -------------------------------------------------------------
+  // 2. TCS Style Professional Thank You Screen
   if (resultData) {
     return (
       <div style={{
-        position: 'fixed', inset: 0,
-        backgroundColor: '#0b132b',
+        position: 'fixed', inset: 0, backgroundColor: '#0b132b',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         zIndex: 99999999, padding: '20px'
       }}>
         <div style={{
-          backgroundColor: '#ffffff', maxWidth: '650px', width: '100%',
-          borderRadius: '25px', padding: '40px', textAlign: 'center',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          backgroundColor: '#fff', maxWidth: '550px', width: '100%',
+          borderRadius: '20px', padding: '30px 20px', textAlign: 'center',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
         }}>
-          <i className="fas fa-award text-primary" style={{ fontSize: '70px', marginBottom: '20px' }}></i>
-          <h2 style={{ fontWeight: '800', color: '#1e293b' }}>EXAM SUBMITTED SUCCESSFULLY</h2>
+          <i className="fas fa-check-circle text-success" style={{ fontSize: '60px', marginBottom: '15px' }}></i>
+          <h3 style={{ fontWeight: '800', color: '#1e293b' }}>EXAM SUBMITTED!</h3>
           
           <div style={{
-            background: '#f1f5f9', borderRadius: '15px', padding: '25px',
-            margin: '25px 0', borderLeft: '6px solid #0000FF', textAlign: 'left'
+            background: '#f8fafc', borderRadius: '15px', padding: '20px',
+            margin: '20px 0', borderLeft: '5px solid #0000FF', textAlign: 'left'
           }}>
-            <h5 style={{ fontWeight: '700', color: '#0f172a' }}>
+            <h5 style={{ fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>
               Thanks Mr./Ms. <span style={{ color: '#0000FF' }}>{resultData.name}</span>,
             </h5>
-            <p style={{ fontSize: '16px', color: '#475569', margin: '10px 0 0 0' }}>
+            <p style={{ fontSize: '15px', color: '#475569', margin: '0 0 8px 0' }}>
               Aapka exam successfully submit ho chuka hai.
             </p>
-            <p style={{ fontSize: '16px', color: '#475569', margin: '5px 0 0 0' }}>
+            <p style={{ fontSize: '15px', color: '#475569', margin: 0 }}>
               Aapne total <b>{resultData.total}</b> questions mein se <b>{resultData.attempted}</b> question attempt kiye hain.
             </p>
           </div>
 
           <button 
-            className="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow"
+            className="btn btn-dark w-100 rounded-pill py-3 fw-bold shadow-sm"
             onClick={() => navigate('/')}
           >
-            Finish & Return to Portal
+            Finish & Return to Home
           </button>
         </div>
       </div>
@@ -302,83 +283,79 @@ function OnlineTest() {
   }
 
   if (questions.length === 0) {
-    return <div className="p-5 text-center"><h3>Loading Assessment...</h3></div>;
+    return <div className="p-5 text-center"><h3>Loading Assessment Questions...</h3></div>;
   }
 
   const currentQ = questions[currentIndex];
 
-  // -------------------------------------------------------------
-  // SCREEN 3: TCS iON STYLE EXAM UI WITH SIDE QUESTION PALETTE
-  // -------------------------------------------------------------
+  // 3. Mobile Friendly TCS Interface
   return (
     <div style={{
-      position: 'fixed', inset: 0,
-      display: 'flex', flexDirection: 'column',
-      backgroundColor: '#f8fafc', zIndex: 9999999,
-      userSelect: 'none', WebkitUserSelect: 'none'
+      position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column',
+      backgroundColor: '#f8fafc', zIndex: 9999999, userSelect: 'none',
+      WebkitUserSelect: 'none', overscrollBehavior: 'none'
     }}>
-      {/* Header Bar */}
+      {/* Top Header */}
       <header style={{
-        height: '65px', backgroundColor: '#1e293b', color: 'white',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 25px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+        backgroundColor: '#1e293b', color: 'white',
+        padding: '10px 15px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', zIndex: 10
       }}>
         <div>
-          <span style={{ fontWeight: '700', fontSize: '18px' }}>{student.name}</span>
-          <span style={{ marginLeft: '12px', background: '#334155', padding: '4px 10px', borderRadius: '6px', fontSize: '13px' }}>
-            Roll: {student.studentId}
-          </span>
-          <span style={{ marginLeft: '10px', color: '#38bdf8', fontSize: '14px', fontWeight: '600' }}>
-            ({student.course})
-          </span>
+          <div style={{ fontWeight: '700', fontSize: '15px' }}>{student.name}</div>
+          <small style={{ color: '#38bdf8' }}>{student.course} ({student.studentId})</small>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            background: '#dc2626', color: 'white', padding: '6px 18px',
-            borderRadius: '50px', fontWeight: '800', fontSize: '17px',
-            display: 'flex', alignItems: 'center', gap: '8px'
+            background: '#dc2626', color: 'white', padding: '4px 12px',
+            borderRadius: '20px', fontWeight: '800', fontSize: '14px'
           }}>
-            <i className="far fa-clock"></i>
-            <span>{formatTimer(timeLeft)}</span>
+            <i className="far fa-clock me-1"></i>{formatTimer(timeLeft)}
           </div>
+
+          {/* Palette button for mobile */}
+          <button 
+            onClick={() => setShowPaletteMobile(!showPaletteMobile)}
+            className="btn btn-sm btn-outline-light d-md-none rounded-pill"
+          >
+            <i className="fas fa-th"></i>
+          </button>
 
           <button 
             onClick={() => {
-              if (window.confirm("Sure ho final test submit karna hai?")) {
-                handleFinalSubmit();
-              }
+              if (window.confirm("Sure ho final test submit karna hai?")) handleFinalSubmit();
             }}
             style={{
               backgroundColor: '#16a34a', color: 'white', border: 'none',
-              padding: '8px 24px', borderRadius: '50px', fontWeight: '700',
-              cursor: 'pointer', boxShadow: '0 4px 10px rgba(22, 163, 74, 0.3)'
+              padding: '6px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px'
             }}
           >
-            Final Submit
+            Submit
           </button>
         </div>
       </header>
 
-      {/* Main Container: Question Area (Left) + TCS Palette (Right) */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      {/* Main Body */}
+      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
         
-        {/* Left: Active Question Display */}
-        <div style={{ flex: 1, padding: '30px 40px', overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* Left/Main Question Area */}
+        <div style={{
+          flex: 1, padding: '15px 20px', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+        }}>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px', marginBottom: '25px' }}>
-              <h5 style={{ fontWeight: '800', color: '#0000FF', margin: 0 }}>
-                Question No. {currentIndex + 1}
-              </h5>
-              <span style={{ fontSize: '13px', color: '#64748b' }}>Single Choice MCQ</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px' }}>
+              <span style={{ fontWeight: '800', color: '#0000FF' }}>Question {currentIndex + 1} of {questions.length}</span>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>Single MCQ</span>
             </div>
 
-            <h4 style={{ color: '#1e293b', fontWeight: '600', lineHeight: 1.5, marginBottom: '30px' }}>
+            <h5 style={{ color: '#1e293b', fontWeight: '600', lineHeight: 1.4, marginBottom: '20px' }}>
               {currentQ.q}
-            </h4>
+            </h5>
 
             {/* Options */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {currentQ.o.map((opt, idx) => {
                 const isSelected = userAnswers[currentQ.id] === idx;
                 return (
@@ -386,34 +363,30 @@ function OnlineTest() {
                     key={idx}
                     onClick={() => setUserAnswers({ ...userAnswers, [currentQ.id]: idx })}
                     style={{
-                      padding: '16px 20px', borderRadius: '12px',
-                      border: isSelected ? '2px solid #0000FF' : '2px solid #e2e8f0',
+                      padding: '12px 15px', borderRadius: '10px',
+                      border: isSelected ? '2px solid #0000FF' : '1px solid #cbd5e1',
                       backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px',
-                      transition: '0.2s', fontWeight: isSelected ? '700' : '500'
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px'
                     }}
                   >
                     <div style={{
-                      width: '24px', height: '24px', borderRadius: '50%',
-                      border: isSelected ? '6px solid #0000FF' : '2px solid #94a3b8',
+                      width: '20px', height: '20px', borderRadius: '50%',
+                      border: isSelected ? '5px solid #0000FF' : '2px solid #94a3b8',
                       backgroundColor: 'white'
                     }}></div>
-                    <span style={{ color: '#334155' }}>{opt}</span>
+                    <span style={{ fontSize: '14px', color: '#334155' }}>{opt}</span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Navigation Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #e2e8f0', paddingTop: '20px', marginTop: '30px' }}>
+          {/* Navigation */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '15px', marginTop: '20px' }}>
             <button
               disabled={currentIndex === 0}
               onClick={() => setCurrentIndex(prev => prev - 1)}
-              style={{
-                padding: '10px 25px', borderRadius: '10px', border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff', fontWeight: '700', cursor: 'pointer'
-              }}
+              className="btn btn-outline-secondary btn-sm px-3 rounded-pill"
             >
               Previous
             </button>
@@ -421,24 +394,16 @@ function OnlineTest() {
             {currentIndex < questions.length - 1 ? (
               <button
                 onClick={() => setCurrentIndex(prev => prev + 1)}
-                style={{
-                  padding: '10px 35px', borderRadius: '10px', border: 'none',
-                  backgroundColor: '#0000FF', color: 'white', fontWeight: '700', cursor: 'pointer'
-                }}
+                className="btn btn-primary btn-sm px-4 rounded-pill fw-bold"
               >
                 Save & Next
               </button>
             ) : (
               <button
                 onClick={() => {
-                  if (window.confirm("Aakhri question ho gaya! Paper submit kar dein?")) {
-                    handleFinalSubmit();
-                  }
+                  if (window.confirm("Paper submit karein?")) handleFinalSubmit();
                 }}
-                style={{
-                  padding: '10px 35px', borderRadius: '10px', border: 'none',
-                  backgroundColor: '#16a34a', color: 'white', fontWeight: '700', cursor: 'pointer'
-                }}
+                className="btn btn-success btn-sm px-4 rounded-pill fw-bold"
               >
                 Final Submit
               </button>
@@ -446,26 +411,25 @@ function OnlineTest() {
           </div>
         </div>
 
-        {/* Right: TCS Style 50 Question Palette */}
+        {/* Right / Responsive Question Palette */}
         <div style={{
-          width: '320px', backgroundColor: '#ffffff', borderLeft: '2px solid #e2e8f0',
-          display: 'flex', flexDirection: 'column', height: '100%'
+          width: '280px', backgroundColor: '#ffffff', borderLeft: '2px solid #e2e8f0',
+          display: 'flex', flexDirection: 'column', height: '100%',
+          position: window.innerWidth < 768 ? 'absolute' : 'relative',
+          right: 0, top: 0, bottom: 0, zIndex: 20,
+          transform: window.innerWidth < 768 && !showPaletteMobile ? 'translateX(100%)' : 'translateX(0)',
+          transition: 'transform 0.3s ease'
         }}>
-          <div style={{ padding: '15px 20px', backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
-            <h6 style={{ margin: 0, fontWeight: '800', color: '#1e293b' }}>QUESTION PALETTE</h6>
-            <div style={{ display: 'flex', gap: '15px', marginTop: '10px', fontSize: '11px', fontWeight: '700' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '12px', background: '#16a34a', borderRadius: '3px' }}></span> Answered
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '12px', height: '12px', background: '#e2e8f0', borderRadius: '3px' }}></span> Unanswered
-              </span>
-            </div>
+          <div style={{ padding: '12px 15px', backgroundColor: '#f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: '800', fontSize: '13px' }}>QUESTION PALETTE</span>
+            {window.innerWidth < 768 && (
+              <button className="btn-close btn-sm" onClick={() => setShowPaletteMobile(false)}></button>
+            )}
           </div>
 
           <div style={{
-            flex: 1, padding: '15px', overflowY: 'auto',
-            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px'
+            flex: 1, padding: '12px', overflowY: 'auto',
+            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px'
           }}>
             {questions.map((q, idx) => {
               const isAnswered = userAnswers[q.id] !== undefined;
@@ -474,14 +438,16 @@ function OnlineTest() {
               return (
                 <button
                   key={idx}
-                  onClick={() => setCurrentIndex(idx)}
+                  onClick={() => {
+                    setCurrentIndex(idx);
+                    if (window.innerWidth < 768) setShowPaletteMobile(false);
+                  }}
                   style={{
-                    height: '42px', border: isCurrent ? '2px solid #0000FF' : 'none',
-                    borderRadius: '8px',
+                    height: '38px', border: isCurrent ? '2px solid #0000FF' : 'none',
+                    borderRadius: '6px',
                     backgroundColor: isAnswered ? '#16a34a' : '#e2e8f0',
                     color: isAnswered ? '#ffffff' : '#334155',
-                    fontWeight: '800', fontSize: '14px', cursor: 'pointer',
-                    boxShadow: isCurrent ? '0 0 8px rgba(0,0,255,0.4)' : 'none'
+                    fontWeight: '700', fontSize: '12px'
                   }}
                 >
                   {idx + 1}

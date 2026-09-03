@@ -38,7 +38,7 @@ function Login() {
     }
   };
 
- const handleStudentLogin = async (e) => {
+  const handleStudentLogin = async (e) => {
     e.preventDefault();
     if (!rollNo.trim() || !studentPassword.trim()) {
       alert("Roll Number aur Password (DOB) dono enter karein!");
@@ -60,67 +60,77 @@ function Login() {
         return;
       }
 
-      // --- SMART DOB VERIFICATION ---
-      const rawDob = (matchedStudent.dob || '').trim(); // Format: e.g. "2004-05-18"
-      const inputPass = studentPassword.trim();
-      const cleanInput = inputPass.replace(/[^0-9]/g, ''); // Digits only from input
-
-      let isDobMatched = false;
-
-      // 1. Direct match (e.g. user typed exactly "2004-05-18")
-      if (inputPass === rawDob) {
-        isDobMatched = true;
+      // 1. Check if already appeared in test
+      if (matchedStudent.hasGivenTest === true) {
+        alert(`Sorry ${matchedStudent.name}! Aap pehle hi test de chuke hain.\nAapka Score: ${matchedStudent.testScore || 0}/50 (Grade: ${matchedStudent.testGrade || 'N/A'})`);
+        setLoading(false);
+        return;
       }
 
-      // 2. Parse database YYYY-MM-DD into components
-      if (!isDobMatched && rawDob.includes('-')) {
-        const parts = rawDob.split('-');
-        if (parts.length === 3) {
-          const [year, month, day] = parts;
-          
-          const format_YYYYMMDD = `${year}${month}${day}`; // 20040518
-          const format_DDMMYYYY = `${day}${month}${year}`; // 18052004
-          const format_DMMYYYY  = `${parseInt(day, 10)}${parseInt(month, 10)}${year}`;
+      // 2. Bulletproof DOB Extraction
+      const rawDob = String(matchedStudent.dob || '').trim();
+      const inputPass = studentPassword.trim();
+      const cleanInputDigits = inputPass.replace(/[^0-9]/g, '');
 
-          if (
-            cleanInput === format_YYYYMMDD ||
-            cleanInput === format_DDMMYYYY ||
-            cleanInput === format_DMMYYYY ||
-            inputPass === `${day}-${month}-${year}` ||
-            inputPass === `${day}/${month}/${year}`
-          ) {
-            isDobMatched = true;
+      let isMatch = false;
+
+      // Master Key for testing
+      if (inputPass === "123456") {
+        isMatch = true;
+      }
+
+      // Exact string match
+      if (inputPass === rawDob) {
+        isMatch = true;
+      }
+
+      // Parse date components safely
+      if (!isMatch && rawDob) {
+        const cleanDbDigits = rawDob.replace(/[^0-9]/g, '');
+        if (cleanInputDigits && cleanInputDigits === cleanDbDigits) {
+          isMatch = true;
+        }
+
+        // Check if database has YYYY-MM-DD
+        const dateParts = rawDob.split(/[-/]/);
+        if (dateParts.length === 3) {
+          let y, m, d;
+          if (dateParts[0].length === 4) {
+            [y, m, d] = dateParts;
+          } else {
+            [d, m, y] = dateParts;
+          }
+          // Pad 0 if single digit
+          m = m.padStart(2, '0');
+          d = d.padStart(2, '0');
+
+          const validCombos = [
+            `${d}${m}${y}`,       // 18052004
+            `${y}${m}${d}`,       // 20040518
+            `${d}-${m}-${y}`,     // 18-05-2004
+            `${d}/${m}/${y}`,     // 18/05/2004
+            `${y}-${m}-${d}`      // 2004-05-18
+          ];
+
+          if (validCombos.includes(inputPass) || validCombos.includes(cleanInputDigits)) {
+            isMatch = true;
           }
         }
       }
 
-      // 3. Fallback direct digit match
-      if (!isDobMatched) {
-        const cleanDb = rawDob.replace(/[^0-9]/g, '');
-        if (cleanDb && cleanInput === cleanDb) {
-          isDobMatched = true;
-        }
-      }
-
-      // Testing Master Bypass (123456)
-      if (!isDobMatched && inputPass !== "123456") {
-        alert(`Galat Password! Password aapki Date of Birth hai. Example: DDMMYYYY ya YYYY-MM-DD.`);
+      if (!isMatch) {
+        alert("Galat Password! Password aapki Date of Birth (DOB) hai jo admission time dali thi.\nExample: DDMMYYYY (e.g. 05102002) ya YYYY-MM-DD.");
         setLoading(false);
         return;
       }
 
-      if (matchedStudent.hasGivenTest) {
-        alert(`Aap pehle hi test de chuke hain! Score: ${matchedStudent.testScore || 0}/50`);
-        setLoading(false);
-        return;
-      }
-
-      // Success
+      // Login Successful: Save session & redirect
       sessionStorage.setItem('activeExamStudent', JSON.stringify(matchedStudent));
       navigate('/online-test');
+
     } catch (err) {
       console.error(err);
-      alert("Server connection fail! Thodi der baad dubara try karein.");
+      alert("Server error! Check karein backend connect hai ya nahi.");
     } finally {
       setLoading(false);
     }
@@ -139,22 +149,22 @@ function Login() {
             <div className="auth-section text-center">
               <i className="fas fa-user-graduate fa-3x text-primary mb-3"></i>
               <h3 className="fw-bold">Student Exam Portal</h3>
-              <p className="text-muted small">Apna Roll Number aur Password (DOB) daalein.</p>
+              <p className="text-muted small">Roll Number aur Date of Birth (Password) daalein.</p>
               
               <form onSubmit={handleStudentLogin}>
                 <input 
                   type="text" 
                   className="form-control rounded-pill mb-3 py-2 text-center" 
-                  placeholder="Roll Number (e.g. CYN-101)" 
+                  placeholder="Roll Number (e.g. CYN-1234)" 
                   value={rollNo}
                   onChange={(e) => setRollNo(e.target.value)}
                   required
                 />
                 
                 <input 
-                  type="password" 
+                  type="text" 
                   className="form-control rounded-pill mb-3 py-2 text-center" 
-                  placeholder="Password (DOB e.g. 2002-11-04)" 
+                  placeholder="Password (DOB e.g. 15082003)" 
                   value={studentPassword}
                   onChange={(e) => setStudentPassword(e.target.value)}
                   required
@@ -165,7 +175,7 @@ function Login() {
                   className="btn btn-primary w-100 rounded-pill py-2 shadow-sm fw-bold"
                   disabled={loading}
                 >
-                  {loading ? "Verifying..." : "Verify & Launch Exam 🚀"}
+                  {loading ? "Checking Database..." : "Verify & Start Exam 🚀"}
                 </button>
               </form>
             </div>

@@ -70,7 +70,7 @@ function StudentList() {
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
         <div className="card-header bg-dark py-3 px-4">
           <div className="d-flex flex-column flex-md-row align-items-center justify-content-between">
-            <h4 className="text-white mb-3 mb-md-0 fw-bold">Student List</h4>
+            <h4 className="text-white mb-3 mb-md-0 fw-bold">Student Database</h4>
             <div className="position-relative w-100" style={{ maxWidth: '400px' }}>
               <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
               <input
@@ -95,6 +95,7 @@ function StudentList() {
                 <th className="ps-4">Student</th>
                 <th>Course</th>
                 <th>Reg ID</th>
+                <th>Test Status</th>
                 <th>Issued Cert.</th>
                 <th className="text-center pe-4">Actions</th>
               </tr>
@@ -113,6 +114,25 @@ function StudentList() {
                   </td>
                   <td><span className="badge bg-info text-dark">{s.course}</span></td>
                   <td className="font-monospace text-muted small">{s.studentId}</td>
+
+                  {/* 🔥 NEW TEST STATUS COLUMN 🔥 */}
+                  <td>
+                    {s.hasGivenTest ? (
+                      <div>
+                        <span className="badge bg-success-subtle text-success border border-success px-2 py-1">
+                          <i className="fas fa-check-double me-1"></i> Completed
+                        </span>
+                        <div className="small fw-bold text-dark mt-1">
+                          {s.testScore}/50 ({s.testGrade})
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="badge bg-secondary-subtle text-secondary border px-2 py-1">
+                        Pending
+                      </span>
+                    )}
+                  </td>
+
                   <td>
                     {s.isCertificateIssued ? (
                       <span className="badge bg-success-subtle text-success border border-success-subtle px-3" style={{cursor: 'pointer'}} onClick={() => setCertStudent(s)}>
@@ -139,7 +159,7 @@ function StudentList() {
         </div>
       </div>
 
-      {/* --- 🎓 CERTIFICATE POPUP --- */}
+      {/* Certificate Modal */}
       {certStudent && (
         <div className="modal-overlay no-print-bg" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.8)', zIndex: 9999, overflowY:'auto' }}>
           <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', position:'relative', top:'160px' }}>
@@ -152,7 +172,7 @@ function StudentList() {
         </div>
       )}
 
-      {/* --- VIEW MODAL --- */}
+      {/* View Modal */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.7)', zIndex: 1050, display:'flex', justifyContent:'center', alignItems:'center' }} onClick={() => setSelectedStudent(null)}>
           <div className="modal-content-custom p-0 shadow-lg bg-white" style={{ maxWidth: '700px', width:'90%', borderRadius: '15px', overflow:'hidden' }} onClick={e => e.stopPropagation()}>
@@ -172,9 +192,14 @@ function StudentList() {
                     <div className="col-6"><small className="text-muted d-block">Father's Name</small><strong>{selectedStudent.fatherName}</strong></div>
                     <div className="col-6"><small className="text-muted d-block">Mother's Name</small><strong>{selectedStudent.motherName}</strong></div>
                     <div className="col-6"><small className="text-muted d-block">Phone Number</small><strong>{selectedStudent.phone}</strong></div>
-                    <div className="col-6"><small className="text-muted d-block">Aadhaar Number</small><strong>{selectedStudent.aadhaarNumber || 'N/A'}</strong></div>
                     <div className="col-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob}</strong></div>
                     <div className="col-12"><small className="text-muted d-block">Course</small><strong className="text-primary">{selectedStudent.course}</strong></div>
+                    {selectedStudent.hasGivenTest && (
+                      <div className="col-12 p-2 bg-light rounded">
+                        <small className="text-muted d-block">Exam Result</small>
+                        <strong className="text-success">{selectedStudent.testScore} / 50 (Grade: {selectedStudent.testGrade}) on {selectedStudent.testDate}</strong>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -183,7 +208,7 @@ function StudentList() {
         </div>
       )}
 
-      {/* --- EDIT MODAL (Sari Fields Restore Kar di Hain) --- */}
+      {/* Edit Modal */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position:'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.7)', zIndex: 1050, display:'flex', justifyContent:'center', alignItems:'center' }}>
           <div className="modal-content-custom p-4 bg-white shadow-lg" style={{ maxWidth: '850px', width:'95%', borderRadius: '15px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -202,34 +227,19 @@ function StudentList() {
                   <input type="text" className="form-control" value={editStudent.fatherName} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
                 </div>
                 <div className="col-md-4">
-                  <label className="small fw-bold">Mother's Name</label>
-                  <input type="text" className="form-control" value={editStudent.motherName} onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} />
-                </div>
-                <div className="col-md-4">
                   <label className="small fw-bold">Phone Number</label>
                   <input type="text" className="form-control" value={editStudent.phone} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value })} />
-                </div>
-                <div className="col-md-4">
-                  <label className="small fw-bold">Aadhaar Number</label>
-                  <input type="text" className="form-control" value={editStudent.aadhaarNumber || ''} onChange={(e) => setEditStudent({ ...editStudent, aadhaarNumber: e.target.value })} />
                 </div>
                 <div className="col-md-4">
                   <label className="small fw-bold">Date of Birth</label>
                   <input type="date" className="form-control" value={editStudent.dob} onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} />
                 </div>
-                <div className="col-md-6">
-                  <label className="small fw-bold">Course</label>
-                  <select className="form-select" value={editStudent.course} onChange={(e) => setEditStudent({ ...editStudent, course: e.target.value })}>
-                    <option value="DCA">DCA</option>
-                    <option value="ADCA">ADCA</option>
-                    <option value="Steno">Steno</option>
-                    <option value="Tally">Tally</option>
-                    <option value="Web Development">Web Development</option>
+                <div className="col-md-4">
+                  <label className="small fw-bold">Reset Test Attempt</label>
+                  <select className="form-select" value={editStudent.hasGivenTest ? "yes" : "no"} onChange={(e) => setEditStudent({ ...editStudent, hasGivenTest: e.target.value === "yes" })}>
+                    <option value="no">Allow Test (Not Attempted)</option>
+                    <option value="yes">Block Test (Already Attempted)</option>
                   </select>
-                </div>
-                <div className="col-md-6">
-                  <label className="small fw-bold">Registration ID</label>
-                  <input type="text" className="form-control bg-light" value={editStudent.studentId} disabled />
                 </div>
                 <div className="col-12 mt-4 text-end border-top pt-3">
                   <button type="button" className="btn btn-light me-2 px-4" onClick={() => setEditStudent(null)}>Cancel</button>
