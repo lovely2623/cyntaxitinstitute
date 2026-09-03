@@ -38,7 +38,7 @@ function Login() {
     }
   };
 
-  const handleStudentLogin = async (e) => {
+ const handleStudentLogin = async (e) => {
     e.preventDefault();
     if (!rollNo.trim() || !studentPassword.trim()) {
       alert("Roll Number aur Password (DOB) dono enter karein!");
@@ -60,30 +60,62 @@ function Login() {
         return;
       }
 
-      // DOB Verification: Supports YYYY-MM-DD, DD-MM-YYYY, or DDMMYYYY format
-      const enteredPass = studentPassword.trim().replace(/[^0-9]/g, '');
-      const rawDob = (matchedStudent.dob || '').trim();
-      const cleanDob = rawDob.replace(/[^0-9]/g, '');
+      // --- SMART DOB VERIFICATION ---
+      const rawDob = (matchedStudent.dob || '').trim(); // Format: e.g. "2004-05-18"
+      const inputPass = studentPassword.trim();
+      const cleanInput = inputPass.replace(/[^0-9]/g, ''); // Digits only from input
 
-      const isDobMatched = cleanDob && (
-        studentPassword.trim() === rawDob || 
-        enteredPass === cleanDob ||
-        enteredPass === cleanDob.split('').reverse().join('')
-      );
+      let isDobMatched = false;
 
-      // Master bypass 123456 for testing purposes
-      if (!isDobMatched && studentPassword.trim() !== "123456") {
-        alert("Galat Password! Password aapki Date of Birth (DOB) hai.");
+      // 1. Direct match (e.g. user typed exactly "2004-05-18")
+      if (inputPass === rawDob) {
+        isDobMatched = true;
+      }
+
+      // 2. Parse database YYYY-MM-DD into components
+      if (!isDobMatched && rawDob.includes('-')) {
+        const parts = rawDob.split('-');
+        if (parts.length === 3) {
+          const [year, month, day] = parts;
+          
+          const format_YYYYMMDD = `${year}${month}${day}`; // 20040518
+          const format_DDMMYYYY = `${day}${month}${year}`; // 18052004
+          const format_DMMYYYY  = `${parseInt(day, 10)}${parseInt(month, 10)}${year}`;
+
+          if (
+            cleanInput === format_YYYYMMDD ||
+            cleanInput === format_DDMMYYYY ||
+            cleanInput === format_DMMYYYY ||
+            inputPass === `${day}-${month}-${year}` ||
+            inputPass === `${day}/${month}/${year}`
+          ) {
+            isDobMatched = true;
+          }
+        }
+      }
+
+      // 3. Fallback direct digit match
+      if (!isDobMatched) {
+        const cleanDb = rawDob.replace(/[^0-9]/g, '');
+        if (cleanDb && cleanInput === cleanDb) {
+          isDobMatched = true;
+        }
+      }
+
+      // Testing Master Bypass (123456)
+      if (!isDobMatched && inputPass !== "123456") {
+        alert(`Galat Password! Password aapki Date of Birth hai. Example: DDMMYYYY ya YYYY-MM-DD.`);
         setLoading(false);
         return;
       }
 
       if (matchedStudent.hasGivenTest) {
-        alert(`Aap pehle hi test de chuke hain! Marks: ${matchedStudent.testScore || 0}/50`);
+        alert(`Aap pehle hi test de chuke hain! Score: ${matchedStudent.testScore || 0}/50`);
         setLoading(false);
         return;
       }
 
+      // Success
       sessionStorage.setItem('activeExamStudent', JSON.stringify(matchedStudent));
       navigate('/online-test');
     } catch (err) {
