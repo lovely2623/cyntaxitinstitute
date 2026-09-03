@@ -19,38 +19,38 @@ function AddStudent() {
   const [loading, setLoading] = useState(false);
   const [fetchingId, setFetchingId] = useState(true);
 
-  // Auto Serial ID Generator: CYN-YY01, CYN-YY02...
+  // Auto Serial ID: CYN-2601, CYN-2602... (Matches current Year)
   useEffect(() => {
     const generateNextSerialId = async () => {
       try {
         const res = await fetch(`${BASE_URL}/api/students`);
         const students = await res.json();
 
-        // Current Year 2 Digits (e.g. 2026 -> "26")
+        // 2026 -> "26"
         const currentYearShort = new Date().getFullYear().toString().slice(-2);
         const prefix = `CYN-${currentYearShort}`;
 
-        // Filter students belonging to this year's prefix
-        const thisYearStudents = students.filter(s => 
-          s.studentId && s.studentId.trim().toUpperCase().startsWith(prefix)
-        );
+        // Find students with this year's prefix
+        const thisYearStudents = Array.isArray(students) ? students.filter(s => {
+          const sid = (s.studentId || "").trim().toUpperCase();
+          return sid.startsWith(prefix) || sid.startsWith(`CYN${currentYearShort}`);
+        }) : [];
 
         let maxSerial = 0;
         thisYearStudents.forEach(s => {
-          const numPart = s.studentId.trim().toUpperCase().replace(prefix, '');
-          const parsedNum = parseInt(numPart, 10);
-          if (!isNaN(parsedNum) && parsedNum > maxSerial) {
-            maxSerial = parsedNum;
+          const sid = (s.studentId || "").trim().toUpperCase();
+          const cleanNum = sid.replace(`CYN-${currentYearShort}`, '').replace(`CYN${currentYearShort}`, '');
+          const parsed = parseInt(cleanNum, 10);
+          if (!isNaN(parsed) && parsed > maxSerial) {
+            maxSerial = parsed;
           }
         });
 
-        // Next serial padded to 2 digits (01, 02, 03... 99, 100...)
-        const nextSerial = (maxSerial + 1).toString().padStart(2, '0');
-        const generatedId = `${prefix}${nextSerial}`;
-
-        setFormData(prev => ({ ...prev, studentId: generatedId }));
+        const nextNum = (maxSerial + 1).toString().padStart(2, '0');
+        const nextId = `${prefix}${nextNum}`;
+        setFormData(prev => ({ ...prev, studentId: nextId }));
       } catch (err) {
-        console.error("Auto ID generation error:", err);
+        console.error("Auto ID fetch error:", err);
         const fallbackYear = new Date().getFullYear().toString().slice(-2);
         setFormData(prev => ({ ...prev, studentId: `CYN-${fallbackYear}01` }));
       } finally {
@@ -61,6 +61,7 @@ function AddStudent() {
     generateNextSerialId();
   }, [BASE_URL]);
 
+  // Image compression to prevent server payload error
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -78,35 +79,51 @@ function AddStudent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone || !formData.dob) {
-      alert("Kripya saari required details bharein!");
+    if (!formData.name.trim() || !formData.phone.trim() || !formData.dob.trim()) {
+      alert("Name, Phone aur Date of Birth bharna zaroori hai!");
       return;
     }
 
     setLoading(true);
+
+    // Schema Clean Payload (Server 500 error rokne ke liye clean object)
+    const cleanPayload = {
+      studentId: formData.studentId.trim(),
+      name: formData.name.trim(),
+      fatherName: formData.fatherName ? formData.fatherName.trim() : "",
+      motherName: formData.motherName ? formData.motherName.trim() : "",
+      phone: formData.phone.trim(),
+      dob: formData.dob.trim(),
+      course: formData.course || "DCA",
+      courseDuration: formData.courseDuration || "6 Months",
+      photo: formData.photo || "",
+      hasGivenTest: false,
+      testScore: 0
+    };
+
     try {
       const res = await fetch(`${BASE_URL}/api/students`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          hasGivenTest: false,
-          testScore: 0,
-          isCertificateIssued: false
-        })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(cleanPayload)
       });
 
       if (res.ok) {
-        alert(`Student ${formData.name} successfully registered with ID: ${formData.studentId}!`);
-        // Refresh local cache for 0ms loading in StudentList
+        alert(`Student ${cleanPayload.name} successfully registered with ID: ${cleanPayload.studentId}!`);
+        // Invalidate student list cache
         localStorage.removeItem("cyntax_cached_students_list");
         window.location.reload();
       } else {
-        alert("Registration fail hua! Server error.");
+        const errData = await res.json().catch(() => ({}));
+        console.error("Server responded with error:", errData);
+        alert(`Registration fail hua! Server message: ${errData.message || "Invalid data"}`);
       }
     } catch (error) {
-      console.error(error);
-      alert("Server connect nahi ho paya!");
+      console.error("Network / Server error:", error);
+      alert("Server connect nahi ho paya! Please check your network ya thodi der baad prayas karein.");
     } finally {
       setLoading(false);
     }
@@ -125,7 +142,7 @@ function AddStudent() {
         <div className="card-body p-4 p-md-5 bg-white">
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
-              {/* Registration ID (Auto-generated & locked) */}
+              {/* Registration ID (Auto Serial) */}
               <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Registration ID (Auto Serial)</label>
                 <input 

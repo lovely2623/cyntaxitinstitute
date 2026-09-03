@@ -21,7 +21,7 @@ function StudentList() {
   const [viewPaperStudent, setViewPaperStudent] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedYear, setSelectedYear] = useState("ALL"); // Year Filter State
+  const [selectedYear, setSelectedYear] = useState("ALL");
 
   const fetchStudents = useCallback(async () => {
     setIsSyncing(true);
@@ -43,38 +43,31 @@ function StudentList() {
     fetchStudents();
   }, [fetchStudents]);
 
-  // Extract all available years from Student IDs (e.g. CYN-2601 -> 2026)
+  // STRICT BATCH RULE: Only from 2025 up to CURRENT CALENDAR YEAR (No future 2027 until 2027 arrives)
   const availableYears = useMemo(() => {
-    const yearsSet = new Set();
-    students.forEach(s => {
-      if (s.studentId && s.studentId.includes("CYN-")) {
-        const yearPart = s.studentId.split("CYN-")[1]?.substring(0, 2);
-        if (yearPart && !isNaN(yearPart)) {
-          yearsSet.add(`20${yearPart}`);
-        }
-      } else if (s.createdAt) {
-        const y = new Date(s.createdAt).getFullYear();
-        if (y) yearsSet.add(y.toString());
-      }
-    });
-    // Default current year include rakhein
-    yearsSet.add(new Date().getFullYear().toString());
-    return Array.from(yearsSet).sort((a, b) => b - a);
-  }, [students]);
+    const currentYear = new Date().getFullYear(); // e.g. 2026
+    const startYear = 2025;
+    const years = [];
 
-  // Combined Search + Year Filter
+    for (let yr = currentYear; yr >= startYear; yr--) {
+      years.push(yr.toString());
+    }
+    return years;
+  }, []);
+
+  // Filter logic
   const filteredStudents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return students.filter(s => {
-      // 1. Year Filter Check
+      // 1. Year Filter
       if (selectedYear !== "ALL") {
         const shortYear = selectedYear.slice(-2);
-        const matchId = s.studentId && s.studentId.toUpperCase().includes(`CYN-${shortYear}`);
+        const matchId = (s.studentId || "").toUpperCase().includes(`CYN-${shortYear}`) || (s.studentId || "").toUpperCase().includes(`CYN${shortYear}`);
         const matchCreated = s.createdAt && new Date(s.createdAt).getFullYear().toString() === selectedYear;
         if (!matchId && !matchCreated) return false;
       }
 
-      // 2. Search Filter Check
+      // 2. Search Filter
       if (!term) return true;
       return (
         (s.name && s.name.toLowerCase().includes(term)) ||
@@ -282,7 +275,7 @@ function StudentList() {
     <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
         
-        {/* Card Header: Title + Year Selector + Search Bar */}
+        {/* Card Header: Title + Year Selector (2025 to Current Year) + Search */}
         <div className="card-header bg-dark py-3 px-4">
           <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
             <div className="d-flex align-items-center gap-3">
@@ -326,7 +319,6 @@ function StudentList() {
                 />
               </div>
 
-              {/* Refresh Sync Button */}
               <button className="btn btn-warning btn-sm rounded-pill px-3 fw-bold" onClick={fetchStudents}>
                 <i className="fas fa-sync-alt"></i> Refresh
               </button>
@@ -447,9 +439,7 @@ function StudentList() {
         </div>
       </div>
 
-      {/* ============================================================== */}
-      {/* CANDIDATE QUESTION PAPER / RESPONSE SHEET MODAL               */}
-      {/* ============================================================== */}
+      {/* CANDIDATE RESPONSE SHEET MODAL */}
       {viewPaperStudent && (() => {
         const stats = calculateAccurateStats(viewPaperStudent.paper, viewPaperStudent.student);
 
