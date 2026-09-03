@@ -53,7 +53,7 @@ function OnlineTest() {
   // 1. Auth Guard & Question Bank Loader
   useEffect(() => {
     if (!isSubmittedRef.current && !student._id) {
-      navigate('/Login');
+      navigate('/Test');
       return;
     }
 
@@ -100,7 +100,7 @@ function OnlineTest() {
     navigate('/');
   }, [navigate]);
 
-  // 3. COMPLETE SUBMISSION LOGIC (Dynamic Score & Grade Calculation)
+  // 3. BULLETPROOF ANSWER EVALUATION & GRADING LOGIC
   const executeFinalSubmission = useCallback(async () => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
@@ -109,13 +109,35 @@ function OnlineTest() {
     let attempted = 0;
     let correctCount = 0;
 
-    // Detailed response sheet capture for verification
     const detailedResponses = questions.map((q, idx) => {
-      const selectedOption = userAnswersRef.current[q.id];
-      const isAttempted = selectedOption !== undefined && selectedOption !== null;
+      const selectedOptionIdx = userAnswersRef.current[q.id];
+      const isAttempted = selectedOptionIdx !== undefined && selectedOptionIdx !== null;
 
-      // Type-safe matching
-      const isCorrect = isAttempted && String(selectedOption) === String(q.a);
+      // Smart Correct Index Detection: Index, Option Text, ya Letter Match
+      let correctIdx = -1;
+      const rawAns = q.a !== undefined ? q.a : q.correctAnswer;
+
+      if (typeof rawAns === 'number' && rawAns >= 0 && rawAns < q.o.length) {
+        correctIdx = rawAns;
+      } else if (!isNaN(Number(rawAns)) && Number(rawAns) >= 0 && Number(rawAns) < q.o.length) {
+        correctIdx = Number(rawAns);
+      } else if (typeof rawAns === 'string') {
+        const cleanAns = rawAns.trim().toLowerCase();
+        // Check if answer is stored as "A", "B", "C", "D"
+        if (cleanAns === 'a') correctIdx = 0;
+        else if (cleanAns === 'b') correctIdx = 1;
+        else if (cleanAns === 'c') correctIdx = 2;
+        else if (cleanAns === 'd') correctIdx = 3;
+        else {
+          // Check if answer is stored as exact option text
+          correctIdx = q.o.findIndex(opt => String(opt).trim().toLowerCase() === cleanAns);
+        }
+      }
+
+      // Default fallback to 0 agar question me galat index save hua ho
+      if (correctIdx === -1) correctIdx = 0;
+
+      const isCorrect = isAttempted && Number(selectedOptionIdx) === correctIdx;
 
       if (isAttempted) {
         attempted += 1;
@@ -126,20 +148,27 @@ function OnlineTest() {
         qIndex: idx + 1,
         questionText: q.q,
         options: q.o,
-        correctAnswerIndex: q.a,
-        selectedAnswerIndex: isAttempted ? selectedOption : null,
+        correctAnswerIndex: correctIdx,
+        selectedAnswerIndex: isAttempted ? Number(selectedOptionIdx) : null,
         status: !isAttempted ? 'unattempted' : isCorrect ? 'correct' : 'incorrect'
       };
     });
 
-    // Dynamic Grade based on percentage
-    let grade = "C (Fail)";
+    // Professional Percentage Grading Formula (Dynamic for any number of questions)
     const percentage = actualTotalQuestions > 0 ? (correctCount / actualTotalQuestions) * 100 : 0;
-    if (percentage >= 85) grade = "A++";
-    else if (percentage >= 70) grade = "A+";
-    else if (percentage >= 55) grade = "A";
-    else if (percentage >= 40) grade = "B";
-    else grade = "C (Fail)";
+    let grade = "Fail";
+
+    if (percentage >= 85) {
+      grade = "A++";
+    } else if (percentage >= 65) {
+      grade = "A+";
+    } else if (percentage >= 50) {
+      grade = "A";
+    } else if (percentage >= 35) {
+      grade = "B";
+    } else {
+      grade = "Fail";
+    }
 
     const currentDate = new Date().toISOString().split('T')[0];
 
@@ -149,6 +178,7 @@ function OnlineTest() {
       totalQuestions: actualTotalQuestions,
       attemptedCount: attempted,
       totalScore: correctCount,
+      percentage: percentage.toFixed(1),
       grade: grade,
       responses: detailedResponses
     };
@@ -168,11 +198,12 @@ function OnlineTest() {
       course: student.course || "General",
       total: actualTotalQuestions,
       attempted: attempted,
-      score: correctCount
+      score: correctCount,
+      grade: grade
     });
     setIsSubmitted(true);
 
-    // Backend database update (stripped MongoDB immutable fields)
+    // Backend database update
     const { _id, __v, createdAt, updatedAt, ...cleanStudentData } = student;
 
     const updatedPayload = {
@@ -335,7 +366,6 @@ function OnlineTest() {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)', borderTop: '8px solid #0000FF',
           position: 'relative'
         }}>
-          {/* Top-Right Cross Button */}
           <button 
             onClick={handleExitToHome}
             title="Close & Return to Home"
