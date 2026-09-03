@@ -28,7 +28,6 @@ function AddStudent() {
   const [fetchingId, setFetchingId] = useState(true);
   const [existingStudents, setExistingStudents] = useState([]);
 
-  // 1. Auto Serial Generator (CYN-2601, CYN-2602...)
   useEffect(() => {
     const fetchStudentsAndGenerateId = async () => {
       try {
@@ -37,7 +36,6 @@ function AddStudent() {
         
         if (Array.isArray(students)) {
           setExistingStudents(students);
-
           const currentYearShort = new Date().getFullYear().toString().slice(-2);
           const prefix = `CYN-${currentYearShort}`;
 
@@ -68,7 +66,6 @@ function AddStudent() {
     fetchStudentsAndGenerateId();
   }, [BASE_URL]);
 
-  // 2. Client-side Image Compression
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -106,35 +103,33 @@ function AddStudent() {
     }
   };
 
-  // 3. Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const targetId = formData.studentId.trim().toUpperCase();
 
     if (!targetId) {
-      alert("Registration ID khali nahi ho sakti!");
+      alert("Registration ID zaroori hai!");
       return;
     }
 
     if (!formData.name.trim() || !formData.phone.trim() || !formData.dob.trim()) {
-      alert("Student Name, Mobile Number aur DOB bharna zaroori hai!");
+      alert("Student Name, Mobile Number aur DOB zaroori hain!");
       return;
     }
 
     if (!formData.aadhaar.trim()) {
-      alert("Aadhaar Number bharna zaroori hai!");
+      alert("Aadhaar Number zaroori hai!");
       return;
     }
 
     const isDuplicate = existingStudents.some(s => 
       (s.studentId && s.studentId.trim().toUpperCase() === targetId) ||
-      (s.rollNo && s.rollNo.trim().toUpperCase() === targetId) ||
-      (s.regNo && s.regNo.trim().toUpperCase() === targetId)
+      (s.rollNo && s.rollNo.trim().toUpperCase() === targetId)
     );
 
     if (isDuplicate) {
-      alert(`Registration ID "${targetId}" pehle se allot hai. Kripya alag roll number enter karein.`);
+      alert(`Registration ID "${targetId}" pehle se exist karti hai. Kripya alag roll no daalein.`);
       return;
     }
 
@@ -142,20 +137,12 @@ function AddStudent() {
 
     const cleanAadhaar = formData.aadhaar.trim();
 
+    // HAR POSSIBLE KEY VARIATION MEIN SEND KARO TAANKI MONGOOSE KISI BHI CONDITION MEIN DROP NA KARE
     const cleanPayload = {
-      adaharNumber: cleanAadhaar,
-      adharNumber: cleanAadhaar,
-      aadharNumber: cleanAadhaar,
-      aadhaarNumber: cleanAadhaar,
-      aadhar: cleanAadhaar,
-      aadhaar: cleanAadhaar,
-      adhar: cleanAadhaar,
-      adahar: cleanAadhaar,
-
+      // Top Level Universal
       studentId: targetId,
       rollNo: targetId,
       regNo: targetId,
-
       name: formData.name.trim(),
       fatherName: formData.fatherName.trim() || "N/A",
       fatherOccupation: formData.fatherOccupation.trim() || "N/A",
@@ -172,16 +159,23 @@ function AddStudent() {
       address: formData.address.trim() || "N/A",
       photo: formData.photo || "https://via.placeholder.com/150",
 
+      // Aadhaar variations
+      aadhaar: cleanAadhaar,
+      adaharNumber: cleanAadhaar,
+      adharNumber: cleanAadhaar,
+      aadharNumber: cleanAadhaar,
+
+      // Nested wrapper for schema compatibility
       details: {
-        adaharNumber: cleanAadhaar,
-        aadhaar: cleanAadhaar,
+        email: formData.email.trim(),
+        bloodGroup: formData.bloodGroup,
         fatherOccupation: formData.fatherOccupation.trim(),
         familyIncome: formData.familyIncome,
         qualification: formData.qualification,
-        bloodGroup: formData.bloodGroup,
         address: formData.address.trim(),
-        email: formData.email.trim(),
-        gender: formData.gender
+        gender: formData.gender,
+        aadhaar: cleanAadhaar,
+        adaharNumber: cleanAadhaar
       },
 
       hasGivenTest: false,
@@ -203,7 +197,7 @@ function AddStudent() {
       const responseData = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        alert(`Success! Student "${cleanPayload.name}" ka admission ho gaya hai.\nAllotted ID: ${cleanPayload.studentId}`);
+        alert(`Success! Student "${cleanPayload.name}" ka admission confirm ho gaya.\nID: ${cleanPayload.studentId}`);
         localStorage.removeItem("cyntax_cached_students_list");
         window.location.reload();
       } else {
@@ -236,16 +230,9 @@ function AddStudent() {
           border-color: #0000FF !important;
           box-shadow: 0 0 0 3px rgba(0, 0, 255, 0.12) !important;
         }
-        .custom-form-input::placeholder {
-          color: #94a3b8 !important;
-          font-weight: 400 !important;
-          opacity: 1 !important;
-        }
       `}</style>
 
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden" style={{ maxWidth: '1050px', margin: '0 auto' }}>
-        
-        {/* Header */}
         <div className="card-header bg-dark text-white py-3 px-3 px-md-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
           <div>
             <h4 className="mb-0 fw-bold">Student Admission</h4>
@@ -256,17 +243,12 @@ function AddStudent() {
           </span>
         </div>
 
-        {/* Form Body */}
         <div className="card-body p-3 p-md-5 bg-white">
           <form onSubmit={handleSubmit}>
-
-            {/* SECTION 1: COURSE & REGISTRATION */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
               1. Course & Registration Details
             </h6>
             <div className="row g-3 mb-4">
-              
-              {/* REGISTRATION ID INPUT (Full width on mobile, clearly visible) */}
               <div className="col-12 col-md-4">
                 <label className="form-label small fw-bold text-dark d-block">
                   Registration ID * <span className="text-primary fw-normal">(Editable)</span>
@@ -277,12 +259,8 @@ function AddStudent() {
                   placeholder="e.g. CYN-2601"
                   value={formData.studentId}
                   onChange={(e) => setFormData({ ...formData, studentId: e.target.value.toUpperCase() })}
-                  autoCapitalize="characters"
                   required
                 />
-                <small className="text-muted d-block mt-1" style={{ fontSize: '11px' }}>
-                  * Auto-generated hai, zarurat padne par change karein.
-                </small>
               </div>
 
               <div className="col-12 col-md-4">
@@ -313,7 +291,6 @@ function AddStudent() {
               </div>
             </div>
 
-            {/* SECTION 2: PERSONAL BIODATA */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
               2. Personal Information & Identity
             </h6>
@@ -323,7 +300,7 @@ function AddStudent() {
                 <input 
                   type="text" 
                   className="custom-form-input" 
-                  placeholder="e.g. Rahul Sharma"
+                  placeholder="Full Name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -359,7 +336,7 @@ function AddStudent() {
                 <input 
                   type="text" 
                   className="custom-form-input border-danger font-monospace" 
-                  placeholder="12-digit Aadhaar Number"
+                  placeholder="12-digit Aadhaar"
                   maxLength="12"
                   value={formData.aadhaar}
                   onChange={(e) => setFormData({ ...formData, aadhaar: e.target.value.replace(/[^0-9]/g, '') })}
@@ -400,10 +377,10 @@ function AddStudent() {
                 >
                   <option value="10th Pass">10th Matriculation</option>
                   <option value="12th Pass">12th Intermediate</option>
-                  <option value="Undergraduate">Undergraduate / Pursuing Graduation</option>
-                  <option value="Graduate">Graduate (BA, BSc, BCom, BCA, BTech)</option>
-                  <option value="Postgraduate">Postgraduate (MCA, MA, MSc)</option>
-                  <option value="Other">Other Diploma / Certificate</option>
+                  <option value="Undergraduate">Undergraduate</option>
+                  <option value="Graduate">Graduate</option>
+                  <option value="Postgraduate">Postgraduate</option>
+                  <option value="Other">Other Diploma</option>
                 </select>
               </div>
 
@@ -414,7 +391,7 @@ function AddStudent() {
                   value={formData.bloodGroup}
                   onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
                 >
-                  <option value="Unknown">Don't Know / Not Available</option>
+                  <option value="Unknown">Unknown</option>
                   <option value="A+">A+</option>
                   <option value="A-">A-</option>
                   <option value="B+">B+</option>
@@ -427,7 +404,6 @@ function AddStudent() {
               </div>
             </div>
 
-            {/* SECTION 3: PARENTAL & FINANCIAL */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
               3. Family Background & Occupation
             </h6>
@@ -448,7 +424,7 @@ function AddStudent() {
                 <input 
                   type="text" 
                   className="custom-form-input" 
-                  placeholder="e.g. Govt Job, Business, Private"
+                  placeholder="e.g. Govt Job, Business, Farmer"
                   value={formData.fatherOccupation}
                   onChange={(e) => setFormData({ ...formData, fatherOccupation: e.target.value })}
                 />
@@ -472,27 +448,26 @@ function AddStudent() {
                   value={formData.familyIncome}
                   onChange={(e) => setFormData({ ...formData, familyIncome: e.target.value })}
                 >
-                  <option value="Below 1 Lakh">Below ₹1,00,000 / annum</option>
-                  <option value="1 Lakh - 2.5 Lakhs">₹1,00,000 - ₹2,50,000 / annum</option>
-                  <option value="2.5 Lakhs - 5 Lakhs">₹2,50,000 - ₹5,00,000 / annum</option>
-                  <option value="Above 5 Lakhs">Above ₹5,00,000 / annum</option>
+                  <option value="Below 1 Lakh">Below ₹1,00,000</option>
+                  <option value="1 Lakh - 2.5 Lakhs">₹1,00,000 - ₹2,50,000</option>
+                  <option value="2.5 Lakhs - 5 Lakhs">₹2,50,000 - ₹5,00,000</option>
+                  <option value="Above 5 Lakhs">Above ₹5,00,000</option>
                 </select>
               </div>
 
               <div className="col-12">
-                <label className="form-label small fw-bold text-muted d-block">Permanent / Residential Address</label>
+                <label className="form-label small fw-bold text-muted d-block">Permanent Address</label>
                 <textarea 
                   className="form-control" 
                   rows="2"
                   style={{ borderRadius: '10px', fontSize: '15px' }}
-                  placeholder="Village / Ward, Post Office, Tehsil, District, PIN Code"
+                  placeholder="Village, Tehsil, District, PIN"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 ></textarea>
               </div>
             </div>
 
-            {/* SECTION 4: PHOTO UPLOAD */}
             <h6 className="fw-bold text-primary text-uppercase border-bottom pb-2 mb-3">
               4. Student Photograph
             </h6>
@@ -504,9 +479,6 @@ function AddStudent() {
                   accept="image/*"
                   onChange={handlePhotoUpload}
                 />
-                <small className="text-muted d-block mt-1" style={{ fontSize: '11px' }}>
-                  * Image auto-compress ho jayegi.
-                </small>
                 {formData.photo && (
                   <div className="mt-3">
                     <img 
@@ -519,7 +491,6 @@ function AddStudent() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <div className="text-end border-top pt-4">
               <button 
                 type="submit" 
@@ -527,18 +498,9 @@ function AddStudent() {
                 disabled={loading || fetchingId}
                 style={{ fontSize: '16px' }}
               >
-                {loading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin me-2"></i> Registering Student...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-check-circle me-2"></i> Complete Admission
-                  </>
-                )}
+                {loading ? <><i className="fas fa-spinner fa-spin me-2"></i> Registering...</> : "Complete Admission"}
               </button>
             </div>
-
           </form>
         </div>
       </div>
