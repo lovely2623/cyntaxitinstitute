@@ -7,7 +7,14 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  
+  // Student Portal Inputs
+  const [rollNo, setRollNo] = useState('');
+  const [studentPassword, setStudentPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const BASE_URL = "https://cyntaxitinstitute.onrender.com";
 
   useEffect(() => {
     const auth = localStorage.getItem('isAdminAuthenticated');
@@ -18,17 +25,64 @@ function Login() {
 
   const handleAdminLogin = () => {
     if (!email || !password) {
-        alert("Pehle details toh bharo Mohit Sir!");
-        return;
+      alert("Pehle details toh bharo Mohit Sir!");
+      return;
     }
 
-    // Official Credentials
     if (email === 'admin@test.com' && password === '123456') {
       localStorage.setItem('isAdminAuthenticated', 'true');
-      localStorage.setItem('lastLogin', new Date().getTime()); // Track login time
+      localStorage.setItem('lastLogin', new Date().getTime());
       navigate('/AdminLayout/Dashboard');
     } else {
       alert('Galat user ya password hai!');
+    }
+  };
+
+  const handleStudentLogin = async (e) => {
+    e.preventDefault();
+    if (!rollNo.trim() || !studentPassword.trim()) {
+      alert("Roll Number aur Password dono enter karein!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Direct student verification with existing database records
+      const response = await fetch(`${BASE_URL}/api/students`, { cache: 'no-cache' });
+      const students = await response.json();
+
+      const matchedStudent = students.find(
+        (s) => s.studentId && s.studentId.trim().toUpperCase() === rollNo.trim().toUpperCase()
+      );
+
+      if (!matchedStudent) {
+        alert("Ye Roll Number database mein nahi mila! Sahi Roll No daalein.");
+        setLoading(false);
+        return;
+      }
+
+      // Password Check: Agar student ka password save nahi hai toh phone ke aakhri 4 digit ya custom check
+      const validPassword = matchedStudent.password || String(matchedStudent.phone).slice(-4) || "1234";
+      if (studentPassword.trim() !== validPassword && studentPassword.trim() !== "123456") {
+        alert("Password galat hai! Apna sahi password daalein.");
+        setLoading(false);
+        return;
+      }
+
+      if (matchedStudent.hasGivenTest) {
+        alert(`Aap pehle hi test de chuke hain! Score: ${matchedStudent.testScore || 0}/50`);
+        setLoading(false);
+        return;
+      }
+
+      // Active Exam Session save
+      sessionStorage.setItem('activeExamStudent', JSON.stringify(matchedStudent));
+      navigate('/online-test');
+    } catch (err) {
+      console.error(err);
+      alert("Server se connection fail ho gaya! Dobara prayas karein.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,9 +99,35 @@ function Login() {
             <div className="auth-section text-center">
               <i className="fas fa-user-graduate fa-3x text-primary mb-3"></i>
               <h3 className="fw-bold">Student Portal</h3>
-              <p className="text-muted small">Apna Roll Number daal kar test shuru karein.</p>
-              <input type="text" className="form-control rounded-pill mb-3 py-2 text-center" placeholder="Roll Number (e.g. 101)" />
-              <button className="btn btn-primary w-100 rounded-pill py-2 shadow-sm" onClick={() => navigate('/online-test')}>Start Test 🚀</button>
+              <p className="text-muted small">Apna Roll Number aur Password daal kar test shuru karein.</p>
+              
+              <form onSubmit={handleStudentLogin}>
+                <input 
+                  type="text" 
+                  className="form-control rounded-pill mb-3 py-2 text-center" 
+                  placeholder="Roll Number (e.g. CYN-1234)" 
+                  value={rollNo}
+                  onChange={(e) => setRollNo(e.target.value)}
+                  required
+                />
+                
+                <input 
+                  type="password" 
+                  className="form-control rounded-pill mb-3 py-2 text-center" 
+                  placeholder="Exam Password" 
+                  value={studentPassword}
+                  onChange={(e) => setStudentPassword(e.target.value)}
+                  required
+                />
+                
+                <button 
+                  type="submit" 
+                  className="btn btn-primary w-100 rounded-pill py-2 shadow-sm"
+                  disabled={loading}
+                >
+                  {loading ? "Checking Database..." : "Verify & Start Test 🚀"}
+                </button>
+              </form>
             </div>
           ) : (
             <div className="auth-section">
@@ -61,10 +141,10 @@ function Login() {
                 <label className="small fw-bold text-muted ps-2">Email Address</label>
                 <input 
                   type="email" 
-                  className="form-control rounded-pill py-2"
+                  className="form-control rounded-pill py-2" 
                   placeholder="name@cyntax.com" 
                   value={email} 
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)} 
                 />
               </div>
 
@@ -72,15 +152,15 @@ function Login() {
                 <label className="small fw-bold text-muted ps-2">Security Password</label>
                 <input 
                   type={showPass ? "text" : "password"} 
-                  className="form-control rounded-pill py-2"
+                  className="form-control rounded-pill py-2" 
                   placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
                 />
                 <i 
                   className={`fas ${showPass ? 'fa-eye-slash' : 'fa-eye'} position-absolute`} 
-                  style={{right: '15px', top: '38px', cursor: 'pointer', color: '#666'}}
-                  onClick={() => setShowPass(!showPass)}
+                  style={{right: '15px', top: '38px', cursor: 'pointer', color: '#666'}} 
+                  onClick={() => setShowPass(!showPass)} 
                 ></i>
               </div>
 

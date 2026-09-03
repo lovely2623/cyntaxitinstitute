@@ -11,6 +11,7 @@ import AboutUs from './pages/AboutUs';
 import Gallery from './pages/Gallery';
 import Login from './pages/Login';
 import Verification from './pages/Verification';
+import OnlineTest from './pages/OnlineTest';
 
 // ADMIN PAGES IMPORT
 import AdminLayout from './pages/admin/AdminLayout';
@@ -91,6 +92,7 @@ function App() {
           <Route path="/Verification" element={<Verification />} />
 
           {/* ADMIN PANEL ROUTES */}
+          <Route path="/online-test" element={<OnlineTest />} />
           <Route path="/AdminLayout" element={<AdminLayout />}>
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="StudentList" element={<StudentList />} />
