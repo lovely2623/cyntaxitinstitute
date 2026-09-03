@@ -164,7 +164,46 @@ function StudentList() {
     return null;
   };
 
-  // 🔥 100% PROVEN PDF PRINT ENGINE (Eliminates White Sheet) 🔥
+  // 🔥 ACCURATE SCORE & GRADE CALCULATOR (Responses Array Verification) 🔥
+  const calculateAccurateStats = (paper, studentRecord) => {
+    if (paper && Array.isArray(paper.responses) && paper.responses.length > 0) {
+      const total = paper.responses.length;
+      let correct = 0;
+
+      paper.responses.forEach(r => {
+        const isAttempted = r.selectedAnswerIndex !== null && r.selectedAnswerIndex !== undefined;
+        // Direct matching of selected vs correct index or status flag
+        if (isAttempted && (r.status === 'correct' || Number(r.selectedAnswerIndex) === Number(r.correctAnswerIndex))) {
+          correct += 1;
+        }
+      });
+
+      const percentage = (correct / total) * 100;
+      let grade = "Fail";
+      if (percentage >= 80) grade = "A++";
+      else if (percentage >= 65) grade = "A+";
+      else if (percentage >= 50) grade = "A";
+      else if (percentage >= 35) grade = "B";
+      else grade = "Fail";
+
+      return { total, correct, grade };
+    }
+
+    // Fallback if paper object not loaded
+    const fallbackScore = Number(studentRecord?.testScore) || 0;
+    const fallbackTotal = paper?.totalQuestions || 2;
+    const fallbackPct = (fallbackScore / fallbackTotal) * 100;
+    let fallbackGrade = studentRecord?.testGrade || "Fail";
+    if (fallbackPct >= 80) fallbackGrade = "A++";
+    else if (fallbackPct >= 65) fallbackGrade = "A+";
+    else if (fallbackPct >= 50) fallbackGrade = "A";
+    else if (fallbackPct >= 35) fallbackGrade = "B";
+    else fallbackGrade = "Fail";
+
+    return { total: fallbackTotal, correct: fallbackScore, grade: fallbackGrade };
+  };
+
+  // Dedicated Clean PDF Window Engine
   const handlePrintResponsePaper = () => {
     const printArea = document.getElementById('printableResponseContent');
     if (!printArea) {
@@ -263,7 +302,7 @@ function StudentList() {
                 filteredStudents.map((s) => {
                   const testDone = isStudentTestDone(s);
                   const paper = getExamPaper(s);
-                  const totalQuestionsCount = paper?.totalQuestions || (s.testScore !== undefined ? 2 : 0);
+                  const stats = calculateAccurateStats(paper, s);
 
                   return (
                     <tr key={s._id}>
@@ -286,7 +325,7 @@ function StudentList() {
                               <i className="fas fa-check-circle me-1"></i> Done
                             </span>
                             <div className="small fw-bold text-dark mt-1">
-                              {s.testScore ?? s.certificateDetails?.testScore ?? 0}/{totalQuestionsCount} ({s.testGrade || paper?.grade || 'C (Fail)'})
+                              {stats.correct}/{stats.total} ({stats.grade})
                             </div>
                           </div>
                         ) : (
@@ -358,166 +397,171 @@ function StudentList() {
       </div>
 
       {/* ============================================================== */}
-      {/* CANDIDATE QUESTION PAPER / RESPONSE SHEET MODAL (100% PDF FIX) */}
+      {/* CANDIDATE QUESTION PAPER / RESPONSE SHEET MODAL (WITH EXACT SCORE) */}
       {/* ============================================================== */}
-      {viewPaperStudent && (
-        <div className="modal-overlay" style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 10000,
-          overflowY: 'auto', padding: '20px 10px'
-        }}>
-          <div style={{
-            maxWidth: '850px', margin: '0 auto', backgroundColor: '#ffffff',
-            borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+      {viewPaperStudent && (() => {
+        const stats = calculateAccurateStats(viewPaperStudent.paper, viewPaperStudent.student);
+
+        return (
+          <div className="modal-overlay" style={{
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 10000,
+            overflowY: 'auto', padding: '20px 10px'
           }}>
-            {/* Top Toolbar */}
-            <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
-              <div>
-                <h5 className="mb-0 fw-bold">Candidate Exam Response Sheet</h5>
-                <small className="text-white-50">Cyntax IT Institute &bull; Official Submission Copy</small>
-              </div>
-              <div className="d-flex gap-2">
-                <button
-                  className="btn btn-success btn-sm rounded-pill px-3 fw-bold"
-                  onClick={handlePrintResponsePaper}
-                >
-                  <i className="fas fa-print me-1"></i> Print / Save as PDF
-                </button>
-                <button
-                  className="btn btn-light btn-sm rounded-pill px-3 fw-bold"
-                  onClick={() => setViewPaperStudent(null)}
-                >
-                  ✕ Close
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Container Target */}
-            <div id="printableResponseContent" className="p-4" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
-              <div className="text-center mb-4 pb-2 border-bottom">
-                <h3 style={{ fontWeight: '900', color: '#0000FF', margin: 0, letterSpacing: '0.5px' }}>
-                  CYNTAX CODING HUB & IT INSTITUTE
-                </h3>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
-                  Official Examination Candidate Assessment Sheet
-                </p>
-              </div>
-
-              {/* Candidate Info Header */}
-              <div className="card-header-box" style={{
-                border: '2px solid #0000FF', borderRadius: '12px', padding: '16px',
-                backgroundColor: '#f8fafc', marginBottom: '25px'
-              }}>
-                <div className="row g-2">
-                  <div className="col-sm-6">
-                    <span className="text-muted small d-block">Candidate Name:</span>
-                    <strong className="fs-6 text-primary">{viewPaperStudent.student.name}</strong>
-                  </div>
-                  <div className="col-sm-6">
-                    <span className="text-muted small d-block">Roll Number / Reg ID:</span>
-                    <strong className="fs-6 font-monospace">{viewPaperStudent.student.studentId}</strong>
-                  </div>
-                  <div className="col-sm-6">
-                    <span className="text-muted small d-block">Course:</span>
-                    <strong>{viewPaperStudent.student.course}</strong>
-                  </div>
-                  <div className="col-sm-6">
-                    <span className="text-muted small d-block">Submission Time:</span>
-                    <strong>{viewPaperStudent.paper?.submittedAt || viewPaperStudent.student.testDate || 'Recorded'}</strong>
-                  </div>
-                  <div className="col-sm-6">
-                    <span className="text-muted small d-block">Total Score:</span>
-                    <span className="badge bg-success fs-6">
-                      {viewPaperStudent.student.testScore ?? 0} / {viewPaperStudent.paper?.totalQuestions || 2}
-                    </span>
-                  </div>
-                  <div className="col-sm-6">
-                    <span className="text-muted small d-block">Final Grade:</span>
-                    <span className="badge bg-primary fs-6">
-                      {viewPaperStudent.student.testGrade || viewPaperStudent.paper?.grade || 'C (Fail)'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Questions & Responses List */}
-              {viewPaperStudent.paper && viewPaperStudent.paper.responses && viewPaperStudent.paper.responses.length > 0 ? (
+            <div style={{
+              maxWidth: '850px', margin: '0 auto', backgroundColor: '#ffffff',
+              borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+            }}>
+              {/* Top Toolbar */}
+              <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
                 <div>
-                  <h6 className="fw-bold border-bottom pb-2 mb-3 text-secondary">
-                    EXAMINATION QUESTIONS & CANDIDATE ANSWERS
-                  </h6>
-
-                  {viewPaperStudent.paper.responses.map((r, qIdx) => {
-                    const isCorrect = r.status === 'correct';
-                    const isUnattempted = r.status === 'unattempted';
-
-                    return (
-                      <div
-                        key={qIdx}
-                        className="question-box"
-                        style={{
-                          border: '1px solid #e2e8f0', borderRadius: '10px',
-                          padding: '14px', marginBottom: '16px',
-                          backgroundColor: isCorrect ? '#f0fdf4' : isUnattempted ? '#f8fafc' : '#fef2f2',
-                          pageBreakInside: 'avoid'
-                        }}
-                      >
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <span className="fw-bold" style={{ color: '#0f172a' }}>
-                            Q{r.qIndex}. {r.questionText}
-                          </span>
-                          <span className={`badge ${isCorrect ? 'bg-success' : isUnattempted ? 'bg-secondary' : 'bg-danger'} ms-2`}>
-                            {isCorrect ? 'Correct (+1)' : isUnattempted ? 'Unattempted (0)' : 'Incorrect (0)'}
-                          </span>
-                        </div>
-
-                        {/* Options */}
-                        <div className="mt-2 ms-2">
-                          {r.options.map((opt, optIdx) => {
-                            const isSelected = r.selectedAnswerIndex === optIdx;
-                            const isCorrectOpt = r.correctAnswerIndex === optIdx;
-
-                            let optClass = 'opt-normal';
-                            if (isCorrectOpt) optClass = 'opt-correct';
-                            if (isSelected && !isCorrectOpt) optClass = 'opt-wrong';
-
-                            return (
-                              <div
-                                key={optIdx}
-                                className={`opt-row ${optClass}`}
-                                style={{
-                                  padding: '8px 12px', borderRadius: '6px',
-                                  marginBottom: '6px', display: 'flex',
-                                  alignItems: 'center', justifyContent: 'space-between'
-                                }}
-                              >
-                                <span>
-                                  <b>{String.fromCharCode(65 + optIdx)}.</b> {opt}
-                                </span>
-                                <span>
-                                  {isSelected && <span className="badge bg-dark ms-2">Candidate's Choice</span>}
-                                  {isCorrectOpt && <span className="badge bg-success ms-2">✓ Correct Answer</span>}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <h5 className="mb-0 fw-bold">Candidate Exam Response Sheet</h5>
+                  <small className="text-white-50">Cyntax IT Institute &bull; Official Submission Copy</small>
                 </div>
-              ) : (
-                <div className="alert alert-warning text-center my-4">
-                  <h5>⚠️ Detailed Response Sheet Not Found</h5>
-                  <p className="mb-0 small">
-                    Ye test pehle submit hua tha. Naye test submit hone par complete paper yahan visible hoga.
+                <div className="d-flex gap-2">
+                  <button
+                    className="btn btn-success btn-sm rounded-pill px-3 fw-bold"
+                    onClick={handlePrintResponsePaper}
+                  >
+                    <i className="fas fa-print me-1"></i> Print / Save as PDF
+                  </button>
+                  <button
+                    className="btn btn-light btn-sm rounded-pill px-3 fw-bold"
+                    onClick={() => setViewPaperStudent(null)}
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Container Target */}
+              <div id="printableResponseContent" className="p-4" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
+                <div className="text-center mb-4 pb-2 border-bottom">
+                  <h3 style={{ fontWeight: '900', color: '#0000FF', margin: 0, letterSpacing: '0.5px' }}>
+                    CYNTAX CODING HUB & IT INSTITUTE
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+                    Official Examination Candidate Assessment Sheet
                   </p>
                 </div>
-              )}
+
+                {/* Candidate Info Header - DYNAMIC ACCURATE STATS */}
+                <div className="card-header-box" style={{
+                  border: '2px solid #0000FF', borderRadius: '12px', padding: '16px',
+                  backgroundColor: '#f8fafc', marginBottom: '25px'
+                }}>
+                  <div className="row g-2">
+                    <div className="col-sm-6">
+                      <span className="text-muted small d-block">Candidate Name:</span>
+                      <strong className="fs-6 text-primary">{viewPaperStudent.student.name}</strong>
+                    </div>
+                    <div className="col-sm-6">
+                      <span className="text-muted small d-block">Roll Number / Reg ID:</span>
+                      <strong className="fs-6 font-monospace">{viewPaperStudent.student.studentId}</strong>
+                    </div>
+                    <div className="col-sm-6">
+                      <span className="text-muted small d-block">Course:</span>
+                      <strong>{viewPaperStudent.student.course}</strong>
+                    </div>
+                    <div className="col-sm-6">
+                      <span className="text-muted small d-block">Submission Time:</span>
+                      <strong>{viewPaperStudent.paper?.submittedAt || viewPaperStudent.student.testDate || 'Recorded'}</strong>
+                    </div>
+                    <div className="col-sm-6">
+                      <span className="text-muted small d-block">Total Score:</span>
+                      <span className={`badge ${stats.grade === 'Fail' ? 'bg-danger' : 'bg-success'} fs-6`}>
+                        {stats.correct} / {stats.total}
+                      </span>
+                    </div>
+                    <div className="col-sm-6">
+                      <span className="text-muted small d-block">Final Grade:</span>
+                      <span className={`badge ${stats.grade === 'Fail' ? 'bg-danger' : 'bg-primary'} fs-6`}>
+                        {stats.grade}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Questions & Responses List */}
+                {viewPaperStudent.paper && viewPaperStudent.paper.responses && viewPaperStudent.paper.responses.length > 0 ? (
+                  <div>
+                    <h6 className="fw-bold border-bottom pb-2 mb-3 text-secondary">
+                      EXAMINATION QUESTIONS & CANDIDATE ANSWERS
+                    </h6>
+
+                    {viewPaperStudent.paper.responses.map((r, qIdx) => {
+                      const isAttempted = r.selectedAnswerIndex !== null && r.selectedAnswerIndex !== undefined;
+                      const isCorrect = isAttempted && (r.status === 'correct' || Number(r.selectedAnswerIndex) === Number(r.correctAnswerIndex));
+                      const isUnattempted = !isAttempted;
+
+                      return (
+                        <div
+                          key={qIdx}
+                          className="question-box"
+                          style={{
+                            border: '1px solid #e2e8f0', borderRadius: '10px',
+                            padding: '14px', marginBottom: '16px',
+                            backgroundColor: isCorrect ? '#f0fdf4' : isUnattempted ? '#f8fafc' : '#fef2f2',
+                            pageBreakInside: 'avoid'
+                          }}
+                        >
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <span className="fw-bold" style={{ color: '#0f172a' }}>
+                              Q{r.qIndex}. {r.questionText}
+                            </span>
+                            <span className={`badge ${isCorrect ? 'bg-success' : isUnattempted ? 'bg-secondary' : 'bg-danger'} ms-2`}>
+                              {isCorrect ? 'Correct (+1)' : isUnattempted ? 'Unattempted (0)' : 'Incorrect (0)'}
+                            </span>
+                          </div>
+
+                          {/* Options */}
+                          <div className="mt-2 ms-2">
+                            {r.options.map((opt, optIdx) => {
+                              const isSelected = Number(r.selectedAnswerIndex) === optIdx;
+                              const isCorrectOpt = Number(r.correctAnswerIndex) === optIdx;
+
+                              let optClass = 'opt-normal';
+                              if (isCorrectOpt) optClass = 'opt-correct';
+                              if (isSelected && !isCorrectOpt) optClass = 'opt-wrong';
+
+                              return (
+                                <div
+                                  key={optIdx}
+                                  className={`opt-row ${optClass}`}
+                                  style={{
+                                    padding: '8px 12px', borderRadius: '6px',
+                                    marginBottom: '6px', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'space-between'
+                                  }}
+                                >
+                                  <span>
+                                    <b>{String.fromCharCode(65 + optIdx)}.</b> {opt}
+                                  </span>
+                                  <span>
+                                    {isSelected && <span className="badge bg-dark ms-2">Candidate's Choice</span>}
+                                    {isCorrectOpt && <span className="badge bg-success ms-2">✓ Correct Answer</span>}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="alert alert-warning text-center my-4">
+                    <h5>⚠️ Detailed Response Sheet Not Found</h5>
+                    <p className="mb-0 small">
+                      Ye test pehle submit hua tha. Naye test submit hone par complete paper yahan visible hoga.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {certStudent && (
         <div className="modal-overlay no-print-bg" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, overflowY: 'auto' }}>
@@ -555,7 +599,7 @@ function StudentList() {
                     {isStudentTestDone(selectedStudent) && (
                       <div className="col-12 p-2 bg-light rounded">
                         <small className="text-muted d-block">Exam Result</small>
-                        <strong className="text-success">{selectedStudent.testScore ?? 0} Marks (Grade: {selectedStudent.testGrade || 'C (Fail)'}) on {selectedStudent.testDate || 'Completed'}</strong>
+                        <strong className="text-success">{selectedStudent.testScore ?? 0} Marks (Grade: {selectedStudent.testGrade || 'A'}) on {selectedStudent.testDate || 'Completed'}</strong>
                       </div>
                     )}
                   </div>
