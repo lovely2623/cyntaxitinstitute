@@ -43,63 +43,70 @@ function StudentList() {
     fetchStudents();
   }, [fetchStudents]);
 
-  // COMPLETE MULTI-LAYER PARSER: Root aur Details object dono scan karega
+  // COMPLETE MULTI-LAYER PARSER: Har field ko root aur nested details dono se accurately fetch karta hai
   const parseStudent = useCallback((s) => {
     if (!s) return {};
     const d = s.details || s.additionalDetails || {};
 
+    // Helper: Valid string check
+    const getVal = (...keys) => {
+      for (const val of keys) {
+        if (val !== undefined && val !== null) {
+          const str = val.toString().trim();
+          if (str !== "" && str !== "N/A" && str !== "undefined" && str !== "null") {
+            return str;
+          }
+        }
+      }
+      return "";
+    };
+
+    // Date of birth parsing - ensures YYYY-MM-DD for <input type="date">
     let cleanDob = "";
-    const rawDob = s.dob || d.dob || "";
+    const rawDob = getVal(s.dob, d.dob);
     if (rawDob) {
       cleanDob = rawDob.includes("T") ? rawDob.split("T")[0] : rawDob.replace(/\//g, "-");
-      if (cleanDob.includes("-") && cleanDob.split("-")[0].length !== 4) {
+      if (cleanDob.includes("-")) {
         const p = cleanDob.split("-");
-        if (p.length === 3 && p[2].length === 4) cleanDob = `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+        if (p.length === 3 && p[0].length !== 4 && p[2].length === 4) {
+          cleanDob = `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+        }
       }
     }
 
-    const regId = (s.studentId || s.rollNo || s.regNo || d.studentId || d.rollNo || "").toString().trim();
-    
-    // Aadhaar scan from all possible variations
-    const aadhaarVal = (
-      s.aadhaar || s.adaharNumber || s.adharNumber || s.aadharNumber || s.aadhaarNumber || s.adahar || s.adhar || s.aadhar ||
-      d.aadhaar || d.adaharNumber || d.adharNumber || d.aadharNumber || d.aadhaarNumber || d.adahar || d.adhar || d.aadhar || ""
-    ).toString().trim();
-
-    const emailVal = (s.email || d.email || "").toString().trim();
-    const fatherOccupationVal = (s.fatherOccupation || d.fatherOccupation || "").toString().trim();
-    const bloodGroupVal = (s.bloodGroup || d.bloodGroup || "Unknown").toString().trim();
-    const familyIncomeVal = (s.familyIncome || d.familyIncome || "Below 1 Lakh").toString().trim();
-    const qualificationVal = (s.qualification || d.qualification || "12th Pass").toString().trim();
-    const addressVal = (s.address || d.address || "").toString().trim();
-    const genderVal = (s.gender || d.gender || "Male").toString().trim();
+    const regId = getVal(s.studentId, s.rollNo, s.regNo, d.studentId, d.rollNo, d.regNo);
+    const aadhaarVal = getVal(
+      s.aadhaar, s.adaharNumber, s.adharNumber, s.aadharNumber, s.aadhaarNumber, s.adahar, s.adhar, s.aadhar,
+      d.aadhaar, d.adaharNumber, d.adharNumber, d.aadharNumber, d.aadhaarNumber, d.adahar, d.adhar, d.aadhar
+    );
 
     return {
       ...s,
+      _id: s._id,
       studentId: regId,
-      name: (s.name || d.name || "").toString().trim(),
-      gender: genderVal,
+      name: getVal(s.name, d.name),
+      gender: getVal(s.gender, d.gender) || "Male",
       dob: cleanDob,
-      phone: (s.phone || d.phone || "").toString().trim(),
-      email: emailVal,
+      phone: getVal(s.phone, d.phone),
+      email: getVal(s.email, d.email),
       aadhaar: aadhaarVal,
-      fatherName: (s.fatherName || d.fatherName || "").toString().trim(),
-      fatherOccupation: fatherOccupationVal,
-      motherName: (s.motherName || d.motherName || "").toString().trim(),
-      familyIncome: familyIncomeVal,
-      qualification: qualificationVal,
-      bloodGroup: bloodGroupVal,
-      address: addressVal,
-      course: (s.course || d.course || "DCA").toString().trim(),
-      courseDuration: (s.courseDuration || d.courseDuration || "6 Months").toString().trim(),
-      photo: s.photo || d.photo || "https://via.placeholder.com/150"
+      fatherName: getVal(s.fatherName, d.fatherName),
+      fatherOccupation: getVal(s.fatherOccupation, d.fatherOccupation),
+      motherName: getVal(s.motherName, d.motherName),
+      familyIncome: getVal(s.familyIncome, d.familyIncome) || "Below 1 Lakh",
+      qualification: getVal(s.qualification, d.qualification) || "12th Pass",
+      bloodGroup: getVal(s.bloodGroup, d.bloodGroup) || "Unknown",
+      address: getVal(s.address, d.address),
+      course: getVal(s.course, d.course) || "DCA",
+      courseDuration: getVal(s.courseDuration, d.courseDuration) || "6 Months",
+      photo: getVal(s.photo, d.photo) || "https://via.placeholder.com/150"
     };
   }, []);
 
   const availableYears = useMemo(() => {
     const current = new Date().getFullYear();
     const list = [];
-    for (let y = current; y >= 2025; y--) list.push(y.toString());
+    for (let y = current; y >= 2024; y--) list.push(y.toString());
     return list;
   }, []);
 
@@ -166,6 +173,44 @@ function StudentList() {
     }
   };
 
+  // Photo upload handler for edit modal
+  const handleEditPhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 300;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setEditStudent(prev => ({ ...prev, photo: compressedBase64 }));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     const targetId = editStudent._id;
@@ -177,36 +222,51 @@ function StudentList() {
       studentId: regId,
       rollNo: regId,
       regNo: regId,
-      name: editStudent.name.trim(),
+      name: (editStudent.name || "").trim(),
       gender: editStudent.gender || "Male",
-      dob: editStudent.dob,
-      phone: editStudent.phone.trim(),
-      email: editStudent.email.trim(),
+      dob: editStudent.dob || "",
+      phone: (editStudent.phone || "").trim(),
+      email: (editStudent.email || "").trim(),
       aadhaar: aadhaarVal,
       adaharNumber: aadhaarVal,
       adharNumber: aadhaarVal,
       aadharNumber: aadhaarVal,
-      fatherName: editStudent.fatherName.trim(),
-      fatherOccupation: editStudent.fatherOccupation.trim(),
-      motherName: editStudent.motherName.trim(),
-      familyIncome: editStudent.familyIncome,
-      qualification: editStudent.qualification,
-      bloodGroup: editStudent.bloodGroup,
-      address: editStudent.address.trim(),
-      course: editStudent.course,
-      courseDuration: editStudent.courseDuration,
+      aadhaarNumber: aadhaarVal,
+      fatherName: (editStudent.fatherName || "").trim(),
+      fatherOccupation: (editStudent.fatherOccupation || "").trim(),
+      motherName: (editStudent.motherName || "").trim(),
+      familyIncome: editStudent.familyIncome || "Below 1 Lakh",
+      qualification: editStudent.qualification || "12th Pass",
+      bloodGroup: editStudent.bloodGroup || "Unknown",
+      address: (editStudent.address || "").trim(),
+      course: editStudent.course || "DCA",
+      courseDuration: editStudent.courseDuration || "6 Months",
+      photo: editStudent.photo || "https://via.placeholder.com/150",
       details: {
         ...(editStudent.details || {}),
         studentId: regId,
+        rollNo: regId,
+        regNo: regId,
+        name: (editStudent.name || "").trim(),
+        gender: editStudent.gender || "Male",
+        dob: editStudent.dob || "",
+        phone: (editStudent.phone || "").trim(),
+        email: (editStudent.email || "").trim(),
         aadhaar: aadhaarVal,
         adaharNumber: aadhaarVal,
-        fatherOccupation: editStudent.fatherOccupation.trim(),
-        familyIncome: editStudent.familyIncome,
-        qualification: editStudent.qualification,
-        bloodGroup: editStudent.bloodGroup,
-        address: editStudent.address.trim(),
-        email: editStudent.email.trim(),
-        gender: editStudent.gender
+        adharNumber: aadhaarVal,
+        aadharNumber: aadhaarVal,
+        aadhaarNumber: aadhaarVal,
+        fatherName: (editStudent.fatherName || "").trim(),
+        fatherOccupation: (editStudent.fatherOccupation || "").trim(),
+        motherName: (editStudent.motherName || "").trim(),
+        familyIncome: editStudent.familyIncome || "Below 1 Lakh",
+        qualification: editStudent.qualification || "12th Pass",
+        bloodGroup: editStudent.bloodGroup || "Unknown",
+        address: (editStudent.address || "").trim(),
+        course: editStudent.course || "DCA",
+        courseDuration: editStudent.courseDuration || "6 Months",
+        photo: editStudent.photo || "https://via.placeholder.com/150"
       }
     };
 
@@ -223,6 +283,7 @@ function StudentList() {
       });
       if (!res.ok) throw new Error();
       alert("Student data successfully update ho gaya!");
+      fetchStudents();
     } catch {
       alert("Update fail! Reverting changes...");
       fetchStudents();
@@ -362,9 +423,7 @@ function StudentList() {
                       </td>
                       <td className="text-center pe-4">
                         <div className="btn-group">
-                          {/* VIEW: Deep Parsed Student */}
                           <button className="btn btn-sm btn-outline-primary" title="View Biodata" onClick={() => setSelectedStudent(parseStudent(raw))}><i className="fas fa-eye"></i></button>
-                          {/* EDIT: Deep Parsed Student */}
                           <button className="btn btn-sm btn-outline-warning" title="Edit Student" onClick={() => setEditStudent(parseStudent(raw))}><i className="fas fa-edit"></i></button>
                           <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(raw._id)}><i className="fas fa-trash"></i></button>
                           <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(raw)}><i className="fas fa-certificate text-dark"></i></button>
@@ -381,7 +440,7 @@ function StudentList() {
         </div>
       </div>
 
-      {/* VIEW MODAL (Accurate Deep Resolved Info) */}
+      {/* VIEW MODAL */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setSelectedStudent(null)}>
           <div className="modal-content-custom bg-white shadow-lg" style={{ maxWidth: '850px', width: '95%', borderRadius: '18px', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
@@ -403,7 +462,7 @@ function StudentList() {
                   <div className="row g-2 mb-3">
                     <div className="col-sm-6"><small className="text-muted d-block">Gender</small><strong>{selectedStudent.gender || "Male"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob || "Not Provided"}</strong></div>
-                    <div className="col-sm-6"><small className="text-muted d-block">Mobile Number</small><strong>{selectedStudent.phone}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Mobile Number</small><strong>{selectedStudent.phone || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Email Address</small><strong className="text-primary">{selectedStudent.email || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Blood Group</small><strong className="text-danger">{selectedStudent.bloodGroup || "Unknown"}</strong></div>
@@ -411,9 +470,9 @@ function StudentList() {
                   </div>
                   <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Family Background & Occupation</h6>
                   <div className="row g-2 mb-3">
-                    <div className="col-sm-6"><small className="text-muted d-block">Father's Name</small><strong>{selectedStudent.fatherName || "N/A"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Father's Name</small><strong>{selectedStudent.fatherName || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Father's Occupation</small><strong>{selectedStudent.fatherOccupation || "Not Provided"}</strong></div>
-                    <div className="col-sm-6"><small className="text-muted d-block">Mother's Name</small><strong>{selectedStudent.motherName || "N/A"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Mother's Name</small><strong>{selectedStudent.motherName || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Annual Family Income</small><strong className="text-success">{selectedStudent.familyIncome || "Below 1 Lakh"}</strong></div>
                     <div className="col-sm-12"><small className="text-muted d-block">Permanent Address</small><strong>{selectedStudent.address || "Not Provided"}</strong></div>
                   </div>
@@ -427,7 +486,7 @@ function StudentList() {
         </div>
       )}
 
-      {/* EDIT MODAL (All Fields Pre-Filled & Editable) */}
+      {/* EDIT MODAL */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className="modal-content-custom p-4 bg-white shadow-lg" style={{ maxWidth: '900px', width: '95%', borderRadius: '18px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -479,7 +538,7 @@ function StudentList() {
                 </div>
                 <div className="col-md-4">
                   <label className="small fw-bold">Email Address</label>
-                  <input type="email" className="form-control" value={editStudent.email || ""} onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} />
+                  <input type="email" className="form-control" value={editStudent.email || ""} onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} placeholder="student@example.com" />
                 </div>
                 <div className="col-md-6">
                   <label className="small fw-bold">Highest Qualification</label>
@@ -521,6 +580,14 @@ function StudentList() {
                 <div className="col-12">
                   <label className="small fw-bold">Permanent Address</label>
                   <textarea className="form-control" rows="2" value={editStudent.address || ""} onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })}></textarea>
+                </div>
+
+                <div className="col-12 mt-3"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Update Photograph (Optional)</h6></div>
+                <div className="col-12 d-flex align-items-center gap-3">
+                  {editStudent.photo && (
+                    <img src={editStudent.photo} alt="Student" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '10px', border: '2px solid #0000FF' }} />
+                  )}
+                  <input type="file" className="form-control" accept="image/*" onChange={handleEditPhotoUpload} />
                 </div>
 
                 <div className="col-12 mt-4 text-end border-top pt-3">
