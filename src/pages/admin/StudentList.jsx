@@ -59,7 +59,8 @@ function StudentList() {
     return students.filter(s => {
       if (selectedYear !== "ALL") {
         const shortYear = selectedYear.slice(-2);
-        const matchId = (s.studentId || "").toUpperCase().includes(`CYN-${shortYear}`) || (s.studentId || "").toUpperCase().includes(`CYN${shortYear}`);
+        const matchId = (s.studentId || s.rollNo || s.regNo || "").toUpperCase().includes(`CYN-${shortYear}`) || 
+                        (s.studentId || s.rollNo || s.regNo || "").toUpperCase().includes(`CYN${shortYear}`);
         const matchCreated = s.createdAt && new Date(s.createdAt).getFullYear().toString() === selectedYear;
         if (!matchId && !matchCreated) return false;
       }
@@ -67,11 +68,88 @@ function StudentList() {
       if (!term) return true;
       return (
         (s.name && s.name.toLowerCase().includes(term)) ||
-        (s.studentId && s.studentId.toLowerCase().includes(term)) ||
+        ((s.studentId || s.rollNo || s.regNo) && (s.studentId || s.rollNo || s.regNo).toLowerCase().includes(term)) ||
         (s.phone && String(s.phone).includes(term))
       );
     });
   }, [students, searchTerm, selectedYear]);
+
+  // 🔥 UNIVERSAL DEEP PARSER: Extracts data from root or any nested details object 🔥
+  const extractAllStudentData = useCallback((s) => {
+    if (!s) return {};
+    const d = s.details || s.additionalDetails || {};
+
+    // 1. Clean Date of Birth for <input type="date"> (Strict YYYY-MM-DD)
+    let formattedDob = "";
+    const rawDob = s.dob || d.dob || "";
+    if (rawDob) {
+      if (rawDob.includes("T")) {
+        formattedDob = rawDob.split("T")[0];
+      } else if (rawDob.includes("-") && rawDob.split("-")[0].length === 4) {
+        formattedDob = rawDob;
+      } else if (rawDob.includes("/")) {
+        const parts = rawDob.split("/");
+        if (parts.length === 3) {
+          if (parts[2].length === 4) {
+            formattedDob = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          } else if (parts[0].length === 4) {
+            formattedDob = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+          }
+        }
+      } else {
+        formattedDob = rawDob;
+      }
+    }
+
+    // 2. Comprehensive Aadhaar Extraction
+    const aadhaarVal = (
+      s.aadhaar || s.adaharNumber || s.adharNumber || s.aadharNumber || s.aadhaarNumber || s.aadhar || s.adhar || s.adahar ||
+      d.aadhaar || d.adaharNumber || d.adharNumber || d.aadharNumber || d.aadhaarNumber || d.aadhar || d.adhar || d.adahar || ""
+    ).toString().trim();
+
+    // 3. Email Extraction
+    const emailVal = (s.email || d.email || "").toString().trim();
+
+    // 4. Father Details
+    const fatherOccupationVal = (s.fatherOccupation || d.fatherOccupation || "").toString().trim();
+    const fatherNameVal = (s.fatherName || d.fatherName || "").toString().trim();
+    const motherNameVal = (s.motherName || d.motherName || "").toString().trim();
+
+    // 5. Socio-Economic & Academic Details
+    const incomeVal = (s.familyIncome || d.familyIncome || "Below 1 Lakh").toString().trim();
+    const qualVal = (s.qualification || d.qualification || "12th Pass").toString().trim();
+    const bloodVal = (s.bloodGroup || d.bloodGroup || "Unknown").toString().trim();
+    const addrVal = (s.address || d.address || "").toString().trim();
+    const genderVal = (s.gender || d.gender || "Male").toString().trim();
+
+    const regId = (s.studentId || s.rollNo || s.regNo || "").toString().trim();
+
+    return {
+      ...s,
+      studentId: regId,
+      rollNo: regId,
+      regNo: regId,
+      name: (s.name || "").toString().trim(),
+      gender: genderVal,
+      dob: formattedDob,
+      phone: (s.phone || "").toString().trim(),
+      email: emailVal,
+      aadhaar: aadhaarVal,
+      adaharNumber: aadhaarVal,
+      adharNumber: aadhaarVal,
+      aadharNumber: aadhaarVal,
+      fatherName: fatherNameVal,
+      fatherOccupation: fatherOccupationVal,
+      motherName: motherNameVal,
+      familyIncome: incomeVal,
+      qualification: qualVal,
+      bloodGroup: bloodVal,
+      address: addrVal,
+      course: (s.course || "DCA").toString().trim(),
+      courseDuration: (s.courseDuration || "6 Months").toString().trim(),
+      photo: s.photo || "https://via.placeholder.com/150"
+    };
+  }, []);
 
   const handleDelete = async (id) => {
     if (window.confirm("Bhai, pakka delete karna hai? Ye data wapas nahi aayega!")) {
@@ -135,36 +213,51 @@ function StudentList() {
     }
   };
 
-  // 100% Comprehensive Update Handler
+  // 🔥 Complete Dynamic Update Handler 🔥
   const handleUpdate = async (e) => {
     e.preventDefault();
     const { _id, __v, createdAt, updatedAt, ...cleanUpdateData } = editStudent;
     const targetId = _id;
 
     const targetRegId = (editStudent.studentId || "").trim().toUpperCase();
-    const aadhaarVal = (editStudent.aadhaar || editStudent.adaharNumber || editStudent.adharNumber || editStudent.aadharNumber || "").trim();
+    const aadhaarVal = (editStudent.aadhaar || editStudent.adaharNumber || editStudent.adharNumber || "").trim();
 
     const fullPayload = {
       ...cleanUpdateData,
       studentId: targetRegId,
       rollNo: targetRegId,
       regNo: targetRegId,
+      name: editStudent.name.trim(),
+      gender: editStudent.gender || "Male",
+      dob: editStudent.dob,
+      phone: editStudent.phone.trim(),
+      email: editStudent.email.trim(),
       aadhaar: aadhaarVal,
       adaharNumber: aadhaarVal,
       adharNumber: aadhaarVal,
       aadharNumber: aadhaarVal,
       aadhaarNumber: aadhaarVal,
+      fatherName: editStudent.fatherName.trim(),
+      fatherOccupation: editStudent.fatherOccupation.trim(),
+      motherName: editStudent.motherName.trim(),
+      familyIncome: editStudent.familyIncome,
+      qualification: editStudent.qualification,
+      bloodGroup: editStudent.bloodGroup,
+      address: editStudent.address.trim(),
+      course: editStudent.course,
+      courseDuration: editStudent.courseDuration,
       details: {
         ...(editStudent.details || {}),
         aadhaar: aadhaarVal,
         adaharNumber: aadhaarVal,
-        fatherOccupation: editStudent.fatherOccupation || "",
-        familyIncome: editStudent.familyIncome || "Below 1 Lakh",
-        qualification: editStudent.qualification || "12th Pass",
-        bloodGroup: editStudent.bloodGroup || "Unknown",
-        address: editStudent.address || "",
-        email: editStudent.email || "",
-        gender: editStudent.gender || "Male"
+        adharNumber: aadhaarVal,
+        fatherOccupation: editStudent.fatherOccupation.trim(),
+        familyIncome: editStudent.familyIncome,
+        qualification: editStudent.qualification,
+        bloodGroup: editStudent.bloodGroup,
+        address: editStudent.address.trim(),
+        email: editStudent.email.trim(),
+        gender: editStudent.gender
       }
     };
 
@@ -296,23 +389,6 @@ function StudentList() {
     }, 450);
   };
 
-  // Helper function to safely extract fields from top-level or details object
-  const extractStudentData = (s) => {
-    if (!s) return {};
-    const d = s.details || {};
-    return {
-      ...s,
-      gender: s.gender || d.gender || "Male",
-      email: s.email || d.email || "",
-      aadhaar: s.aadhaar || s.adaharNumber || s.adharNumber || s.aadharNumber || d.aadhaar || d.adaharNumber || "",
-      fatherOccupation: s.fatherOccupation || d.fatherOccupation || "",
-      familyIncome: s.familyIncome || d.familyIncome || "Below 1 Lakh",
-      qualification: s.qualification || d.qualification || "12th Pass",
-      bloodGroup: s.bloodGroup || d.bloodGroup || "Unknown",
-      address: s.address || d.address || ""
-    };
-  };
-
   return (
     <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
@@ -399,7 +475,7 @@ function StudentList() {
                         </div>
                       </td>
                       <td><span className="badge bg-info text-dark">{s.course}</span></td>
-                      <td className="font-monospace text-primary fw-bold small">{s.studentId}</td>
+                      <td className="font-monospace text-primary fw-bold small">{s.studentId || s.rollNo || s.regNo}</td>
 
                       <td>
                         {testDone ? (
@@ -458,20 +534,20 @@ function StudentList() {
                       </td>
                       <td className="text-center pe-4">
                         <div className="btn-group">
-                          {/* 1. VIEW BUTTON */}
+                          {/* 1. VIEW BUTTON: DEEP PARSED */}
                           <button 
                             className="btn btn-sm btn-outline-primary" 
                             title="View Full Biodata" 
-                            onClick={() => setSelectedStudent(extractStudentData(s))}
+                            onClick={() => setSelectedStudent(extractAllStudentData(s))}
                           >
                             <i className="fas fa-eye"></i>
                           </button>
 
-                          {/* 2. EDIT BUTTON */}
+                          {/* 2. EDIT BUTTON: FULLY PRE-FILLED & EDITABLE */}
                           <button 
                             className="btn btn-sm btn-outline-warning" 
                             title="Edit All Details" 
-                            onClick={() => setEditStudent(extractStudentData(s))}
+                            onClick={() => setEditStudent(extractAllStudentData(s))}
                           >
                             <i className="fas fa-edit"></i>
                           </button>
@@ -669,7 +745,7 @@ function StudentList() {
       )}
 
       {/* ============================================================== */}
-      {/* 1. VIEW MODAL: ALL ADMISSION FIELDS DISPLAYED                  */}
+      {/* 1. VIEW MODAL: ALL ADMISSION FIELDS SHOWN (DEEP RESOLVED)      */}
       {/* ============================================================== */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: '20px 10px' }} onClick={() => setSelectedStudent(null)}>
@@ -704,7 +780,7 @@ function StudentList() {
                   <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Personal & Identity Details</h6>
                   <div className="row g-2 mb-3">
                     <div className="col-sm-6"><small className="text-muted d-block">Gender</small><strong>{selectedStudent.gender || "Male"}</strong></div>
-                    <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Mobile Number</small><strong>{selectedStudent.phone}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Email Address</small><strong>{selectedStudent.email || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar || "Not Provided"}</strong></div>
@@ -745,7 +821,7 @@ function StudentList() {
       )}
 
       {/* ============================================================== */}
-      {/* 2. EDIT MODAL: EVERY SINGLE FIELD IS PRE-FILLED & EDITABLE     */}
+      {/* 2. EDIT MODAL: PRE-FILLED DOB & ALL FIELDS EDITABLE            */}
       {/* ============================================================== */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: '20px 10px' }}>
@@ -754,7 +830,7 @@ function StudentList() {
             <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
               <div>
                 <h4 className="fw-bold text-warning mb-0"><i className="fas fa-user-edit me-2"></i> Update Complete Student Record</h4>
-                <small className="text-muted">Student: <strong className="text-dark">{editStudent.name}</strong></small>
+                <small className="text-muted">Editing: <strong className="text-dark">{editStudent.name}</strong></small>
               </div>
               <button className="btn-close" onClick={() => setEditStudent(null)}></button>
             </div>
@@ -765,7 +841,6 @@ function StudentList() {
                 {/* 1. Academic Information */}
                 <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Academic & Registration Details</h6></div>
                 
-                {/* REGISTRATION ID EDITABLE */}
                 <div className="col-md-4">
                   <label className="small fw-bold text-dark">Registration ID * (Custom Editable)</label>
                   <input 
@@ -830,6 +905,7 @@ function StudentList() {
                   </select>
                 </div>
 
+                {/* PRE-FILLED DATE OF BIRTH */}
                 <div className="col-md-4">
                   <label className="small fw-bold">Date of Birth (Password) *</label>
                   <input 
@@ -841,6 +917,7 @@ function StudentList() {
                   />
                 </div>
 
+                {/* PRE-FILLED AADHAAR */}
                 <div className="col-md-4">
                   <label className="small fw-bold text-danger">Aadhaar Card Number *</label>
                   <input 
@@ -865,6 +942,7 @@ function StudentList() {
                   />
                 </div>
 
+                {/* PRE-FILLED EMAIL */}
                 <div className="col-md-4">
                   <label className="small fw-bold">Email Address</label>
                   <input 
@@ -891,6 +969,7 @@ function StudentList() {
                   </select>
                 </div>
 
+                {/* PRE-FILLED BLOOD GROUP */}
                 <div className="col-md-6">
                   <label className="small fw-bold">Blood Group</label>
                   <select 
@@ -967,7 +1046,7 @@ function StudentList() {
                   ></textarea>
                 </div>
 
-                {/* 4. Test Attempt Status Control */}
+                {/* 4. Test Status */}
                 <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Examination Status Override</h6></div>
                 <div className="col-md-4">
                   <label className="small fw-bold">Test Status</label>
