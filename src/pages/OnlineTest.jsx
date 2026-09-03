@@ -33,11 +33,10 @@ function OnlineTest() {
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(30 * 60);
 
-  // Submit State
+  // Submission & Summary States
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmationData, setConfirmationData] = useState(null);
-  const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const [summaryData, setSummaryData] = useState(null);
+  const [redirectTimer, setRedirectTimer] = useState(15);
 
   // Warnings: 3 -> 2 -> 1 -> Auto Submit
   const [warningsLeft, setWarningsLeft] = useState(3);
@@ -51,9 +50,9 @@ function OnlineTest() {
   userAnswersRef.current = userAnswers;
   const isSubmittedRef = useRef(false);
 
-  // Load Questions Bank
+  // 1. Auth Guard & Question Bank Loading
   useEffect(() => {
-    if (!student._id) {
+    if (!isSubmittedRef.current && !student._id) {
       navigate('/Login');
       return;
     }
@@ -79,7 +78,7 @@ function OnlineTest() {
     }
   }, [student, navigate]);
 
-  // 3-Second Blue Countdown
+  // 2. 3-Second Blue Countdown
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
@@ -93,36 +92,39 @@ function OnlineTest() {
     }
   }, [countdown]);
 
-  // 5-Second Auto Redirect
-  useEffect(() => {
-    if (showConfirmation) {
-      if (redirectCountdown > 0) {
-        const rTimer = setTimeout(() => {
-          setRedirectCountdown(prev => prev - 1);
-        }, 1000);
-        return () => clearTimeout(rTimer);
-      } else {
-        navigate('/');
-      }
-    }
-  }, [showConfirmation, redirectCountdown, navigate]);
+  const handleExitToHome = useCallback(() => {
+    sessionStorage.removeItem('activeExamStudent');
+    navigate('/');
+  }, [navigate]);
 
-  // SUBMISSION LOGIC (Fixes MongoDB immutable field '_id' error)
-  const executeSubmission = useCallback(async () => {
+  // 3. SUBMISSION ENGINE WITH CANDIDATE RESPONSE SHEET CAPTURE
+  const executeFinalSubmission = useCallback(async () => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
-    setIsSubmitted(true);
 
     const totalQ = questions.length || 50;
     let attempted = 0;
     let score = 0;
 
-    questions.forEach((q) => {
-      const selected = userAnswersRef.current[q.id];
-      if (selected !== undefined) {
+    // Full detailed response sheet capture
+    const detailedResponses = questions.map((q, idx) => {
+      const selectedOption = userAnswersRef.current[q.id];
+      const isAttempted = selectedOption !== undefined;
+      const isCorrect = isAttempted && selectedOption === q.a;
+
+      if (isAttempted) {
         attempted += 1;
-        if (selected === q.a) score += 1;
+        if (isCorrect) score += 1;
       }
+
+      return {
+        qIndex: idx + 1,
+        questionText: q.q,
+        options: q.o,
+        correctAnswerIndex: q.a,
+        selectedAnswerIndex: isAttempted ? selectedOption : null,
+        status: !isAttempted ? 'unattempted' : isCorrect ? 'correct' : 'incorrect'
+      };
     });
 
     let grade = "A";
@@ -135,7 +137,36 @@ function OnlineTest() {
 
     const currentDate = new Date().toISOString().split('T')[0];
 
-    // 🔥 CRITICAL FIX: _id and immutable fields stripped so MongoDB update never fails 🔥
+    // Response Paper Snapshot
+    const paperSnapshot = {
+      submittedAt: new Date().toLocaleString(),
+      examDate: currentDate,
+      totalQuestions: totalQ,
+      attemptedCount: attempted,
+      totalScore: score,
+      grade: grade,
+      responses: detailedResponses
+    };
+
+    // Save locally for instant offline backup
+    localStorage.setItem(`cyntax_test_done_${student.studentId}`, JSON.stringify({
+      hasGivenTest: true,
+      testScore: score,
+      testGrade: grade,
+      paperSnapshot: paperSnapshot
+    }));
+
+    // Switch UI instantly to 15s thanks screen
+    setSummaryData({
+      name: student.name || "Student",
+      rollNo: student.studentId || "N/A",
+      course: student.course || "General",
+      total: totalQ,
+      attempted: attempted
+    });
+    setIsSubmitted(true);
+
+    // Backend payload with response paper
     const { _id, __v, createdAt, updatedAt, ...cleanStudentData } = student;
 
     const updatedPayload = {
@@ -144,6 +175,7 @@ function OnlineTest() {
       testScore: score,
       testDate: currentDate,
       testGrade: grade,
+      submittedExamPaper: paperSnapshot,
       certificateDetails: {
         ...(student.certificateDetails || {}),
         studentName: student.name,
@@ -158,15 +190,6 @@ function OnlineTest() {
       }
     };
 
-    // 1. Permanent Local Backup
-    localStorage.setItem(`cyntax_test_done_${student.studentId}`, JSON.stringify({
-      hasGivenTest: true,
-      testScore: score,
-      testGrade: grade,
-      testDate: currentDate
-    }));
-
-    // 2. Database Server Update
     try {
       await fetch(`${BASE_URL}/api/students/${student._id}`, {
         method: 'PUT',
@@ -174,22 +197,25 @@ function OnlineTest() {
         body: JSON.stringify(updatedPayload)
       });
     } catch (err) {
-      console.error("Database sync error:", err);
+      console.error("Database update error:", err);
     }
-
-    setConfirmationData({
-      name: student.name,
-      rollNo: student.studentId,
-      course: student.course,
-      total: totalQ,
-      attempted: attempted
-    });
-
-    setShowConfirmation(true);
-    sessionStorage.removeItem('activeExamStudent');
   }, [BASE_URL, questions, student]);
 
-  // Security: Keyboard Lock & Warnings (3 -> 2 -> 1 -> Submit)
+  // 4. 15-Second Auto Redirect
+  useEffect(() => {
+    if (isSubmitted) {
+      if (redirectTimer > 0) {
+        const rTimer = setTimeout(() => {
+          setRedirectTimer(prev => prev - 1);
+        }, 1000);
+        return () => clearTimeout(rTimer);
+      } else {
+        handleExitToHome();
+      }
+    }
+  }, [isSubmitted, redirectTimer, handleExitToHome]);
+
+  // 5. Anti-Cheat & Screen Protection
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
 
@@ -198,7 +224,7 @@ function OnlineTest() {
       window.history.pushState(null, null, window.location.href);
     };
 
-    const blockKeys = (e) => {
+    const blockAllKeys = (e) => {
       e.preventDefault();
       e.stopPropagation();
       return false;
@@ -206,7 +232,7 @@ function OnlineTest() {
 
     const blockContextMenu = (e) => e.preventDefault();
 
-    const blockTouch = (e) => {
+    const blockTouchMove = (e) => {
       if (e.touches.length > 1 || e.pageY < 25) {
         e.preventDefault();
       }
@@ -219,41 +245,41 @@ function OnlineTest() {
           const updated = left - 1;
           setWarningsLeft(updated);
           warningsLeftRef.current = updated;
-          alert(`⚠️ EXAMINATION WARNING!\nScreen switch karna sakht mana hai!\nAapke paas sirf ${updated} warning baaki hai.`);
+          alert(`⚠️ EXAMINATION ALERT!\nScreen switch karna sakht mana hai!\nAapke paas sirf ${updated} warning baaki hai.`);
         } else {
           setWarningsLeft(0);
           warningsLeftRef.current = 0;
           alert("⚠️ LIMIT EXCEEDED!\nBaar-baar tab switch karne ke karan test auto-submit kiya ja raha hai!");
-          executeSubmission();
+          executeFinalSubmission();
         }
       }
     };
 
     window.addEventListener('popstate', trapBack);
-    window.addEventListener('keydown', blockKeys, true);
+    window.addEventListener('keydown', blockAllKeys, true);
     window.addEventListener('contextmenu', blockContextMenu);
-    document.addEventListener('touchmove', blockTouch, { passive: false });
+    document.addEventListener('touchmove', blockTouchMove, { passive: false });
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       window.removeEventListener('popstate', trapBack);
-      window.removeEventListener('keydown', blockKeys, true);
+      window.removeEventListener('keydown', blockAllKeys, true);
       window.removeEventListener('contextmenu', blockContextMenu);
-      document.removeEventListener('touchmove', blockTouch);
+      document.removeEventListener('touchmove', blockTouchMove);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [isTestReady, isSubmitted, executeSubmission]);
+  }, [isTestReady, isSubmitted, executeFinalSubmission]);
 
-  // 30-Minute Timer
+  // 6. 30-Minute Timer
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
     if (timeLeft <= 0) {
-      executeSubmission();
+      executeFinalSubmission();
       return;
     }
     const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     return () => clearInterval(timer);
-  }, [isTestReady, isSubmitted, timeLeft, executeSubmission]);
+  }, [isTestReady, isSubmitted, timeLeft, executeFinalSubmission]);
 
   const formatTimer = (secs) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -285,8 +311,8 @@ function OnlineTest() {
     );
   }
 
-  // Screen 2: Clean Confirmation + 5-Sec Auto Redirect
-  if (showConfirmation && confirmationData) {
+  // Screen 2: 15-Second Thanks Screen
+  if (isSubmitted) {
     return (
       <div style={{
         position: 'fixed', inset: 0, backgroundColor: '#0f172a',
@@ -295,13 +321,29 @@ function OnlineTest() {
       }}>
         <div style={{
           backgroundColor: '#ffffff', maxWidth: '580px', width: '100%',
-          borderRadius: '24px', padding: '40px 30px', textAlign: 'center',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)', borderTop: '8px solid #0000FF'
+          borderRadius: '24px', padding: '35px 25px', textAlign: 'center',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)', borderTop: '8px solid #0000FF',
+          position: 'relative'
         }}>
+          <button 
+            onClick={handleExitToHome}
+            title="Close & Return to Home"
+            style={{
+              position: 'absolute', top: '15px', right: '15px',
+              width: '36px', height: '36px', borderRadius: '50%',
+              backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1',
+              color: '#64748b', fontSize: '18px', fontWeight: 'bold',
+              cursor: 'pointer', display: 'flex', alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ✕
+          </button>
+
           <div style={{
-            width: '80px', height: '80px', background: '#dcfce7', color: '#16a34a',
+            width: '75px', height: '75px', background: '#dcfce7', color: '#16a34a',
             borderRadius: '50%', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: '40px', margin: '0 auto 20px auto'
+            justifyContent: 'center', fontSize: '36px', margin: '0 auto 15px auto'
           }}>
             <i className="fas fa-check"></i>
           </div>
@@ -309,37 +351,36 @@ function OnlineTest() {
           <h3 style={{ fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>
             TEST SUBMITTED SUCCESSFULLY
           </h3>
-          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>
-            Roll Number: <b>{confirmationData.rollNo}</b> &bull; Course: <b>{confirmationData.course}</b>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '20px' }}>
+            Roll Number: <b>{summaryData?.rollNo || student.studentId}</b> &bull; Course: <b>{summaryData?.course || student.course}</b>
           </p>
 
           <div style={{
-            backgroundColor: '#f8fafc', borderRadius: '16px', padding: '24px',
+            backgroundColor: '#f8fafc', borderRadius: '16px', padding: '22px',
             textAlign: 'left', border: '1px solid #e2e8f0', marginBottom: '20px'
           }}>
             <h5 style={{ fontWeight: '700', color: '#1e293b', marginBottom: '10px' }}>
-              Thanks, <span style={{ color: '#0000FF' }}>{confirmationData.name}</span>!
+              Thanks Mr./Ms. <span style={{ color: '#0000FF' }}>{summaryData?.name || student.name}</span>!
             </h5>
             <p style={{ fontSize: '16px', color: '#334155', lineHeight: '1.6', margin: '0 0 10px 0' }}>
               Aapka exam paper successfully submit ho chuka hai.
             </p>
             <p style={{ fontSize: '16px', color: '#0f172a', fontWeight: '600', margin: 0 }}>
-              Aapne total <span style={{ color: '#0000FF' }}>{confirmationData.total}</span> questions mein se <span style={{ color: '#16a34a' }}>{confirmationData.attempted}</span> question attempt kiye hain.
+              Aapne total <span style={{ color: '#0000FF' }}>{summaryData?.total || 50}</span> questions mein se <span style={{ color: '#16a34a' }}>{summaryData?.attempted ?? 0}</span> question attempt kiye hain.
             </p>
           </div>
 
-          {/* 5-Second Live Redirect Indicator */}
           <div style={{
             backgroundColor: '#eff6ff', border: '1px dashed #3b82f6',
             borderRadius: '12px', padding: '12px', marginBottom: '20px',
             color: '#1d4ed8', fontSize: '14px', fontWeight: '600'
           }}>
             <i className="fas fa-spinner fa-spin me-2"></i>
-            Auto redirecting to Home Page in <b>{redirectCountdown}</b> seconds...
+            Auto redirecting to Home Page in <b>{redirectTimer}</b> seconds...
           </div>
 
           <button 
-            onClick={() => navigate('/')}
+            onClick={handleExitToHome}
             style={{
               width: '100%', padding: '14px', borderRadius: '50px',
               backgroundColor: '#0000FF', color: '#ffffff', border: 'none',
@@ -347,7 +388,7 @@ function OnlineTest() {
               boxShadow: '0 4px 15px rgba(0, 0, 255, 0.3)'
             }}
           >
-            Finish & Exit Now
+            Exit & Return to Home
           </button>
         </div>
       </div>
@@ -367,7 +408,6 @@ function OnlineTest() {
       backgroundColor: '#f8fafc', zIndex: 9999999, userSelect: 'none',
       WebkitUserSelect: 'none', overscrollBehavior: 'none'
     }}>
-      {/* Top Header */}
       <header style={{
         backgroundColor: '#1e293b', color: 'white',
         padding: '10px 15px', display: 'flex', alignItems: 'center',
@@ -400,7 +440,7 @@ function OnlineTest() {
           <button 
             onClick={() => {
               if (window.confirm("Bhai kya aap sach mein final paper submit karna chahte hain?")) {
-                executeSubmission();
+                executeFinalSubmission();
               }
             }}
             style={{
@@ -413,10 +453,7 @@ function OnlineTest() {
         </div>
       </header>
 
-      {/* Main Body */}
       <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-        
-        {/* Left Question Area */}
         <div style={{
           flex: 1, padding: '15px 20px', overflowY: 'auto',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
@@ -433,7 +470,6 @@ function OnlineTest() {
               {currentQ.q}
             </h5>
 
-            {/* Options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {currentQ.o.map((opt, idx) => {
                 const isSelected = userAnswers[currentQ.id] === idx;
@@ -464,7 +500,6 @@ function OnlineTest() {
             </div>
           </div>
 
-          {/* Navigation Controls */}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '15px', marginTop: '20px' }}>
             <button
               disabled={currentIndex === 0}
@@ -485,7 +520,7 @@ function OnlineTest() {
               <button
                 onClick={() => {
                   if (window.confirm("Bhai saare questions attempt ho gaye? Final paper submit kar dein?")) {
-                    executeSubmission();
+                    executeFinalSubmission();
                   }
                 }}
                 className="btn btn-success btn-sm px-4 rounded-pill fw-bold"
@@ -496,7 +531,6 @@ function OnlineTest() {
           </div>
         </div>
 
-        {/* Right Palette */}
         <div style={{
           width: '280px', backgroundColor: '#ffffff', borderLeft: '2px solid #e2e8f0',
           display: 'flex', flexDirection: 'column', height: '100%',
@@ -541,7 +575,6 @@ function OnlineTest() {
             })}
           </div>
         </div>
-
       </div>
     </div>
   );
