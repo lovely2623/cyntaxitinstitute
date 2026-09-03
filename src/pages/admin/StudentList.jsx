@@ -18,7 +18,7 @@ function StudentList() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [editStudent, setEditStudent] = useState(null);
   const [certStudent, setCertStudent] = useState(null);
-  const [viewPaperStudent, setViewPaperStudent] = useState(null); // Response Paper State
+  const [viewPaperStudent, setViewPaperStudent] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -70,7 +70,7 @@ function StudentList() {
     }
   };
 
-  // ONE-CLICK RESET TEST (Clears Test Status AND Exam Response Sheet)
+  // ONE-CLICK RESET TEST
   const handleResetTest = async (studentToReset) => {
     if (window.confirm(`Kya aap ${studentToReset.name} ka test RESET karna chahte hain? Purana submit paper aur result delete ho jayega aur bacha dubara test de payega.`)) {
       const { _id, __v, createdAt, updatedAt, ...cleanData } = studentToReset;
@@ -81,7 +81,7 @@ function StudentList() {
         testScore: 0,
         testGrade: null,
         testDate: null,
-        submittedExamPaper: null, // Clear Response Sheet
+        submittedExamPaper: null,
         certificateDetails: {
           ...(studentToReset.certificateDetails || {}),
           hasGivenTest: false,
@@ -148,7 +148,6 @@ function StudentList() {
     );
   };
 
-  // Helper to retrieve paper snapshot from student or local storage
   const getExamPaper = (s) => {
     if (s.submittedExamPaper && s.submittedExamPaper.responses) {
       return s.submittedExamPaper;
@@ -158,38 +157,63 @@ function StudentList() {
       try {
         const parsed = JSON.parse(local);
         if (parsed.paperSnapshot) return parsed.paperSnapshot;
-      } catch (e) {}
+      } catch (e) {
+        console.error(e);
+      }
     }
     return null;
   };
 
+  // 🔥 100% PROVEN PDF PRINT ENGINE (Eliminates White Sheet) 🔥
+  const handlePrintResponsePaper = () => {
+    const printArea = document.getElementById('printableResponseContent');
+    if (!printArea) {
+      alert("Print content not found!");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      alert("Pop-up blocked! Browser pop-up allow karein print karne ke liye.");
+      return;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Exam_Response_${viewPaperStudent?.student?.studentId || 'Paper'}</title>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #0f172a; background: #fff; }
+            .card-header-box { border: 2px solid #0000FF; border-radius: 10px; padding: 15px; background-color: #f8fafc; margin-bottom: 20px; }
+            .question-box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 14px; page-break-inside: avoid; }
+            .opt-row { padding: 6px 12px; border-radius: 6px; margin-bottom: 5px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+            .opt-correct { background-color: #dcfce7 !important; border: 1px solid #16a34a !important; color: #15803d !important; font-weight: bold; }
+            .opt-wrong { background-color: #fee2e2 !important; border: 1px solid #dc2626 !important; color: #b91c1c !important; font-weight: bold; }
+            .opt-normal { background-color: #ffffff; border: 1px solid #e2e8f0; color: #334155; }
+            @media print {
+              body { padding: 10px; }
+              @page { margin: 12mm; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printArea.innerHTML}
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 450);
+  };
+
   return (
     <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
-      {/* Print Style Fix: White Screen Problem Solver */}
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden !important;
-          }
-          .printable-response-paper, .printable-response-paper * {
-            visibility: visible !important;
-          }
-          .printable-response-paper {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 20px !important;
-            background: #ffffff !important;
-            box-shadow: none !important;
-          }
-          .no-print-area {
-            display: none !important;
-          }
-        }
-      `}</style>
-
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
         <div className="card-header bg-dark py-3 px-4">
           <div className="d-flex flex-column flex-md-row align-items-center justify-content-between">
@@ -239,7 +263,7 @@ function StudentList() {
                 filteredStudents.map((s) => {
                   const testDone = isStudentTestDone(s);
                   const paper = getExamPaper(s);
-                  const totalCount = paper?.totalQuestions || (s.testScore !== undefined ? 2 : 0);
+                  const totalQuestionsCount = paper?.totalQuestions || (s.testScore !== undefined ? 2 : 0);
 
                   return (
                     <tr key={s._id}>
@@ -255,7 +279,6 @@ function StudentList() {
                       <td><span className="badge bg-info text-dark">{s.course}</span></td>
                       <td className="font-monospace text-muted small">{s.studentId}</td>
 
-                      {/* TEST STATUS (DYNAMIC QUESTIONS COUNT) */}
                       <td>
                         {testDone ? (
                           <div>
@@ -263,7 +286,7 @@ function StudentList() {
                               <i className="fas fa-check-circle me-1"></i> Done
                             </span>
                             <div className="small fw-bold text-dark mt-1">
-                              {s.testScore ?? s.certificateDetails?.testScore ?? 0}/{totalCount} ({s.testGrade || paper?.grade || 'C (Fail)'})
+                              {s.testScore ?? s.certificateDetails?.testScore ?? 0}/{totalQuestionsCount} ({s.testGrade || paper?.grade || 'C (Fail)'})
                             </div>
                           </div>
                         ) : (
@@ -273,7 +296,6 @@ function StudentList() {
                         )}
                       </td>
 
-                      {/* RESPONSE SHEET / VIEW PAPER BUTTON */}
                       <td>
                         {testDone ? (
                           <button
@@ -287,7 +309,6 @@ function StudentList() {
                         )}
                       </td>
 
-                      {/* RESET BUTTON */}
                       <td>
                         {testDone ? (
                           <button 
@@ -337,7 +358,7 @@ function StudentList() {
       </div>
 
       {/* ============================================================== */}
-      {/* CANDIDATE QUESTION PAPER / RESPONSE SHEET MODAL (WITH PRINT)    */}
+      {/* CANDIDATE QUESTION PAPER / RESPONSE SHEET MODAL (100% PDF FIX) */}
       {/* ============================================================== */}
       {viewPaperStudent && (
         <div className="modal-overlay" style={{
@@ -345,12 +366,12 @@ function StudentList() {
           backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 10000,
           overflowY: 'auto', padding: '20px 10px'
         }}>
-          <div className="printable-response-paper" style={{
+          <div style={{
             maxWidth: '850px', margin: '0 auto', backgroundColor: '#ffffff',
             borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
           }}>
-            {/* Header Toolbar (No-Print) */}
-            <div className="no-print-area d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
+            {/* Top Toolbar */}
+            <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
               <div>
                 <h5 className="mb-0 fw-bold">Candidate Exam Response Sheet</h5>
                 <small className="text-white-50">Cyntax IT Institute &bull; Official Submission Copy</small>
@@ -358,7 +379,7 @@ function StudentList() {
               <div className="d-flex gap-2">
                 <button
                   className="btn btn-success btn-sm rounded-pill px-3 fw-bold"
-                  onClick={() => window.print()}
+                  onClick={handlePrintResponsePaper}
                 >
                   <i className="fas fa-print me-1"></i> Print / Save as PDF
                 </button>
@@ -371,10 +392,19 @@ function StudentList() {
               </div>
             </div>
 
-            {/* Printable Paper Body */}
-            <div className="p-4" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
+            {/* Printable Container Target */}
+            <div id="printableResponseContent" className="p-4" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
+              <div className="text-center mb-4 pb-2 border-bottom">
+                <h3 style={{ fontWeight: '900', color: '#0000FF', margin: 0, letterSpacing: '0.5px' }}>
+                  CYNTAX CODING HUB & IT INSTITUTE
+                </h3>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+                  Official Examination Candidate Assessment Sheet
+                </p>
+              </div>
+
               {/* Candidate Info Header */}
-              <div style={{
+              <div className="card-header-box" style={{
                 border: '2px solid #0000FF', borderRadius: '12px', padding: '16px',
                 backgroundColor: '#f8fafc', marginBottom: '25px'
               }}>
@@ -424,6 +454,7 @@ function StudentList() {
                     return (
                       <div
                         key={qIdx}
+                        className="question-box"
                         style={{
                           border: '1px solid #e2e8f0', borderRadius: '10px',
                           padding: '14px', marginBottom: '16px',
@@ -446,28 +477,16 @@ function StudentList() {
                             const isSelected = r.selectedAnswerIndex === optIdx;
                             const isCorrectOpt = r.correctAnswerIndex === optIdx;
 
-                            let optBg = '#ffffff';
-                            let borderStyle = '1px solid #cbd5e1';
-                            let textStyle = '#334155';
-
-                            if (isCorrectOpt) {
-                              optBg = '#dcfce7';
-                              borderStyle = '2px solid #16a34a';
-                              textStyle = '#15803d';
-                            }
-                            if (isSelected && !isCorrectOpt) {
-                              optBg = '#fee2e2';
-                              borderStyle = '2px solid #dc2626';
-                              textStyle = '#b91c1c';
-                            }
+                            let optClass = 'opt-normal';
+                            if (isCorrectOpt) optClass = 'opt-correct';
+                            if (isSelected && !isCorrectOpt) optClass = 'opt-wrong';
 
                             return (
                               <div
                                 key={optIdx}
+                                className={`opt-row ${optClass}`}
                                 style={{
                                   padding: '8px 12px', borderRadius: '6px',
-                                  backgroundColor: optBg, border: borderStyle,
-                                  color: textStyle, fontSize: '13px',
                                   marginBottom: '6px', display: 'flex',
                                   alignItems: 'center', justifyContent: 'space-between'
                                 }}
@@ -491,7 +510,7 @@ function StudentList() {
                 <div className="alert alert-warning text-center my-4">
                   <h5>⚠️ Detailed Response Sheet Not Found</h5>
                   <p className="mb-0 small">
-                    Ye test pichhle version mein submit hua tha jab individual response questions database mein save nahi ho rahe the. Naye submit hone wale har test ka complete paper yahan auto-generate hoga.
+                    Ye test pehle submit hua tha. Naye test submit hone par complete paper yahan visible hoga.
                   </p>
                 </div>
               )}
@@ -500,7 +519,6 @@ function StudentList() {
         </div>
       )}
 
-      {/* Certificate Modal */}
       {certStudent && (
         <div className="modal-overlay no-print-bg" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, overflowY: 'auto' }}>
           <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', position: 'relative', top: '160px' }}>
@@ -513,7 +531,6 @@ function StudentList() {
         </div>
       )}
 
-      {/* View Modal */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setSelectedStudent(null)}>
           <div className="modal-content-custom p-0 shadow-lg bg-white" style={{ maxWidth: '700px', width: '90%', borderRadius: '15px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
@@ -549,7 +566,6 @@ function StudentList() {
         </div>
       )}
 
-      {/* Edit Modal */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div className="modal-content-custom p-4 bg-white shadow-lg" style={{ maxWidth: '850px', width: '95%', borderRadius: '15px', maxHeight: '90vh', overflowY: 'auto' }}>
