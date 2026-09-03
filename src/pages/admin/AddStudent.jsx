@@ -114,12 +114,13 @@ function AddStudent() {
     }
 
     if (!formData.name.trim() || !formData.phone.trim() || !formData.dob.trim()) {
-      alert("Student Name, Mobile Number aur DOB zaroori hain!");
+      alert("Student Name, Mobile Number aur DOB bharna zaroori hai!");
       return;
     }
 
-    if (!formData.aadhaar.trim()) {
-      alert("Aadhaar Number zaroori hai!");
+    const cleanAadhaar = formData.aadhaar.trim();
+    if (!cleanAadhaar) {
+      alert("Aadhaar Number bharna zaroori hai!");
       return;
     }
 
@@ -129,17 +130,14 @@ function AddStudent() {
     );
 
     if (isDuplicate) {
-      alert(`Registration ID "${targetId}" pehle se exist karti hai. Kripya alag roll no daalein.`);
+      alert(`Registration ID "${targetId}" pehle se maujood hai. Kripya alag roll no daalein.`);
       return;
     }
 
     setLoading(true);
 
-    const cleanAadhaar = formData.aadhaar.trim();
-
-    // HAR POSSIBLE KEY VARIATION MEIN SEND KARO TAANKI MONGOOSE KISI BHI CONDITION MEIN DROP NA KARE
+    // EXACT PAYLOAD: Flat + Nested donon keys taaki backend kisi bhi haal mein reject na kare
     const cleanPayload = {
-      // Top Level Universal
       studentId: targetId,
       rollNo: targetId,
       regNo: targetId,
@@ -159,23 +157,35 @@ function AddStudent() {
       address: formData.address.trim() || "N/A",
       photo: formData.photo || "https://via.placeholder.com/150",
 
-      // Aadhaar variations
+      // Har possible Aadhaar field spelling direct top level pe
       aadhaar: cleanAadhaar,
       adaharNumber: cleanAadhaar,
       adharNumber: cleanAadhaar,
       aadharNumber: cleanAadhaar,
+      aadhaarNumber: cleanAadhaar,
+      adahar: cleanAadhaar,
+      adhar: cleanAadhaar,
+      aadhar: cleanAadhaar,
 
-      // Nested wrapper for schema compatibility
+      // Nested details wrapper for schema safety
       details: {
-        email: formData.email.trim(),
-        bloodGroup: formData.bloodGroup,
-        fatherOccupation: formData.fatherOccupation.trim(),
-        familyIncome: formData.familyIncome,
-        qualification: formData.qualification,
-        address: formData.address.trim(),
-        gender: formData.gender,
+        studentId: targetId,
+        name: formData.name.trim(),
+        email: formData.email.trim() || "N/A",
+        bloodGroup: formData.bloodGroup || "Unknown",
+        fatherOccupation: formData.fatherOccupation.trim() || "N/A",
+        fatherName: formData.fatherName.trim() || "N/A",
+        motherName: formData.motherName.trim() || "N/A",
+        familyIncome: formData.familyIncome || "Below 1 Lakh",
+        qualification: formData.qualification || "12th Pass",
+        address: formData.address.trim() || "N/A",
+        gender: formData.gender || "Male",
+        dob: formData.dob.trim(),
+        phone: formData.phone.trim(),
         aadhaar: cleanAadhaar,
-        adaharNumber: cleanAadhaar
+        adaharNumber: cleanAadhaar,
+        adharNumber: cleanAadhaar,
+        aadharNumber: cleanAadhaar
       },
 
       hasGivenTest: false,
@@ -197,14 +207,14 @@ function AddStudent() {
       const responseData = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        alert(`Success! Student "${cleanPayload.name}" ka admission confirm ho gaya.\nID: ${cleanPayload.studentId}`);
+        alert(`Success! Student "${cleanPayload.name}" ka admission ho gaya.\nID: ${cleanPayload.studentId}`);
         localStorage.removeItem("cyntax_cached_students_list");
         window.location.reload();
       } else {
         alert(`Registration Fail: ${responseData.message || responseData.error || "Server validation error"}`);
       }
     } catch (error) {
-      alert("Server connection fail! Internet check karein.");
+      alert("Server connection fail! Internet connection check karein.");
     } finally {
       setLoading(false);
     }
@@ -336,7 +346,7 @@ function AddStudent() {
                 <input 
                   type="text" 
                   className="custom-form-input border-danger font-monospace" 
-                  placeholder="12-digit Aadhaar"
+                  placeholder="12-digit Aadhaar Number"
                   maxLength="12"
                   value={formData.aadhaar}
                   onChange={(e) => setFormData({ ...formData, aadhaar: e.target.value.replace(/[^0-9]/g, '') })}

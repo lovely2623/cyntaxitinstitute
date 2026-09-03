@@ -43,7 +43,7 @@ function StudentList() {
     fetchStudents();
   }, [fetchStudents]);
 
-  // Deep Resolver: Agar database me data root me ho ya details me ho, ye har jagah se nikaal lega
+  // COMPLETE MULTI-LAYER PARSER: Root aur Details object dono scan karega
   const parseStudent = useCallback((s) => {
     if (!s) return {};
     const d = s.details || s.additionalDetails || {};
@@ -60,22 +60,15 @@ function StudentList() {
 
     const regId = (s.studentId || s.rollNo || s.regNo || d.studentId || d.rollNo || "").toString().trim();
     
-    // Aadhaar scan
+    // Aadhaar scan from all possible variations
     const aadhaarVal = (
-      s.aadhaar || s.adaharNumber || s.adharNumber || s.aadharNumber || s.aadhaarNumber ||
-      d.aadhaar || d.adaharNumber || d.adharNumber || d.aadharNumber || d.aadhaarNumber || ""
+      s.aadhaar || s.adaharNumber || s.adharNumber || s.aadharNumber || s.aadhaarNumber || s.adahar || s.adhar || s.aadhar ||
+      d.aadhaar || d.adaharNumber || d.adharNumber || d.aadharNumber || d.aadhaarNumber || d.adahar || d.adhar || d.aadhar || ""
     ).toString().trim();
 
-    // Email scan
     const emailVal = (s.email || d.email || "").toString().trim();
-
-    // Father Occupation scan
     const fatherOccupationVal = (s.fatherOccupation || d.fatherOccupation || "").toString().trim();
-
-    // Blood Group scan
     const bloodGroupVal = (s.bloodGroup || d.bloodGroup || "Unknown").toString().trim();
-
-    // Income & Qualification
     const familyIncomeVal = (s.familyIncome || d.familyIncome || "Below 1 Lakh").toString().trim();
     const qualificationVal = (s.qualification || d.qualification || "12th Pass").toString().trim();
     const addressVal = (s.address || d.address || "").toString().trim();
@@ -204,6 +197,7 @@ function StudentList() {
       courseDuration: editStudent.courseDuration,
       details: {
         ...(editStudent.details || {}),
+        studentId: regId,
         aadhaar: aadhaarVal,
         adaharNumber: aadhaarVal,
         fatherOccupation: editStudent.fatherOccupation.trim(),
@@ -368,7 +362,9 @@ function StudentList() {
                       </td>
                       <td className="text-center pe-4">
                         <div className="btn-group">
+                          {/* VIEW: Deep Parsed Student */}
                           <button className="btn btn-sm btn-outline-primary" title="View Biodata" onClick={() => setSelectedStudent(parseStudent(raw))}><i className="fas fa-eye"></i></button>
+                          {/* EDIT: Deep Parsed Student */}
                           <button className="btn btn-sm btn-outline-warning" title="Edit Student" onClick={() => setEditStudent(parseStudent(raw))}><i className="fas fa-edit"></i></button>
                           <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(raw._id)}><i className="fas fa-trash"></i></button>
                           <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(raw)}><i className="fas fa-certificate text-dark"></i></button>
@@ -385,7 +381,7 @@ function StudentList() {
         </div>
       </div>
 
-      {/* VIEW MODAL (100% Resolved Data) */}
+      {/* VIEW MODAL (Accurate Deep Resolved Info) */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setSelectedStudent(null)}>
           <div className="modal-content-custom bg-white shadow-lg" style={{ maxWidth: '850px', width: '95%', borderRadius: '18px', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
@@ -431,7 +427,7 @@ function StudentList() {
         </div>
       )}
 
-      {/* EDIT MODAL (Pre-Filled & Editable) */}
+      {/* EDIT MODAL (All Fields Pre-Filled & Editable) */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className="modal-content-custom p-4 bg-white shadow-lg" style={{ maxWidth: '900px', width: '95%', borderRadius: '18px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -502,7 +498,7 @@ function StudentList() {
                   </select>
                 </div>
 
-                <div className="col-12 mt-3"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Family Background & Occupation</h6></div>
+                <div className="col-12 mt-3"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Family Background & Socio-Economic</h6></div>
                 <div className="col-md-6">
                   <label className="small fw-bold">Father's Name</label>
                   <input type="text" className="form-control" value={editStudent.fatherName || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
@@ -527,21 +523,86 @@ function StudentList() {
                   <textarea className="form-control" rows="2" value={editStudent.address || ""} onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })}></textarea>
                 </div>
 
-                <div className="col-12 mt-3"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Examination Status Override</h6></div>
-                <div className="col-md-4">
-                  <label className="small fw-bold">Test Status</label>
-                  <select className="form-select" value={isTestDone(editStudent) ? "yes" : "no"} onChange={(e) => setEditStudent({ ...editStudent, hasGivenTest: e.target.value === "yes" })}>
-                    <option value="no">Allow Test (Pending)</option>
-                    <option value="yes">Block Test (Done)</option>
-                  </select>
-                </div>
-
                 <div className="col-12 mt-4 text-end border-top pt-3">
                   <button type="button" className="btn btn-light me-2 px-4 rounded-pill" onClick={() => setEditStudent(null)}>Cancel</button>
                   <button type="submit" className="btn btn-warning px-5 fw-bold rounded-pill shadow-sm">Save All Changes</button>
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* RESPONSE SHEET MODAL */}
+      {viewPaperStudent && (() => {
+        const stats = calculateScore(viewPaperStudent.paper, viewPaperStudent.student);
+        return (
+          <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 10000, overflowY: 'auto', padding: '20px 10px' }}>
+            <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: '#ffffff', borderRadius: '16px', overflow: 'hidden' }}>
+              <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
+                <h5 className="mb-0 fw-bold">Candidate Exam Response Sheet</h5>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-success btn-sm rounded-pill px-3 fw-bold" onClick={handlePrint}><i className="fas fa-print me-1"></i> Print PDF</button>
+                  <button className="btn btn-light btn-sm rounded-pill px-3 fw-bold" onClick={() => setViewPaperStudent(null)}>✕ Close</button>
+                </div>
+              </div>
+              <div id="printableResponseContent" className="p-4" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
+                <div className="text-center mb-4 pb-2 border-bottom">
+                  <h3 style={{ fontWeight: '900', color: '#0000FF', margin: 0 }}>CYNTAX CODING HUB & IT INSTITUTE</h3>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Candidate Assessment Sheet</p>
+                </div>
+                <div className="card-header-box" style={{ border: '2px solid #0000FF', borderRadius: '12px', padding: '16px', backgroundColor: '#f8fafc', marginBottom: '25px' }}>
+                  <div className="row g-2">
+                    <div className="col-sm-6"><span className="text-muted small d-block">Candidate:</span><strong className="fs-6 text-primary">{viewPaperStudent.student.name}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Roll No:</span><strong className="fs-6 font-monospace">{viewPaperStudent.student.studentId}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Course:</span><strong>{viewPaperStudent.student.course}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Date:</span><strong>{viewPaperStudent.paper?.submittedAt || viewPaperStudent.student.testDate || 'Recorded'}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Score:</span><span className={`badge ${stats.grade === 'Fail' ? 'bg-danger' : 'bg-success'} fs-6`}>{stats.correct} / {stats.total}</span></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Grade:</span><span className={`badge ${stats.grade === 'Fail' ? 'bg-danger' : 'bg-primary'} fs-6`}>{stats.grade}</span></div>
+                  </div>
+                </div>
+                {viewPaperStudent.paper?.responses?.length ? (
+                  viewPaperStudent.paper.responses.map((r, qIdx) => {
+                    const isAttempted = r.selectedAnswerIndex !== null && r.selectedAnswerIndex !== undefined;
+                    const isCorrect = isAttempted && (r.status === 'correct' || Number(r.selectedAnswerIndex) === Number(r.correctAnswerIndex));
+                    return (
+                      <div key={qIdx} className="question-box" style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', marginBottom: '16px', backgroundColor: isCorrect ? '#f0fdf4' : !isAttempted ? '#f8fafc' : '#fef2f2', pageBreakInside: 'avoid' }}>
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <span className="fw-bold">Q{r.qIndex}. {r.questionText}</span>
+                          <span className={`badge ${isCorrect ? 'bg-success' : !isAttempted ? 'bg-secondary' : 'bg-danger'} ms-2`}>{isCorrect ? 'Correct (+1)' : !isAttempted ? 'Unattempted (0)' : 'Incorrect (0)'}</span>
+                        </div>
+                        <div className="mt-2 ms-2">
+                          {r.options.map((opt, optIdx) => {
+                            const isSelected = Number(r.selectedAnswerIndex) === optIdx;
+                            const isCorrectOpt = Number(r.correctAnswerIndex) === optIdx;
+                            const optClass = isCorrectOpt ? 'opt-correct' : isSelected ? 'opt-wrong' : 'opt-normal';
+                            return (
+                              <div key={optIdx} className={`opt-row ${optClass}`} style={{ padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
+                                <span><b>{String.fromCharCode(65 + optIdx)}.</b> {opt}</span>
+                                <span>{isSelected && <span className="badge bg-dark ms-2">Candidate's Choice</span>}{isCorrectOpt && <span className="badge bg-success ms-2">✓ Correct Answer</span>}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : <div className="alert alert-warning text-center">Detailed Paper Not Found</div>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Certificate Modal */}
+      {certStudent && (
+        <div className="modal-overlay no-print-bg" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, overflowY: 'auto' }}>
+          <div className="modal-content-custom bg-white mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', position: 'relative', top: '160px' }}>
+            <div className="no-print d-flex justify-content-between align-items-center p-3 border-bottom bg-dark text-white rounded-top-4">
+              <h5 className="mb-0 fw-bold">Certificate Portal</h5>
+              <button className="btn-close btn-close-white" onClick={() => setCertStudent(null)}></button>
+            </div>
+            <Certificate preFillData={certStudent} onSuccess={() => { fetchStudents(); setCertStudent(null); }} />
           </div>
         </div>
       )}
