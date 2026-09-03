@@ -20,6 +20,7 @@ import StudentList from './pages/admin/StudentList';
 import AddStudent from './pages/admin/AddStudent';
 import ManageContent from './pages/admin/ManageContent';
 import Certificate from './pages/admin/Certificate';
+import ManageQuestions from './pages/admin/ManageQuestions';
 
 // --- SCROLL TO TOP LOGIC ---
 const ScrollToTop = () => {
@@ -93,6 +94,7 @@ function App() {
 
           {/* ADMIN PANEL ROUTES */}
           <Route path="/online-test" element={<OnlineTest />} />
+          <Route path="ManageQuestions" element={<ManageQuestions />} />
           <Route path="/AdminLayout" element={<AdminLayout />}>
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="StudentList" element={<StudentList />} />

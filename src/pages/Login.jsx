@@ -41,13 +41,12 @@ function Login() {
   const handleStudentLogin = async (e) => {
     e.preventDefault();
     if (!rollNo.trim() || !studentPassword.trim()) {
-      alert("Roll Number aur Password dono enter karein!");
+      alert("Roll Number aur Password (DOB) dono enter karein!");
       return;
     }
 
     setLoading(true);
     try {
-      // Direct student verification with existing database records
       const response = await fetch(`${BASE_URL}/api/students`, { cache: 'no-cache' });
       const students = await response.json();
 
@@ -61,26 +60,35 @@ function Login() {
         return;
       }
 
-      // Password Check: Agar student ka password save nahi hai toh phone ke aakhri 4 digit ya custom check
-      const validPassword = matchedStudent.password || String(matchedStudent.phone).slice(-4) || "1234";
-      if (studentPassword.trim() !== validPassword && studentPassword.trim() !== "123456") {
-        alert("Password galat hai! Apna sahi password daalein.");
+      // DOB Verification: Supports YYYY-MM-DD, DD-MM-YYYY, or DDMMYYYY format
+      const enteredPass = studentPassword.trim().replace(/[^0-9]/g, '');
+      const rawDob = (matchedStudent.dob || '').trim();
+      const cleanDob = rawDob.replace(/[^0-9]/g, '');
+
+      const isDobMatched = cleanDob && (
+        studentPassword.trim() === rawDob || 
+        enteredPass === cleanDob ||
+        enteredPass === cleanDob.split('').reverse().join('')
+      );
+
+      // Master bypass 123456 for testing purposes
+      if (!isDobMatched && studentPassword.trim() !== "123456") {
+        alert("Galat Password! Password aapki Date of Birth (DOB) hai.");
         setLoading(false);
         return;
       }
 
       if (matchedStudent.hasGivenTest) {
-        alert(`Aap pehle hi test de chuke hain! Score: ${matchedStudent.testScore || 0}/50`);
+        alert(`Aap pehle hi test de chuke hain! Marks: ${matchedStudent.testScore || 0}/50`);
         setLoading(false);
         return;
       }
 
-      // Active Exam Session save
       sessionStorage.setItem('activeExamStudent', JSON.stringify(matchedStudent));
       navigate('/online-test');
     } catch (err) {
       console.error(err);
-      alert("Server se connection fail ho gaya! Dobara prayas karein.");
+      alert("Server connection fail! Thodi der baad dubara try karein.");
     } finally {
       setLoading(false);
     }
@@ -98,14 +106,14 @@ function Login() {
           {!isAdmin ? (
             <div className="auth-section text-center">
               <i className="fas fa-user-graduate fa-3x text-primary mb-3"></i>
-              <h3 className="fw-bold">Student Portal</h3>
-              <p className="text-muted small">Apna Roll Number aur Password daal kar test shuru karein.</p>
+              <h3 className="fw-bold">Student Exam Portal</h3>
+              <p className="text-muted small">Apna Roll Number aur Password (DOB) daalein.</p>
               
               <form onSubmit={handleStudentLogin}>
                 <input 
                   type="text" 
                   className="form-control rounded-pill mb-3 py-2 text-center" 
-                  placeholder="Roll Number (e.g. CYN-1234)" 
+                  placeholder="Roll Number (e.g. CYN-101)" 
                   value={rollNo}
                   onChange={(e) => setRollNo(e.target.value)}
                   required
@@ -114,7 +122,7 @@ function Login() {
                 <input 
                   type="password" 
                   className="form-control rounded-pill mb-3 py-2 text-center" 
-                  placeholder="Exam Password" 
+                  placeholder="Password (DOB e.g. 2002-11-04)" 
                   value={studentPassword}
                   onChange={(e) => setStudentPassword(e.target.value)}
                   required
@@ -122,10 +130,10 @@ function Login() {
                 
                 <button 
                   type="submit" 
-                  className="btn btn-primary w-100 rounded-pill py-2 shadow-sm"
+                  className="btn btn-primary w-100 rounded-pill py-2 shadow-sm fw-bold"
                   disabled={loading}
                 >
-                  {loading ? "Checking Database..." : "Verify & Start Test 🚀"}
+                  {loading ? "Verifying..." : "Verify & Launch Exam 🚀"}
                 </button>
               </form>
             </div>
@@ -164,7 +172,7 @@ function Login() {
                 ></i>
               </div>
 
-              <button className="btn btn-dark w-100 rounded-pill py-2 mb-2 shadow" onClick={handleAdminLogin}>
+              <button className="btn btn-dark w-100 rounded-pill py-2 mb-2 shadow fw-bold" onClick={handleAdminLogin}>
                 Verify & Enter Dashboard
               </button>
             </div>
