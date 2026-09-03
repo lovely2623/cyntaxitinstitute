@@ -10,9 +10,11 @@ function StudentList() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const BASE_URL = "https://cyntaxitinstitute.onrender.com";
+
   const fetchStudents = useCallback(async () => {
     try {
-      const response = await fetch('https://cyntaxitinstitute.onrender.com/api/students', {
+      const response = await fetch(`${BASE_URL}/api/students`, {
         cache: 'no-cache'
       });
       const data = await response.json();
@@ -22,7 +24,7 @@ function StudentList() {
       console.error("Error fetching students:", error);
       setLoading(false);
     }
-  }, []);
+  }, [BASE_URL]);
 
   useEffect(() => {
     fetchStudents();
@@ -37,7 +39,7 @@ function StudentList() {
       const originalStudents = [...students];
       setStudents(students.filter(s => s._id !== id));
       try {
-        const res = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${BASE_URL}/api/students/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error();
       } catch (error) {
         setStudents(originalStudents);
@@ -46,19 +48,30 @@ function StudentList() {
     }
   };
 
-  // 🔥 ONE-CLICK RESET TEST FUNCTION 🔥
+  // ONE-CLICK RESET TEST FUNCTION (Database + LocalStorage Sync)
   const handleResetTest = async (studentToReset) => {
     if (window.confirm(`Kya aap ${studentToReset.name} ka test RESET karna chahte hain? Bacha dubara test de payega.`)) {
+      // MongoDB immutable fields strip karein
+      const { _id, __v, createdAt, updatedAt, ...cleanData } = studentToReset;
+
       const resetPayload = {
-        ...studentToReset,
+        ...cleanData,
         hasGivenTest: false,
         testScore: 0,
         testGrade: null,
-        testDate: null
+        testDate: null,
+        certificateDetails: {
+          ...(studentToReset.certificateDetails || {}),
+          hasGivenTest: false,
+          testScore: 0
+        }
       };
 
       try {
-        const res = await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${studentToReset._id}`, {
+        // Local backup clear karein
+        localStorage.removeItem(`cyntax_test_done_${studentToReset.studentId}`);
+
+        const res = await fetch(`${BASE_URL}/api/students/${studentToReset._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(resetPayload)
@@ -66,12 +79,12 @@ function StudentList() {
 
         if (res.ok) {
           alert(`${studentToReset.name} ka test reset ho gaya! Status ab 'Pending' hai.`);
-          setStudents(prev => prev.map(s => s._id === studentToReset._id ? resetPayload : s));
+          setStudents(prev => prev.map(s => s._id === studentToReset._id ? { ...s, ...resetPayload, _id: studentToReset._id } : s));
         } else {
-          alert("Reset fail hua!");
+          alert("Reset fail hua! Server ne request accept nahi ki.");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Reset error:", err);
         alert("Server error aayi hai reset ke time.");
       }
     }
@@ -79,19 +92,36 @@ function StudentList() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    const updatedData = editStudent;
-    setStudents(prev => prev.map(s => s._id === updatedData._id ? updatedData : s));
+    const { _id, __v, createdAt, updatedAt, ...cleanUpdateData } = editStudent;
+
+    const originalStudents = [...students];
+    setStudents(prev => prev.map(s => s._id === _id ? editStudent : s));
+    const targetId = _id;
     setEditStudent(null);
+
     try {
-      await fetch(`https://cyntaxitinstitute.onrender.com/api/students/${updatedData._id}`, {
+      const res = await fetch(`${BASE_URL}/api/students/${targetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData)
+        body: JSON.stringify(cleanUpdateData)
       });
+      if (!res.ok) throw new Error();
+      fetchStudents();
     } catch (error) {
       alert("Update fail!");
-      fetchStudents();
+      setStudents(originalStudents);
     }
+  };
+
+  // Helper check: Test Done ya Pending
+  const isStudentTestDone = (s) => {
+    return (
+      s.hasGivenTest === true ||
+      s.hasGivenTest === "yes" ||
+      s.hasGivenTest === "true" ||
+      s.certificateDetails?.hasGivenTest === true ||
+      !!localStorage.getItem(`cyntax_test_done_${s.studentId}`)
+    );
   };
 
   if (loading) return <div className="text-center p-5"><h4>🔄 Loading Cyntax Records...</h4></div>;
@@ -133,74 +163,77 @@ function StudentList() {
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.map((s) => (
-                <tr key={s._id}>
-                  <td className="ps-4">
-                    <div className="d-flex align-items-center">
-                      <img src={s.photo || 'https://via.placeholder.com/45'} alt="" className="rounded-circle border me-3" style={{ width: '45px', height: '45px', objectFit: 'cover' }} />
-                      <div>
-                        <div className="fw-bold">{s.name}</div>
-                        <small className="text-muted">{s.phone}</small>
-                      </div>
-                    </div>
-                  </td>
-                  <td><span className="badge bg-info text-dark">{s.course}</span></td>
-                  <td className="font-monospace text-muted small">{s.studentId}</td>
-
-                  {/* TEST STATUS (DONE / PENDING) */}
-                  <td>
-                    {s.hasGivenTest ? (
-                      <div>
-                        <span className="badge bg-success text-white px-2 py-1">
-                          <i className="fas fa-check-circle me-1"></i> Done
-                        </span>
-                        <div className="small fw-bold text-dark mt-1">
-                          {s.testScore}/50 ({s.testGrade})
+              {filteredStudents.map((s) => {
+                const testDone = isStudentTestDone(s);
+                return (
+                  <tr key={s._id}>
+                    <td className="ps-4">
+                      <div className="d-flex align-items-center">
+                        <img src={s.photo || 'https://via.placeholder.com/45'} alt="" className="rounded-circle border me-3" style={{ width: '45px', height: '45px', objectFit: 'cover' }} />
+                        <div>
+                          <div className="fw-bold">{s.name}</div>
+                          <small className="text-muted">{s.phone}</small>
                         </div>
                       </div>
-                    ) : (
-                      <span className="badge bg-warning text-dark px-2 py-1">
-                        <i className="fas fa-clock me-1"></i> Pending
-                      </span>
-                    )}
-                  </td>
+                    </td>
+                    <td><span className="badge bg-info text-dark">{s.course}</span></td>
+                    <td className="font-monospace text-muted small">{s.studentId}</td>
 
-                  {/* RESET BUTTON */}
-                  <td>
-                    {s.hasGivenTest ? (
-                      <button 
-                        className="btn btn-sm btn-outline-danger rounded-pill fw-bold"
-                        onClick={() => handleResetTest(s)}
-                        title="Re-attempt test allow karein"
-                      >
-                        <i className="fas fa-redo-alt me-1"></i> Reset
-                      </button>
-                    ) : (
-                      <span className="text-muted small">Not required</span>
-                    )}
-                  </td>
+                    {/* TEST STATUS (DONE / PENDING) */}
+                    <td>
+                      {testDone ? (
+                        <div>
+                          <span className="badge bg-success text-white px-2 py-1">
+                            <i className="fas fa-check-circle me-1"></i> Done
+                          </span>
+                          <div className="small fw-bold text-dark mt-1">
+                            {s.testScore ?? s.certificateDetails?.testScore ?? 0}/50 ({s.testGrade || 'A'})
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="badge bg-warning text-dark px-2 py-1">
+                          <i className="fas fa-clock me-1"></i> Pending
+                        </span>
+                      )}
+                    </td>
 
-                  <td>
-                    {s.isCertificateIssued ? (
-                      <span className="badge bg-success-subtle text-success border border-success-subtle px-3" style={{cursor: 'pointer'}} onClick={() => setCertStudent(s)}>
-                        <i className="fas fa-check-circle me-1"></i> Yes (View)
-                      </span>
-                    ) : (
-                      <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-3">
-                        <i className="fas fa-times-circle me-1"></i> No
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-center pe-4">
-                    <div className="btn-group">
-                      <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedStudent(s)}><i className="fas fa-eye"></i></button>
-                      <button className="btn btn-sm btn-outline-warning" onClick={() => setEditStudent(s)}><i className="fas fa-edit"></i></button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)}><i className="fas fa-trash"></i></button>
-                      <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)}><i className="fas fa-certificate text-dark"></i></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    {/* RESET BUTTON */}
+                    <td>
+                      {testDone ? (
+                        <button 
+                          className="btn btn-sm btn-outline-danger rounded-pill fw-bold"
+                          onClick={() => handleResetTest(s)}
+                          title="Re-attempt test allow karein"
+                        >
+                          <i className="fas fa-redo-alt me-1"></i> Reset
+                        </button>
+                      ) : (
+                        <span className="text-muted small">Not required</span>
+                      )}
+                    </td>
+
+                    <td>
+                      {s.isCertificateIssued ? (
+                        <span className="badge bg-success-subtle text-success border border-success-subtle px-3" style={{cursor: 'pointer'}} onClick={() => setCertStudent(s)}>
+                          <i className="fas fa-check-circle me-1"></i> Yes (View)
+                        </span>
+                      ) : (
+                        <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-3">
+                          <i className="fas fa-times-circle me-1"></i> No
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center pe-4">
+                      <div className="btn-group">
+                        <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedStudent(s)}><i className="fas fa-eye"></i></button>
+                        <button className="btn btn-sm btn-outline-warning" onClick={() => setEditStudent(s)}><i className="fas fa-edit"></i></button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(s._id)}><i className="fas fa-trash"></i></button>
+                        <button className="btn btn-sm btn-outline-dark" onClick={() => setCertStudent(s)}><i className="fas fa-certificate text-dark"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -241,10 +274,10 @@ function StudentList() {
                     <div className="col-6"><small className="text-muted d-block">Phone Number</small><strong>{selectedStudent.phone}</strong></div>
                     <div className="col-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob}</strong></div>
                     <div className="col-12"><small className="text-muted d-block">Course</small><strong className="text-primary">{selectedStudent.course}</strong></div>
-                    {selectedStudent.hasGivenTest && (
+                    {isStudentTestDone(selectedStudent) && (
                       <div className="col-12 p-2 bg-light rounded">
                         <small className="text-muted d-block">Exam Result</small>
-                        <strong className="text-success">{selectedStudent.testScore} / 50 (Grade: {selectedStudent.testGrade}) on {selectedStudent.testDate}</strong>
+                        <strong className="text-success">{selectedStudent.testScore ?? 0} / 50 (Grade: {selectedStudent.testGrade || 'A'}) on {selectedStudent.testDate || 'Completed'}</strong>
                       </div>
                     )}
                   </div>
@@ -283,7 +316,7 @@ function StudentList() {
                 </div>
                 <div className="col-md-4">
                   <label className="small fw-bold">Reset Test Attempt</label>
-                  <select className="form-select" value={editStudent.hasGivenTest ? "yes" : "no"} onChange={(e) => setEditStudent({ ...editStudent, hasGivenTest: e.target.value === "yes" })}>
+                  <select className="form-select" value={isStudentTestDone(editStudent) ? "yes" : "no"} onChange={(e) => setEditStudent({ ...editStudent, hasGivenTest: e.target.value === "yes" })}>
                     <option value="no">Allow Test (Pending)</option>
                     <option value="yes">Block Test (Done)</option>
                   </select>

@@ -38,42 +38,29 @@ function Login() {
     }
   };
 
-  // Helper: Date of Birth matching engine
   const checkDobMatch = (dbDobRaw, userPassRaw) => {
     if (!dbDobRaw || !userPassRaw) return false;
-
     const inputClean = String(userPassRaw).trim();
     const inputDigits = inputClean.replace(/[^0-9]/g, '');
 
-    // Master Bypass for urgent login/testing
     if (inputClean === "123456") return true;
 
-    // Direct Exact String Match
     const dbClean = String(dbDobRaw).trim();
     if (inputClean.toLowerCase() === dbClean.toLowerCase()) return true;
 
-    // ISO timestamp clean (e.g., "2004-11-04T00:00:00.000Z" -> "2004-11-04")
     const normalizedDb = dbClean.split('T')[0];
     if (inputClean === normalizedDb) return true;
 
-    // Extract Day, Month, Year from Database
     let d = '', m = '', y = '';
     const parts = normalizedDb.split(/[-/.]/);
 
     if (parts.length === 3) {
       if (parts[0].length === 4) {
-        // Format: YYYY-MM-DD
-        y = parts[0];
-        m = parts[1];
-        d = parts[2];
+        y = parts[0]; m = parts[1]; d = parts[2];
       } else {
-        // Format: DD-MM-YYYY
-        d = parts[0];
-        m = parts[1];
-        y = parts[2];
+        d = parts[0]; m = parts[1]; y = parts[2];
       }
     } else {
-      // Direct 8 digit string in DB (YYYYMMDD or DDMMYYYY)
       const digitsOnlyDb = dbClean.replace(/[^0-9]/g, '');
       if (digitsOnlyDb === inputDigits) return true;
       if (digitsOnlyDb.length === 8) {
@@ -90,20 +77,19 @@ function Login() {
       const mSingle = String(parseInt(m, 10));
 
       const matchPatterns = [
-        `${dPadded}${mPadded}${y}`,       // 04112004
-        `${y}${mPadded}${dPadded}`,       // 20041104
-        `${dSingle}${mSingle}${y}`,       // 4112004
-        `${dPadded}-${mPadded}-${y}`,     // 04-11-2004
-        `${dPadded}/${mPadded}/${y}`,     // 04/11/2004
-        `${y}-${mPadded}-${dPadded}`,     // 2004-11-04
-        `${y}/${mPadded}/${dPadded}`      // 2004/11/04
+        `${dPadded}${mPadded}${y}`,
+        `${y}${mPadded}${dPadded}`,
+        `${dSingle}${mSingle}${y}`,
+        `${dPadded}-${mPadded}-${y}`,
+        `${dPadded}/${mPadded}/${y}`,
+        `${y}-${mPadded}-${dPadded}`,
+        `${y}/${mPadded}/${dPadded}`
       ];
 
       if (matchPatterns.includes(inputClean) || matchPatterns.includes(inputDigits)) {
         return true;
       }
     }
-
     return false;
   };
 
@@ -119,7 +105,6 @@ function Login() {
       const response = await fetch(`${BASE_URL}/api/students`, { cache: 'no-cache' });
       const students = await response.json();
 
-      // Find student by case-insensitive Reg ID / Roll Number
       const matchedStudent = students.find(
         (s) => s.studentId && s.studentId.trim().toUpperCase() === rollNo.trim().toUpperCase()
       );
@@ -130,34 +115,37 @@ function Login() {
         return;
       }
 
-      // Check if student already gave the test
-      if (matchedStudent.hasGivenTest === true) {
-        alert(`Sorry ${matchedStudent.name}! Aap pehle hi test de chuke hain.\nAapka Score: ${matchedStudent.testScore || 0}/50 (Grade: ${matchedStudent.testGrade || 'N/A'})`);
-        setLoading(false);
-        return;
-      }
+      // 🔥 BULLETPROOF RE-LOGIN BLOCK CHECK 🔥
+      const localData = localStorage.getItem(`cyntax_test_done_${matchedStudent.studentId}`);
+      const isAlreadyGiven = 
+        matchedStudent.hasGivenTest === true ||
+        matchedStudent.hasGivenTest === "yes" ||
+        matchedStudent.hasGivenTest === "true" ||
+        matchedStudent.certificateDetails?.hasGivenTest === true ||
+        !!localData;
 
-      // Console logging for verification
-      console.log("DB DOB:", matchedStudent.dob);
-      console.log("Entered Password:", studentPassword);
-
-      const isValidPassword = checkDobMatch(matchedStudent.dob, studentPassword);
-
-      if (!isValidPassword) {
+      if (isAlreadyGiven) {
         alert(
-          `Galat Password!\nPassword aapki Date of Birth (DOB) hai jo admission form me dali thi.\nExample: DDMMYYYY (jaise 04112004) ya YYYY-MM-DD (jaise 2004-11-04)`
+          `🛑 Access Denied!\nDear ${matchedStudent.name}, aap already apna online test submit kar chuke hain.\nDubara test attempt karna allowed nahi hai!`
         );
         setLoading(false);
         return;
       }
 
-      // Success: Save active session and start test
+      const isValidPassword = checkDobMatch(matchedStudent.dob, studentPassword);
+
+      if (!isValidPassword) {
+        alert(`Galat Password!\nPassword aapki Date of Birth (DOB) hai jo admission form me dali thi.\nExample: DDMMYYYY ya YYYY-MM-DD`);
+        setLoading(false);
+        return;
+      }
+
       sessionStorage.setItem('activeExamStudent', JSON.stringify(matchedStudent));
       navigate('/online-test');
 
     } catch (err) {
       console.error("Login verification error:", err);
-      alert("Server se connection nahi ho paa raha hai! Render backend active hai ya nahi check karein.");
+      alert("Server connection fail! Dobara prayas karein.");
     } finally {
       setLoading(false);
     }
