@@ -21,6 +21,7 @@ function StudentList() {
   const [viewPaperStudent, setViewPaperStudent] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState("ALL"); // Year Filter State
 
   const fetchStudents = useCallback(async () => {
     setIsSyncing(true);
@@ -42,15 +43,46 @@ function StudentList() {
     fetchStudents();
   }, [fetchStudents]);
 
+  // Extract all available years from Student IDs (e.g. CYN-2601 -> 2026)
+  const availableYears = useMemo(() => {
+    const yearsSet = new Set();
+    students.forEach(s => {
+      if (s.studentId && s.studentId.includes("CYN-")) {
+        const yearPart = s.studentId.split("CYN-")[1]?.substring(0, 2);
+        if (yearPart && !isNaN(yearPart)) {
+          yearsSet.add(`20${yearPart}`);
+        }
+      } else if (s.createdAt) {
+        const y = new Date(s.createdAt).getFullYear();
+        if (y) yearsSet.add(y.toString());
+      }
+    });
+    // Default current year include rakhein
+    yearsSet.add(new Date().getFullYear().toString());
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [students]);
+
+  // Combined Search + Year Filter
   const filteredStudents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return students;
-    return students.filter(s =>
-      (s.name && s.name.toLowerCase().includes(term)) ||
-      (s.studentId && s.studentId.toLowerCase().includes(term)) ||
-      (s.phone && String(s.phone).includes(term))
-    );
-  }, [students, searchTerm]);
+    return students.filter(s => {
+      // 1. Year Filter Check
+      if (selectedYear !== "ALL") {
+        const shortYear = selectedYear.slice(-2);
+        const matchId = s.studentId && s.studentId.toUpperCase().includes(`CYN-${shortYear}`);
+        const matchCreated = s.createdAt && new Date(s.createdAt).getFullYear().toString() === selectedYear;
+        if (!matchId && !matchCreated) return false;
+      }
+
+      // 2. Search Filter Check
+      if (!term) return true;
+      return (
+        (s.name && s.name.toLowerCase().includes(term)) ||
+        (s.studentId && s.studentId.toLowerCase().includes(term)) ||
+        (s.phone && String(s.phone).includes(term))
+      );
+    });
+  }, [students, searchTerm, selectedYear]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Bhai, pakka delete karna hai? Ye data wapas nahi aayega!")) {
@@ -70,7 +102,6 @@ function StudentList() {
     }
   };
 
-  // ONE-CLICK RESET TEST
   const handleResetTest = async (studentToReset) => {
     if (window.confirm(`Kya aap ${studentToReset.name} ka test RESET karna chahte hain? Purana submit paper aur result delete ho jayega aur bacha dubara test de payega.`)) {
       const { _id, __v, createdAt, updatedAt, ...cleanData } = studentToReset;
@@ -164,7 +195,6 @@ function StudentList() {
     return null;
   };
 
-  // 🔥 ACCURATE SCORE & GRADE CALCULATOR (Responses Array Verification) 🔥
   const calculateAccurateStats = (paper, studentRecord) => {
     if (paper && Array.isArray(paper.responses) && paper.responses.length > 0) {
       const total = paper.responses.length;
@@ -172,7 +202,6 @@ function StudentList() {
 
       paper.responses.forEach(r => {
         const isAttempted = r.selectedAnswerIndex !== null && r.selectedAnswerIndex !== undefined;
-        // Direct matching of selected vs correct index or status flag
         if (isAttempted && (r.status === 'correct' || Number(r.selectedAnswerIndex) === Number(r.correctAnswerIndex))) {
           correct += 1;
         }
@@ -189,7 +218,6 @@ function StudentList() {
       return { total, correct, grade };
     }
 
-    // Fallback if paper object not loaded
     const fallbackScore = Number(studentRecord?.testScore) || 0;
     const fallbackTotal = paper?.totalQuestions || 2;
     const fallbackPct = (fallbackScore / fallbackTotal) * 100;
@@ -203,7 +231,6 @@ function StudentList() {
     return { total: fallbackTotal, correct: fallbackScore, grade: fallbackGrade };
   };
 
-  // Dedicated Clean PDF Window Engine
   const handlePrintResponsePaper = () => {
     const printArea = document.getElementById('printableResponseContent');
     if (!printArea) {
@@ -254,8 +281,10 @@ function StudentList() {
   return (
     <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
+        
+        {/* Card Header: Title + Year Selector + Search Bar */}
         <div className="card-header bg-dark py-3 px-4">
-          <div className="d-flex flex-column flex-md-row align-items-center justify-content-between">
+          <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
             <div className="d-flex align-items-center gap-3">
               <h4 className="text-white mb-0 fw-bold">Student Database</h4>
               {isSyncing && (
@@ -265,21 +294,43 @@ function StudentList() {
               )}
             </div>
 
-            <div className="position-relative w-100 mt-2 mt-md-0" style={{ maxWidth: '400px' }}>
-              <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
-              <input
-                type="text"
-                className="form-control ps-5 border-0 text-white"
-                placeholder="Search by name, roll no, phone..."
-                style={{ backgroundColor: '#2c3e50', borderRadius: '10px', height: '40px' }}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <div className="d-flex flex-wrap align-items-center gap-2">
+              {/* YEAR FILTER DROPDOWN */}
+              <div className="d-flex align-items-center bg-secondary bg-opacity-25 rounded-3 px-2 py-1">
+                <i className="far fa-calendar-alt text-warning me-2"></i>
+                <select 
+                  className="form-select form-select-sm border-0 bg-transparent text-white fw-bold shadow-none"
+                  style={{ width: 'auto', cursor: 'pointer' }}
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                >
+                  <option value="ALL" className="text-dark">All Batches</option>
+                  {availableYears.map(yr => (
+                    <option key={yr} value={yr} className="text-dark">
+                      {yr} Batch
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <button className="btn btn-warning btn-sm rounded-pill px-4 fw-bold ms-md-3 mt-3 mt-md-0" onClick={fetchStudents}>
-              <i className="fas fa-sync-alt"></i> Refresh
-            </button>
+              {/* Instant Search Box */}
+              <div className="position-relative" style={{ minWidth: '260px' }}>
+                <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                <input
+                  type="text"
+                  className="form-control form-control-sm ps-5 border-0 text-white"
+                  placeholder="Search name, roll no..."
+                  style={{ backgroundColor: '#2c3e50', borderRadius: '8px', height: '36px' }}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Refresh Sync Button */}
+              <button className="btn btn-warning btn-sm rounded-pill px-3 fw-bold" onClick={fetchStudents}>
+                <i className="fas fa-sync-alt"></i> Refresh
+              </button>
+            </div>
           </div>
         </div>
 
@@ -316,7 +367,7 @@ function StudentList() {
                         </div>
                       </td>
                       <td><span className="badge bg-info text-dark">{s.course}</span></td>
-                      <td className="font-monospace text-muted small">{s.studentId}</td>
+                      <td className="font-monospace text-primary fw-bold small">{s.studentId}</td>
 
                       <td>
                         {testDone ? (
@@ -387,7 +438,7 @@ function StudentList() {
               ) : (
                 <tr>
                   <td colSpan="8" className="text-center py-4 text-muted">
-                    Koi student record nahi mila.
+                    {selectedYear !== "ALL" ? `${selectedYear} Batch ka koi record nahi mila.` : "Koi student record nahi mila."}
                   </td>
                 </tr>
               )}
@@ -397,7 +448,7 @@ function StudentList() {
       </div>
 
       {/* ============================================================== */}
-      {/* CANDIDATE QUESTION PAPER / RESPONSE SHEET MODAL (WITH EXACT SCORE) */}
+      {/* CANDIDATE QUESTION PAPER / RESPONSE SHEET MODAL               */}
       {/* ============================================================== */}
       {viewPaperStudent && (() => {
         const stats = calculateAccurateStats(viewPaperStudent.paper, viewPaperStudent.student);
@@ -412,7 +463,6 @@ function StudentList() {
               maxWidth: '850px', margin: '0 auto', backgroundColor: '#ffffff',
               borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
             }}>
-              {/* Top Toolbar */}
               <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
                 <div>
                   <h5 className="mb-0 fw-bold">Candidate Exam Response Sheet</h5>
@@ -434,7 +484,6 @@ function StudentList() {
                 </div>
               </div>
 
-              {/* Printable Container Target */}
               <div id="printableResponseContent" className="p-4" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
                 <div className="text-center mb-4 pb-2 border-bottom">
                   <h3 style={{ fontWeight: '900', color: '#0000FF', margin: 0, letterSpacing: '0.5px' }}>
@@ -445,7 +494,6 @@ function StudentList() {
                   </p>
                 </div>
 
-                {/* Candidate Info Header - DYNAMIC ACCURATE STATS */}
                 <div className="card-header-box" style={{
                   border: '2px solid #0000FF', borderRadius: '12px', padding: '16px',
                   backgroundColor: '#f8fafc', marginBottom: '25px'
@@ -482,7 +530,6 @@ function StudentList() {
                   </div>
                 </div>
 
-                {/* Questions & Responses List */}
                 {viewPaperStudent.paper && viewPaperStudent.paper.responses && viewPaperStudent.paper.responses.length > 0 ? (
                   <div>
                     <h6 className="fw-bold border-bottom pb-2 mb-3 text-secondary">
@@ -514,7 +561,6 @@ function StudentList() {
                             </span>
                           </div>
 
-                          {/* Options */}
                           <div className="mt-2 ms-2">
                             {r.options.map((opt, optIdx) => {
                               const isSelected = Number(r.selectedAnswerIndex) === optIdx;
@@ -563,6 +609,7 @@ function StudentList() {
         );
       })()}
 
+      {/* Certificate Modal */}
       {certStudent && (
         <div className="modal-overlay no-print-bg" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, overflowY: 'auto' }}>
           <div className="modal-content-custom bg-white p-0 mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', position: 'relative', top: '160px' }}>
@@ -575,6 +622,7 @@ function StudentList() {
         </div>
       )}
 
+      {/* View Modal */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setSelectedStudent(null)}>
           <div className="modal-content-custom p-0 shadow-lg bg-white" style={{ maxWidth: '700px', width: '90%', borderRadius: '15px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
@@ -610,6 +658,7 @@ function StudentList() {
         </div>
       )}
 
+      {/* Edit Modal */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div className="modal-content-custom p-4 bg-white shadow-lg" style={{ maxWidth: '850px', width: '95%', borderRadius: '15px', maxHeight: '90vh', overflowY: 'auto' }}>
