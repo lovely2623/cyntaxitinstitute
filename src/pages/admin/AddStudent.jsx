@@ -27,7 +27,7 @@ function AddStudent() {
   const [loading, setLoading] = useState(false);
   const [fetchingId, setFetchingId] = useState(true);
 
-  // 1. Auto Serial ID Generator (CYN-2601, CYN-2602...)
+  // 1. Auto Serial ID: CYN-2601, CYN-2602...
   useEffect(() => {
     const generateNextSerialId = async () => {
       try {
@@ -66,7 +66,7 @@ function AddStudent() {
     generateNextSerialId();
   }, [BASE_URL]);
 
-  // 2. High-Performance Photo Compressor (Server Payload Crash Solver)
+  // 2. Client-side Image Compression
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -104,7 +104,7 @@ function AddStudent() {
     }
   };
 
-  // 3. Bulletproof Submission
+  // 3. Submission Engine With All Aadhaar Spellings
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -113,38 +113,54 @@ function AddStudent() {
       return;
     }
 
+    if (!formData.aadhaar.trim()) {
+      alert("Aadhaar Number bharna anivarya (required) hai!");
+      return;
+    }
+
     setLoading(true);
 
     const generatedId = (formData.studentId || `CYN-${new Date().getFullYear().toString().slice(-2)}01`).trim();
+    const cleanAadhaar = formData.aadhaar.trim();
 
-    // Dual-Compatibility Payload
+    // Universal Matcher: Sabhi possible spellings bhejo taaki backend reject na kare
     const cleanPayload = {
-      // Core fields
+      // Aadhaar variations
+      adaharNumber: cleanAadhaar,
+      adharNumber: cleanAadhaar,
+      aadharNumber: cleanAadhaar,
+      aadhaarNumber: cleanAadhaar,
+      aadhar: cleanAadhaar,
+      aadhaar: cleanAadhaar,
+      adhar: cleanAadhaar,
+      adahar: cleanAadhaar,
+
+      // Registration ID variations
       studentId: generatedId,
       rollNo: generatedId,
       regNo: generatedId,
+
+      // Core Details
       name: formData.name.trim(),
       fatherName: formData.fatherName.trim() || "N/A",
+      fatherOccupation: formData.fatherOccupation.trim() || "N/A",
       motherName: formData.motherName.trim() || "N/A",
       phone: formData.phone.trim(),
       dob: formData.dob.trim(),
       course: formData.course || "DCA",
       courseDuration: formData.courseDuration || "6 Months",
+      gender: formData.gender || "Male",
+      email: formData.email.trim() || "N/A",
+      familyIncome: formData.familyIncome || "Below 1 Lakh",
+      qualification: formData.qualification || "12th Pass",
+      bloodGroup: formData.bloodGroup || "Unknown",
+      address: formData.address.trim() || "N/A",
       photo: formData.photo || "https://via.placeholder.com/150",
 
-      // Extended Institute Details
-      gender: formData.gender,
-      email: formData.email.trim() || "N/A",
-      aadhaar: formData.aadhaar.trim() || "N/A",
-      fatherOccupation: formData.fatherOccupation.trim() || "N/A",
-      familyIncome: formData.familyIncome,
-      qualification: formData.qualification,
-      bloodGroup: formData.bloodGroup,
-      address: formData.address.trim() || "N/A",
-
-      // Safe metadata wrapper
+      // Details Sub-object (Agar schema me nested object ho)
       details: {
-        aadhaar: formData.aadhaar.trim(),
+        adaharNumber: cleanAadhaar,
+        aadhaar: cleanAadhaar,
         fatherOccupation: formData.fatherOccupation.trim(),
         familyIncome: formData.familyIncome,
         qualification: formData.qualification,
@@ -179,11 +195,11 @@ function AddStudent() {
         window.location.reload();
       } else {
         console.error("Backend Validation Error:", responseData);
-        alert(`Registration Fail: ${responseData.message || responseData.error || "Server validation error. Details console me hain."}`);
+        alert(`Registration Fail: ${responseData.message || responseData.error || "Server validation error"}`);
       }
     } catch (error) {
       console.error("Submission Error:", error);
-      alert("Server se connection nahi ho paya! Internet check karein ya 2 minute baad try karein.");
+      alert("Server connection fail! Internet check karein.");
     } finally {
       setLoading(false);
     }
@@ -295,14 +311,15 @@ function AddStudent() {
               </div>
 
               <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Aadhaar Card Number</label>
+                <label className="form-label small fw-bold text-danger">Aadhaar Card Number * (Required)</label>
                 <input 
                   type="text" 
-                  className="form-control" 
+                  className="form-control border-danger" 
                   placeholder="12-digit Aadhaar Number"
                   maxLength="12"
                   value={formData.aadhaar}
                   onChange={(e) => setFormData({ ...formData, aadhaar: e.target.value.replace(/[^0-9]/g, '') })}
+                  required
                 />
               </div>
 
@@ -443,7 +460,7 @@ function AddStudent() {
                   onChange={handlePhotoUpload}
                 />
                 <small className="text-muted d-block mt-1" style={{ fontSize: '11px' }}>
-                  * Image browser mein hi auto-compress ho jayegi taaki upload super-fast rahe.
+                  * Image browser mein hi auto-compress ho jayegi.
                 </small>
                 {formData.photo && (
                   <div className="mt-3">
