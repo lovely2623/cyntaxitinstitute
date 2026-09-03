@@ -33,12 +33,12 @@ function OnlineTest() {
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(30 * 60);
 
-  // Submission & Summary States
+  // Submission Lifecycle & Thanks Card Data
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [summaryData, setSummaryData] = useState(null);
   const [redirectTimer, setRedirectTimer] = useState(15);
 
-  // Warnings: 3 -> 2 -> 1 -> Auto Submit
+  // Anti-Cheat Warnings (3 -> 2 -> 1 -> Auto Submit)
   const [warningsLeft, setWarningsLeft] = useState(3);
   const warningsLeftRef = useRef(3);
   warningsLeftRef.current = warningsLeft;
@@ -46,11 +46,11 @@ function OnlineTest() {
   const [showPaletteMobile, setShowPaletteMobile] = useState(false);
 
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
-  const userAnswersRef = useRef(userAnswers);
+  const userAnswersRef = useRef({});
   userAnswersRef.current = userAnswers;
   const isSubmittedRef = useRef(false);
 
-  // 1. Auth Guard & Question Bank Loading
+  // 1. Auth Guard & Question Bank Loader
   useEffect(() => {
     if (!isSubmittedRef.current && !student._id) {
       navigate('/Login');
@@ -65,7 +65,9 @@ function OnlineTest() {
           setQuestions(parsed);
           return;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("Local question parse error:", e);
+      }
     }
 
     const cKey = (student.course || "").toUpperCase();
@@ -92,29 +94,32 @@ function OnlineTest() {
     }
   }, [countdown]);
 
+  // Clean Exit to Home Page
   const handleExitToHome = useCallback(() => {
     sessionStorage.removeItem('activeExamStudent');
     navigate('/');
   }, [navigate]);
 
-  // 3. SUBMISSION ENGINE WITH CANDIDATE RESPONSE SHEET CAPTURE
+  // 3. COMPLETE SUBMISSION LOGIC (Dynamic Score Calculation Fix)
   const executeFinalSubmission = useCallback(async () => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
 
-    const totalQ = questions.length || 50;
+    const actualTotalQuestions = questions.length;
     let attempted = 0;
-    let score = 0;
+    let correctCount = 0;
 
-    // Full detailed response sheet capture
+    // Detailed response sheet capture for verification
     const detailedResponses = questions.map((q, idx) => {
       const selectedOption = userAnswersRef.current[q.id];
-      const isAttempted = selectedOption !== undefined;
-      const isCorrect = isAttempted && selectedOption === q.a;
+      const isAttempted = selectedOption !== undefined && selectedOption !== null;
+      
+      // Type-safe matching: String conversion prevents "0" !== 0 issues
+      const isCorrect = isAttempted && String(selectedOption) === String(q.a);
 
       if (isAttempted) {
         attempted += 1;
-        if (isCorrect) score += 1;
+        if (isCorrect) correctCount += 1;
       }
 
       return {
@@ -128,7 +133,7 @@ function OnlineTest() {
     });
 
     let grade = "A";
-    const percentage = (score / totalQ) * 100;
+    const percentage = actualTotalQuestions > 0 ? (correctCount / actualTotalQuestions) * 100 : 0;
     if (percentage >= 85) grade = "A++";
     else if (percentage >= 70) grade = "A+";
     else if (percentage >= 50) grade = "A";
@@ -137,42 +142,42 @@ function OnlineTest() {
 
     const currentDate = new Date().toISOString().split('T')[0];
 
-    // Response Paper Snapshot
     const paperSnapshot = {
       submittedAt: new Date().toLocaleString(),
       examDate: currentDate,
-      totalQuestions: totalQ,
+      totalQuestions: actualTotalQuestions,
       attemptedCount: attempted,
-      totalScore: score,
+      totalScore: correctCount,
       grade: grade,
       responses: detailedResponses
     };
 
-    // Save locally for instant offline backup
+    // Instant local backup
     localStorage.setItem(`cyntax_test_done_${student.studentId}`, JSON.stringify({
       hasGivenTest: true,
-      testScore: score,
+      testScore: correctCount,
       testGrade: grade,
       paperSnapshot: paperSnapshot
     }));
 
-    // Switch UI instantly to 15s thanks screen
+    // Switch UI instantly to Thanks Screen without waiting for network response
     setSummaryData({
       name: student.name || "Student",
       rollNo: student.studentId || "N/A",
       course: student.course || "General",
-      total: totalQ,
-      attempted: attempted
+      total: actualTotalQuestions,
+      attempted: attempted,
+      score: correctCount
     });
     setIsSubmitted(true);
 
-    // Backend payload with response paper
+    // Backend database update (stripped MongoDB immutable fields)
     const { _id, __v, createdAt, updatedAt, ...cleanStudentData } = student;
 
     const updatedPayload = {
       ...cleanStudentData,
       hasGivenTest: true,
-      testScore: score,
+      testScore: correctCount,
       testDate: currentDate,
       testGrade: grade,
       submittedExamPaper: paperSnapshot,
@@ -186,7 +191,7 @@ function OnlineTest() {
         grade: grade,
         issueDate: currentDate,
         hasGivenTest: true,
-        testScore: score
+        testScore: correctCount
       }
     };
 
@@ -201,7 +206,7 @@ function OnlineTest() {
     }
   }, [BASE_URL, questions, student]);
 
-  // 4. 15-Second Auto Redirect
+  // 4. 15-Second Auto Redirect Timer
   useEffect(() => {
     if (isSubmitted) {
       if (redirectTimer > 0) {
@@ -215,7 +220,7 @@ function OnlineTest() {
     }
   }, [isSubmitted, redirectTimer, handleExitToHome]);
 
-  // 5. Anti-Cheat & Screen Protection
+  // 5. Anti-Cheat Security: Keyboard, Right-Click, Navigation, and Tab-Switch Locks
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
 
@@ -245,7 +250,7 @@ function OnlineTest() {
           const updated = left - 1;
           setWarningsLeft(updated);
           warningsLeftRef.current = updated;
-          alert(`⚠️ EXAMINATION ALERT!\nScreen switch karna sakht mana hai!\nAapke paas sirf ${updated} warning baaki hai.`);
+          alert(`⚠️ EXAMINATION ALERT!\nScreen switch karna mana hai!\nAapke paas sirf ${updated} warning baaki hai.`);
         } else {
           setWarningsLeft(0);
           warningsLeftRef.current = 0;
@@ -270,7 +275,7 @@ function OnlineTest() {
     };
   }, [isTestReady, isSubmitted, executeFinalSubmission]);
 
-  // 6. 30-Minute Timer
+  // 6. 30-Minute Reverse Timer
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
     if (timeLeft <= 0) {
@@ -287,7 +292,9 @@ function OnlineTest() {
     return `${m}:${s}`;
   };
 
-  // Screen 1: 3-Second Blue Countdown
+  // -------------------------------------------------------------
+  // SCREEN 1: 3-SECOND BLUE COUNTDOWN OVERLAY
+  // -------------------------------------------------------------
   if (!isTestReady) {
     return (
       <div style={{
@@ -311,7 +318,9 @@ function OnlineTest() {
     );
   }
 
-  // Screen 2: 15-Second Thanks Screen
+  // -------------------------------------------------------------
+  // SCREEN 2: 15-SECOND PROFESSIONAL THANKS SCREEN
+  // -------------------------------------------------------------
   if (isSubmitted) {
     return (
       <div style={{
@@ -325,6 +334,7 @@ function OnlineTest() {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)', borderTop: '8px solid #0000FF',
           position: 'relative'
         }}>
+          {/* Top-Right Cross Button */}
           <button 
             onClick={handleExitToHome}
             title="Close & Return to Home"
@@ -366,10 +376,11 @@ function OnlineTest() {
               Aapka exam paper successfully submit ho chuka hai.
             </p>
             <p style={{ fontSize: '16px', color: '#0f172a', fontWeight: '600', margin: 0 }}>
-              Aapne total <span style={{ color: '#0000FF' }}>{summaryData?.total || 50}</span> questions mein se <span style={{ color: '#16a34a' }}>{summaryData?.attempted ?? 0}</span> question attempt kiye hain.
+              Aapne total <span style={{ color: '#0000FF' }}>{summaryData?.total}</span> questions mein se <span style={{ color: '#16a34a' }}>{summaryData?.attempted}</span> question attempt kiye hain.
             </p>
           </div>
 
+          {/* 15-Second Dynamic Counter */}
           <div style={{
             backgroundColor: '#eff6ff', border: '1px dashed #3b82f6',
             borderRadius: '12px', padding: '12px', marginBottom: '20px',
@@ -379,6 +390,7 @@ function OnlineTest() {
             Auto redirecting to Home Page in <b>{redirectTimer}</b> seconds...
           </div>
 
+          {/* Bottom Exit Button */}
           <button 
             onClick={handleExitToHome}
             style={{
@@ -401,13 +413,16 @@ function OnlineTest() {
 
   const currentQ = questions[currentIndex];
 
-  // Screen 3: Exam Interface
+  // -------------------------------------------------------------
+  // SCREEN 3: COMPLETE EXAM INTERFACE
+  // -------------------------------------------------------------
   return (
     <div style={{
       position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column',
       backgroundColor: '#f8fafc', zIndex: 9999999, userSelect: 'none',
       WebkitUserSelect: 'none', overscrollBehavior: 'none'
     }}>
+      {/* Top Bar */}
       <header style={{
         backgroundColor: '#1e293b', color: 'white',
         padding: '10px 15px', display: 'flex', alignItems: 'center',
@@ -453,7 +468,10 @@ function OnlineTest() {
         </div>
       </header>
 
+      {/* Main Question + Palette Container */}
       <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
+        
+        {/* Left Side: Active Question Display */}
         <div style={{
           flex: 1, padding: '15px 20px', overflowY: 'auto',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
@@ -470,6 +488,7 @@ function OnlineTest() {
               {currentQ.q}
             </h5>
 
+            {/* Multiple Choice Options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {currentQ.o.map((opt, idx) => {
                 const isSelected = userAnswers[currentQ.id] === idx;
@@ -500,6 +519,7 @@ function OnlineTest() {
             </div>
           </div>
 
+          {/* Navigation Buttons */}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '15px', marginTop: '20px' }}>
             <button
               disabled={currentIndex === 0}
@@ -531,6 +551,7 @@ function OnlineTest() {
           </div>
         </div>
 
+        {/* Right Side: TCS Question Palette */}
         <div style={{
           width: '280px', backgroundColor: '#ffffff', borderLeft: '2px solid #e2e8f0',
           display: 'flex', flexDirection: 'column', height: '100%',
@@ -575,6 +596,7 @@ function OnlineTest() {
             })}
           </div>
         </div>
+
       </div>
     </div>
   );
