@@ -5,6 +5,7 @@ function StudentTestPortal() {
   const [rollNo, setRollNo] = useState('');
   const [studentPassword, setStudentPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
@@ -86,7 +87,6 @@ function StudentTestPortal() {
         return;
       }
 
-      // Check if already given
       const localData = localStorage.getItem(`cyntax_test_done_${matchedStudent.studentId}`);
       const isAlreadyGiven = 
         matchedStudent.hasGivenTest === true ||
@@ -123,56 +123,195 @@ function StudentTestPortal() {
   };
 
   return (
-    <div style={{ minHeight: '85vh', paddingTop: '120px', paddingBottom: '60px', backgroundColor: '#f8fafc' }} className="d-flex align-items-center justify-content-center">
-      <div className="card border-0 shadow-lg" style={{ maxWidth: '480px', width: '92%', borderRadius: '24px', overflow: 'hidden' }}>
-        <div style={{ backgroundColor: '#0000FF', padding: '30px 20px', textAlign: 'center', color: '#ffffff' }}>
-          <div style={{ width: '70px', height: '70px', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto', fontSize: '30px' }}>
+    <div style={{
+      minHeight: '100vh',
+      paddingTop: '130px',
+      paddingBottom: '50px',
+      backgroundColor: '#f1f5f9',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <style>{`
+        .portal-input-field {
+          width: 100% !important;
+          height: 48px !important;
+          background-color: #ffffff !important;
+          border: 1.5px solid #cbd5e1 !important;
+          border-radius: 12px !important;
+          padding: 0 15px 0 45px !important;
+          font-size: 16px !important;
+          font-weight: 600 !important;
+          color: #0f172a !important;
+          outline: none !important;
+          box-sizing: border-box !important;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .portal-input-field:focus {
+          border-color: #0000FF !important;
+          box-shadow: 0 0 0 3px rgba(0, 0, 255, 0.15) !important;
+        }
+        .portal-input-field::placeholder {
+          color: #94a3b8 !important;
+          font-weight: 400 !important;
+          opacity: 1 !important;
+        }
+        .portal-input-wrapper {
+          position: relative !important;
+          width: 100% !important;
+        }
+        .portal-input-icon {
+          position: absolute !important;
+          left: 15px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          color: #0000FF !important;
+          font-size: 16px !important;
+          pointer-events: none !important;
+          z-index: 2 !important;
+        }
+        .portal-pass-toggle {
+          position: absolute !important;
+          right: 15px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          color: #64748b !important;
+          cursor: pointer !important;
+          font-size: 16px !important;
+          z-index: 3 !important;
+          background: none !important;
+          border: none !important;
+          padding: 0 !important;
+        }
+      `}</style>
+
+      <div style={{
+        maxWidth: '460px',
+        width: '92%',
+        backgroundColor: '#ffffff',
+        borderRadius: '24px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.15)'
+      }}>
+        {/* Header Banner */}
+        <div style={{
+          backgroundColor: '#0000FF',
+          padding: '28px 20px',
+          textAlign: 'center',
+          color: '#ffffff'
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            backgroundColor: 'rgba(255,255,255,0.18)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 12px auto',
+            fontSize: '28px'
+          }}>
             <i className="fas fa-laptop-code"></i>
           </div>
-          <h3 className="fw-bold mb-1">Cyntax Online Exam Portal</h3>
-          <p className="small mb-0" style={{ color: '#e0e7ff' }}>Candidate Assessment & Verification Gateway</p>
+          <h4 style={{ fontWeight: '800', margin: '0 0 4px 0', letterSpacing: '0.3px' }}>
+            Cyntax Online Exam Portal
+          </h4>
+          <p style={{ margin: 0, fontSize: '13px', color: '#e0e7ff' }}>
+            Candidate Assessment & Verification Gateway
+          </p>
         </div>
 
-        <div className="card-body p-4 p-md-5 bg-white">
+        {/* Form Body */}
+        <div style={{ padding: '30px 24px' }}>
           <form onSubmit={handleStudentLogin}>
-            <div className="mb-3">
-              <label className="form-label small fw-bold text-muted ps-1">Registration / Roll Number</label>
-              <div className="input-group">
-                <span className="input-group-text bg-light border-0"><i className="fas fa-id-card text-primary"></i></span>
+            {/* Roll Number Field */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#334155',
+                marginBottom: '8px'
+              }}>
+                Registration / Roll Number
+              </label>
+              <div className="portal-input-wrapper">
+                <i className="fas fa-id-card portal-input-icon"></i>
                 <input 
                   type="text" 
-                  className="form-control bg-light border-0 py-2" 
-                  placeholder="e.g. CYN-1234" 
+                  className="portal-input-field"
+                  placeholder="e.g. CYN-101 ya Roll No" 
                   value={rollNo}
                   onChange={(e) => setRollNo(e.target.value)}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
                   required
                 />
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="form-label small fw-bold text-muted ps-1">DOB Password (DDMMYYYY)</label>
-              <div className="input-group">
-                <span className="input-group-text bg-light border-0"><i className="fas fa-key text-primary"></i></span>
+            {/* DOB Password Field */}
+            <div style={{ marginBottom: '25px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#334155',
+                marginBottom: '8px'
+              }}>
+                DOB Password (DDMMYYYY)
+              </label>
+              <div className="portal-input-wrapper">
+                <i className="fas fa-key portal-input-icon"></i>
                 <input 
-                  type="text" 
-                  className="form-control bg-light border-0 py-2" 
-                  placeholder="e.g. 04112004" 
+                  type={showPassword ? "text" : "password"} 
+                  className="portal-input-field"
+                  placeholder="e.g. 15082002" 
                   value={studentPassword}
                   onChange={(e) => setStudentPassword(e.target.value)}
+                  autoCorrect="off"
                   required
+                  style={{ paddingRight: '45px' }}
                 />
+                <button
+                  type="button"
+                  className="portal-pass-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                </button>
               </div>
-              <small className="text-muted d-block mt-1 ps-1" style={{ fontSize: '11px' }}>
-                * Admission form me di gayi Date of Birth hi aapka password hai.
+              <small style={{
+                display: 'block',
+                marginTop: '6px',
+                fontSize: '11px',
+                color: '#64748b'
+              }}>
+                * Admission ke time jo Date of Birth di thi wahi password hai.
               </small>
             </div>
 
+            {/* Submit Button */}
             <button 
               type="submit" 
-              className="btn w-100 py-3 rounded-pill fw-bold text-white shadow"
-              style={{ backgroundColor: '#0000FF', letterSpacing: '0.5px' }}
               disabled={loading}
+              style={{
+                width: '100%',
+                height: '48px',
+                borderRadius: '50px',
+                backgroundColor: '#0000FF',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: '700',
+                fontSize: '15px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 14px rgba(0, 0, 255, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'opacity 0.2s'
+              }}
             >
               {loading ? (
                 <>
@@ -186,9 +325,15 @@ function StudentTestPortal() {
             </button>
           </form>
 
-          <div className="mt-4 pt-3 border-top text-center">
-            <small className="text-muted">
-              Kisi bhi samasya ke liye center helpline <b>8988199226</b> par contact karein.
+          {/* Footer Note */}
+          <div style={{
+            marginTop: '25px',
+            paddingTop: '16px',
+            borderTop: '1px solid #e2e8f0',
+            textAlign: 'center'
+          }}>
+            <small style={{ fontSize: '12px', color: '#64748b' }}>
+              Exam helpline: <b style={{ color: '#0f172a' }}>8988199226</b>
             </small>
           </div>
         </div>
