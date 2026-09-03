@@ -12,6 +12,9 @@ import Gallery from './pages/Gallery';
 import Login from './pages/Login';
 import Verification from './pages/Verification';
 import OnlineTest from './pages/OnlineTest';
+import StudentTestPortal from './pages/StudentTestPortal';
+
+
 
 // ADMIN PAGES IMPORT
 import AdminLayout from './pages/admin/AdminLayout';
@@ -89,6 +92,7 @@ function App() {
           <Route path="/Gallery" element={<Gallery />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/Verification" element={<Verification />} />
+          <Route path="/Test" element={<StudentTestPortal />} />
 
           {/* EXAM PORTAL (Full Screen Lockdown) */}
           <Route path="/online-test" element={<OnlineTest />} />

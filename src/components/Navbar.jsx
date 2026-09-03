@@ -6,12 +6,11 @@ import logo from '../assets/images/logo.png';
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date()); // Time State
+  const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
 
   const isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
 
-  // Live Time Update Logic
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -40,7 +39,6 @@ function Navbar() {
 
   const closeMenu = () => setMenuOpen(false);
 
-  // Time format function (09:24 PM)
   const formatTime = (date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   };
@@ -70,7 +68,6 @@ function Navbar() {
             </div>
         </div>
 
-        {/* Live Time - Hamesha Right End mein rahega */}
         <div className='live-time'>
           <i className="far fa-clock"></i>
           <span>{formatTime(currentTime)}</span>
@@ -97,9 +94,9 @@ function Navbar() {
             <li><NavLink to="/Gallery" onClick={closeMenu}>Gallery</NavLink></li>
             <li><NavLink to="/Verification" onClick={closeMenu}>Verification</NavLink></li>
             
-            {/* NEW TEST BUTTON JUST AFTER VERIFICATION */}
+            {/* DEDICATED STUDENT TEST PORTAL LINK */}
             <li>
-              <NavLink to="/Login" onClick={closeMenu} className="nav-test-link">
+              <NavLink to="/Test" onClick={closeMenu} className="nav-test-link">
                 <i className="fas fa-file-signature me-1"></i> Test
               </NavLink>
             </li>
