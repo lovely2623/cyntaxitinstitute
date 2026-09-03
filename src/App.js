@@ -47,12 +47,10 @@ function App() {
   useEffect(() => {
     const checkUpdates = async () => {
       try {
-        // manifest.json ya index.html ko check karte hain
         const response = await fetch(`/index.html?nocache=${new Date().getTime()}`, { 
           method: 'HEAD' 
         });
         const etag = response.headers.get('ETag') || response.headers.get('Last-Modified');
-        
         const lastEtag = localStorage.getItem('app-version-etag');
 
         if (lastEtag && lastEtag !== etag) {
@@ -67,10 +65,10 @@ function App() {
       }
     };
 
-    // Har 1 second mein check karega (1000ms)
+    // Har 30 second mein check karega (1 second se browser aur network choke nahi hoga)
     const interval = setInterval(() => {
       checkUpdates();
-    }, 1000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -92,14 +90,16 @@ function App() {
           <Route path="/Login" element={<Login />} />
           <Route path="/Verification" element={<Verification />} />
 
-          {/* ADMIN PANEL ROUTES */}
+          {/* EXAM PORTAL (Full Screen Lockdown) */}
           <Route path="/online-test" element={<OnlineTest />} />
-          <Route path="ManageQuestions" element={<ManageQuestions />} />
+
+          {/* ADMIN PANEL ROUTES (Sabhi admin child routes ek sath) */}
           <Route path="/AdminLayout" element={<AdminLayout />}>
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="StudentList" element={<StudentList />} />
             <Route path="AddStudent" element={<AddStudent />} /> 
             <Route path="ManageContent" element={<ManageContent />} />
+            <Route path="ManageQuestions" element={<ManageQuestions />} />
             <Route path="Certificate" element={<Certificate />} />
           </Route>
         </Routes>
