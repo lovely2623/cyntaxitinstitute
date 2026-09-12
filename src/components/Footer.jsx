@@ -34,7 +34,7 @@ function Footer() {
         
         {/* Section 1: Institute Info */}
         <div className="footer-box">
-          <h3>Cyntax Coding Hub</h3>
+          <h3>Cyntax Computer Institute</h3>
           <p>Sahi disha, sahi bhavishya. Hum dete hain aapko IT sector mein grow karne ki best training. Aaj hi judiye hmare sath or apne sapno ko dijiye ek nayi udaan.</p>
           <div className="social-icons">
             <a href="https://facebook.com" target="_blank" rel="noreferrer"><i className="fab fa-facebook"></i></a>
@@ -59,7 +59,7 @@ function Footer() {
         {/* Section 3: Contact & Map */}
         <div className="footer-box">
           <h3>Get In Touch</h3>
-          <p><i className="fas fa-map-marker-alt"></i> Solan, Himachal Pradesh</p>
+          <p><i className="fas fa-map-marker-alt"></i> Shimla, Himachal Pradesh</p>
           <p><i className="fas fa-phone"></i> +91 89881 99226</p>
           
           <div className="map-container shadow-sm rounded overflow-hidden mt-2">
@@ -79,11 +79,11 @@ function Footer() {
 
       <div className="footer-bottom">
         <div className="bottom-container">
-          <p>© {new Date().getFullYear()} <b>Cyntax Coding Hub</b>. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} <b>Cyntax Computer Institute</b>. All Rights Reserved.</p>
           <div className="visitor-count">
              <i className="fas fa-eye text-primary"></i> Visitors: <span className="fw-bold">{visitorCount}</span>
           </div>
-          <p className="maintained-by">Maintained by <a href="https://wa.me/918988199226" className="text-decoration-none">Lovely Mohit Thakur</a></p>
+          <p className="maintained-by">Maintained by <a href="https://wa.me/918988199226" className="text-decoration-none"> Mohit Thakur</a></p>
         </div>
       </div>
     </footer>
