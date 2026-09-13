@@ -79,7 +79,7 @@ function Navbar() {
         <div className="nav-container">
           <div className="logo" onClick={() => navigate('/')}>
             <img src={logo} alt="Logo" className="logo-img" />
-            <h1 className="logo-text-branding">Cyntax Computer Institute</h1>
+            <h1 className="logo-text-branding">Cyntax IT Institute</h1>
           </div>
 
           <div className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
@@ -97,7 +97,7 @@ function Navbar() {
             {/* DEDICATED STUDENT TEST PORTAL LINK */}
             <li>
               <NavLink to="/Test" onClick={closeMenu} className="nav-test-link">
-                <i className="fas fa-file-signature me-1"></i> Test
+                <i className="fas fa-file-signature me-1"></i> Online Exam
               </NavLink>
             </li>
 
