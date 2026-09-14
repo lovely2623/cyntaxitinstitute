@@ -56,24 +56,23 @@ function OnlineTest() {
   userAnswersRef.current = userAnswers;
   const isSubmittedRef = useRef(false);
 
-  // 1. Auth Guard & Question Bank Loader (With Server Reset Check)
+  // 1. Auth Guard & LIVE Question Bank Loader
   useEffect(() => {
     if (!student?._id && !student?.studentId) {
       navigate('/Test');
       return;
     }
 
-    // Sync state with server to ensure admin reset is reflected immediately
+    // A. Verify Reset Status directly from server
     const verifyResetStatus = async () => {
       try {
         const idToQuery = student._id || student.studentId;
-        const res = await fetch(`${BASE_URL}/api/students/${idToQuery}`);
+        const res = await fetch(`${BASE_URL}/api/students/${idToQuery}`, { cache: 'no-store' });
         if (res.ok) {
           const freshData = await res.json();
           const testAlreadyDone = freshData.hasGivenTest === true || freshData.hasGivenTest === "true";
 
           if (!testAlreadyDone) {
-            // Admin has reset the exam: remove old completion locks from this device
             localStorage.removeItem(`cyntax_test_done_${freshData.studentId}`);
             localStorage.removeItem(`cyntax_test_done_${student.studentId}`);
             sessionStorage.setItem('activeExamStudent', JSON.stringify(freshData));
@@ -91,29 +90,59 @@ function OnlineTest() {
 
     verifyResetStatus();
 
-    // Check Question Bank: Prioritize course specific custom questions
-    const courseName = student.course || "";
-    const savedCustom = localStorage.getItem(`cyntax_questions_${courseName}`);
-    if (savedCustom) {
+    // B. Fetch Latest Questions Directly From Server API
+    const loadQuestionsFromSource = async () => {
+      const courseName = student.course || "DCA";
+      let loadedQuestions = null;
+
       try {
-        const parsed = JSON.parse(savedCustom);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setQuestions(parsed);
-          return;
+        // Step 1: Server se direct fresh questions mangwao (No cache)
+        const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(courseName)}`, {
+          cache: 'no-store'
+        });
+
+        if (res.ok) {
+          const remoteData = await res.json();
+          if (Array.isArray(remoteData) && remoteData.length > 0) {
+            loadedQuestions = remoteData;
+            localStorage.setItem(`cyntax_questions_${courseName}`, JSON.stringify(remoteData));
+          }
         }
       } catch (e) {
-        console.error("Local question parse error:", e);
+        console.warn("Server question fetch error, checking local storage:", e);
       }
-    }
 
-    const cKey = courseName.toUpperCase();
-    if (cKey.includes("STENO")) {
-      setQuestions(defaultBank.Steno);
-    } else if (cKey.includes("DCA") || cKey.includes("ADCA")) {
-      setQuestions(defaultBank.DCA);
-    } else {
-      setQuestions(defaultBank["Short Term"]);
-    }
+      // Step 2: Agar server fail ho ya empty ho, local storage check karo
+      if (!loadedQuestions || loadedQuestions.length === 0) {
+        const savedCustom = localStorage.getItem(`cyntax_questions_${courseName}`);
+        if (savedCustom) {
+          try {
+            const parsed = JSON.parse(savedCustom);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              loadedQuestions = parsed;
+            }
+          } catch (err) {
+            console.error("Local parse error:", err);
+          }
+        }
+      }
+
+      // Step 3: Agar dono jagah custom question na ho, tab default bank par jao
+      if (loadedQuestions && loadedQuestions.length > 0) {
+        setQuestions(loadedQuestions);
+      } else {
+        const cKey = courseName.toUpperCase();
+        if (cKey.includes("STENO")) {
+          setQuestions(defaultBank.Steno);
+        } else if (cKey.includes("DCA") || cKey.includes("ADCA")) {
+          setQuestions(defaultBank.DCA);
+        } else {
+          setQuestions(defaultBank["Short Term"]);
+        }
+      }
+    };
+
+    loadQuestionsFromSource();
   }, [student?._id, student?.studentId, student?.course, navigate, BASE_URL]);
 
   // 2. 3-Second Blue Countdown
@@ -149,7 +178,6 @@ function OnlineTest() {
       const selectedOptionIdx = userAnswersRef.current[q.id];
       const isAttempted = selectedOptionIdx !== undefined && selectedOptionIdx !== null;
 
-      // Smart Correct Index Detection
       let correctIdx = -1;
       const rawAns = q.a !== undefined ? q.a : q.correctAnswer;
 

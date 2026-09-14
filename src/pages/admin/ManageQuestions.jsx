@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 function ManageQuestions() {
   const [course, setCourse] = useState('DCA');
   const [questions, setQuestions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [form, setForm] = useState({
     q: '',
@@ -16,31 +17,36 @@ function ManageQuestions() {
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const storageKey = `cyntax_questions_${course}`;
 
+  // 1. Dual Loader: Pehle local dikhaye taaki UI instant load ho, fir server se sync kare
   const loadQuestions = useCallback(async () => {
-    // 1. First load from local storage
+    setIsLoading(true);
     const localData = localStorage.getItem(storageKey);
-    let loaded = [];
     if (localData) {
       try {
-        loaded = JSON.parse(localData);
-        setQuestions(Array.isArray(loaded) ? loaded : []);
+        const parsed = JSON.parse(localData);
+        if (Array.isArray(parsed)) {
+          setQuestions(parsed);
+        }
       } catch (e) {
-        setQuestions([]);
+        console.error("Local parse error:", e);
       }
     }
 
-    // 2. Sync with backend API so questions don't disappear on other devices
     try {
-      const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(course)}`);
+      const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(course)}`, {
+        cache: 'no-store'
+      });
       if (res.ok) {
         const remoteData = await res.json();
-        if (Array.isArray(remoteData) && remoteData.length > 0) {
+        if (Array.isArray(remoteData)) {
           setQuestions(remoteData);
           localStorage.setItem(storageKey, JSON.stringify(remoteData));
         }
       }
-    } catch {
-      // Offline fallback: keep local questions intact
+    } catch (err) {
+      console.warn("Server questions fetch failed, running on offline/cached storage:", err);
+    } finally {
+      setIsLoading(false);
     }
   }, [course, storageKey, BASE_URL]);
 
@@ -48,51 +54,74 @@ function ManageQuestions() {
     loadQuestions();
   }, [loadQuestions]);
 
+  // 2. Bulletproof Add Question Handler
   const handleAddQuestion = async (e) => {
     e.preventDefault();
-    if (!form.q || !form.o1 || !form.o2 || !form.o3 || !form.o4) {
+    if (!form.q.trim() || !form.o1.trim() || !form.o2.trim() || !form.o3.trim() || !form.o4.trim()) {
       alert("Saari fields bharein!");
       return;
     }
 
+    const tempId = Date.now();
     const newQ = {
-      id: Date.now(),
-      q: form.q,
-      o: [form.o1, form.o2, form.o3, form.o4],
+      id: tempId,
+      q: form.q.trim(),
+      o: [form.o1.trim(), form.o2.trim(), form.o3.trim(), form.o4.trim()],
       a: parseInt(form.a, 10),
       course: course
     };
 
+    // Instant optimistic update
     const updated = [...questions, newQ];
     setQuestions(updated);
     localStorage.setItem(storageKey, JSON.stringify(updated));
 
-    // Persist to server
+    // Reset form immediately
+    setForm({ q: '', o1: '', o2: '', o3: '', o4: '', a: 0 });
+
     try {
-      await fetch(`${BASE_URL}/api/questions`, {
+      const res = await fetch(`${BASE_URL}/api/questions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newQ)
       });
-    } catch (err) {
-      console.warn("Could not save question to remote API, saved locally:", err);
-    }
 
-    setForm({ q: '', o1: '', o2: '', o3: '', o4: '', a: 0 });
-    alert(`Question Add Ho Gaya! Total: ${updated.length}`);
+      if (res.ok) {
+        const savedData = await res.json();
+        // Agar backend MongoDB se inserted object deta hai toh id sync karein
+        if (savedData && (savedData._id || savedData.id)) {
+          const syncedList = updated.map(item => item.id === tempId ? { ...item, ...savedData } : item);
+          setQuestions(syncedList);
+          localStorage.setItem(storageKey, JSON.stringify(syncedList));
+        }
+        alert(`Question successfully database mein save ho gaya! Total: ${updated.length}`);
+      } else {
+        alert("Server par save nahi ho paya, par local device par temporary saved hai.");
+      }
+    } catch (err) {
+      console.error("Remote save error:", err);
+      alert("Network issue! Question local storage mein save ho chuka hai.");
+    }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Bhai ye question delete karna hai?")) {
-      const updated = questions.filter(q => q.id !== id);
-      setQuestions(updated);
-      localStorage.setItem(storageKey, JSON.stringify(updated));
+  // 3. Complete Delete Handler (_id aur id dono support karta hai)
+  const handleDelete = async (questionObj) => {
+    const targetId = questionObj._id || questionObj.id;
+    if (!window.confirm("Bhai ye question delete karna hai?")) return;
 
-      try {
-        await fetch(`${BASE_URL}/api/questions/${id}`, { method: 'DELETE' });
-      } catch (err) {
-        console.warn("Remote delete failed, updated locally:", err);
+    const updated = questions.filter(q => (q._id ? q._id !== targetId : q.id !== targetId));
+    setQuestions(updated);
+    localStorage.setItem(storageKey, JSON.stringify(updated));
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/questions/${targetId}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        console.warn("Backend par delete fail hua.");
       }
+    } catch (err) {
+      console.error("Remote delete error:", err);
     }
   };
 
@@ -104,14 +133,24 @@ function ManageQuestions() {
           <label className="fw-bold small mb-0">Select Course:</label>
           <select 
             className="form-select fw-bold" 
-            style={{ width: '180px' }}
+            style={{ width: '200px' }}
             value={course} 
             onChange={(e) => setCourse(e.target.value)}
           >
             <option value="DCA">DCA</option>
+            <option value="ADCA">ADCA</option>
             <option value="Steno">Steno</option>
             <option value="Short Term">Short Term</option>
+            <option value="Tally">Tally Prime & Accounting</option>
+            <option value="Basic">Basic Computer</option>
           </select>
+          <button 
+            className="btn btn-sm btn-outline-primary rounded-pill px-3"
+            onClick={loadQuestions}
+            title="Refresh Question Bank"
+          >
+            <i className={`fas fa-sync-alt ${isLoading ? 'fa-spin' : ''}`}></i>
+          </button>
         </div>
       </div>
 
@@ -207,7 +246,10 @@ function ManageQuestions() {
           <div className="card shadow-sm border-0 rounded-4 p-4">
             <h5 className="fw-bold mb-3 d-flex justify-content-between align-items-center">
               <span>Active Questions in Bank</span>
-              <span className="badge bg-dark rounded-pill">{questions.length} Added</span>
+              <div>
+                {isLoading && <span className="badge bg-warning text-dark me-2">Syncing...</span>}
+                <span className="badge bg-dark rounded-pill">{questions.length} Added</span>
+              </div>
             </h5>
 
             {questions.length === 0 ? (
@@ -217,19 +259,20 @@ function ManageQuestions() {
             ) : (
               <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
                 {questions.map((q, idx) => (
-                  <div key={q.id} className="card p-3 mb-2 border rounded-3 bg-light position-relative">
+                  <div key={q._id || q.id || idx} className="card p-3 mb-2 border rounded-3 bg-light position-relative">
                     <button 
+                      type="button"
                       className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2" 
-                      onClick={() => handleDelete(q.id)}
+                      onClick={() => handleDelete(q)}
                     >
                       <i className="fas fa-trash"></i>
                     </button>
                     <h6 className="fw-bold text-dark pe-4">Q{idx + 1}. {q.q}</h6>
                     <div className="small text-muted mt-2">
-                      <div>A: {q.o[0]} {q.a === 0 && <b className="text-success">(Correct)</b>}</div>
-                      <div>B: {q.o[1]} {q.a === 1 && <b className="text-success">(Correct)</b>}</div>
-                      <div>C: {q.o[2]} {q.a === 2 && <b className="text-success">(Correct)</b>}</div>
-                      <div>D: {q.o[3]} {q.a === 3 && <b className="text-success">(Correct)</b>}</div>
+                      <div>A: {q.o[0]} {Number(q.a) === 0 && <b className="text-success">(Correct)</b>}</div>
+                      <div>B: {q.o[1]} {Number(q.a) === 1 && <b className="text-success">(Correct)</b>}</div>
+                      <div>C: {q.o[2]} {Number(q.a) === 2 && <b className="text-success">(Correct)</b>}</div>
+                      <div>D: {q.o[3]} {Number(q.a) === 3 && <b className="text-success">(Correct)</b>}</div>
                     </div>
                   </div>
                 ))}
