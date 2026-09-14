@@ -54,10 +54,19 @@ const studentSchema = new mongoose.Schema({
   joiningDate: { type: Date, default: Date.now },
   photo: String, 
   status: { type: String, default: 'Active' },
-  // NEW FIELDS
+  // EXAM & RESULT FIELDS (strict storage)
+  hasGivenTest: { type: Boolean, default: false },
+  testScore: { type: Number, default: 0 },
+  testGrade: { type: String, default: null },
+  testDate: { type: String, default: null },
+  submittedExamPaper: { type: Object, default: null },
+  paperSnapshot: { type: Object, default: null },
+  examPaperData: { type: String, default: null },
+  details: { type: Object, default: {} },
+  // CERTIFICATE FIELDS
   isCertificateIssued: { type: Boolean, default: false },
   certificateDetails: { type: Object, default: null }
-});
+}, { strict: false });
 const Student = mongoose.model('Student', studentSchema, 'students');
 
 const contactSchema = new mongoose.Schema({
@@ -84,7 +93,68 @@ const newsSchema = new mongoose.Schema({
 });
 const News = mongoose.model('News', newsSchema);
 
+// NEW: QUESTION SCHEMA & MODEL
+const questionSchema = new mongoose.Schema({
+  id: { type: Number },
+  q: { type: String, required: true },
+  o: [{ type: String, required: true }],
+  a: { type: Number, required: true },
+  course: { type: String, required: true, uppercase: true, trim: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const Question = mongoose.models.Question || mongoose.model('Question', questionSchema, 'questions');
+
 // --- ROUTES ---
+
+// QUESTION MANAGEMENT ROUTES
+app.get('/api/questions', async (req, res) => {
+  try {
+    const { course } = req.query;
+    let filter = {};
+    if (course) {
+      filter.course = { $regex: new RegExp(`^${course.trim()}$`, 'i') };
+    }
+    const questions = await Question.find(filter).sort({ createdAt: 1 });
+    res.json(questions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/questions', async (req, res) => {
+  try {
+    const { q, o, a, course, id } = req.body;
+    if (!q || !o || a === undefined || !course) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const newQ = new Question({
+      id: id || Date.now(),
+      q: q.trim(),
+      o: Array.isArray(o) ? o.map(item => item.trim()) : [],
+      a: Number(a),
+      course: course.trim().toUpperCase()
+    });
+    const saved = await newQ.save();
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/questions/:id', async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    await Question.deleteMany({
+      $or: [
+        { _id: mongoose.Types.ObjectId.isValid(targetId) ? targetId : null },
+        { id: Number(targetId) }
+      ]
+    });
+    res.json({ success: true, message: "Question deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/api/admin/stats', async (req, res) => {
   try {
@@ -182,6 +252,24 @@ app.get('/api/students', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Single student fetch by ID or StudentId
+app.get('/api/students/:id', async (req, res) => {
+  try {
+    const target = req.params.id;
+    let query = {};
+    if (mongoose.Types.ObjectId.isValid(target)) {
+      query = { $or: [{ _id: target }, { studentId: target.toUpperCase() }] };
+    } else {
+      query = { studentId: target.toUpperCase() };
+    }
+    const student = await Student.findOne(query);
+    if (!student) return res.status(404).json({ error: "Student not found" });
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/students', async (req, res) => {
   try {
     const newStudent = new Student(req.body);
@@ -193,7 +281,14 @@ app.post('/api/students', async (req, res) => {
 // Update Student
 app.put('/api/students/:id', async (req, res) => {
   try {
-    const updated = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const target = req.params.id;
+    let query = {};
+    if (mongoose.Types.ObjectId.isValid(target)) {
+      query = { _id: target };
+    } else {
+      query = { studentId: target.toUpperCase() };
+    }
+    const updated = await Student.findOneAndUpdate(query, req.body, { new: true });
     res.json(updated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

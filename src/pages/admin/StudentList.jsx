@@ -43,7 +43,6 @@ function StudentList() {
     fetchStudents();
   }, [fetchStudents]);
 
-  // Complete Multi-Layer Parser
   const parseStudent = useCallback((s) => {
     if (!s) return {};
     const d = s.details || s.additionalDetails || {};
@@ -319,14 +318,12 @@ function StudentList() {
     s.certificateDetails?.hasGivenTest === true || !!localStorage.getItem(`cyntax_test_done_${s.studentId}`)
   );
 
-  // Deep inspection for Response Sheet paper
   const getExamPaper = (s) => {
     if (s.submittedExamPaper?.responses?.length) return s.submittedExamPaper;
     if (s.paperSnapshot?.responses?.length) return s.paperSnapshot;
     if (s.details?.submittedExamPaper?.responses?.length) return s.details.submittedExamPaper;
     if (s.details?.paperSnapshot?.responses?.length) return s.details.paperSnapshot;
 
-    // Check stringified exam paper
     const stringified = s.examPaperData || s.details?.examPaperData;
     if (stringified && typeof stringified === 'string') {
       try {
@@ -481,7 +478,6 @@ function StudentList() {
         </div>
       </div>
 
-      {/* VIEW MODAL */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setSelectedStudent(null)}>
           <div className="modal-content-custom bg-white shadow-lg" style={{ maxWidth: '850px', width: '95%', borderRadius: '18px', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
@@ -505,7 +501,7 @@ function StudentList() {
                     <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Mobile Number</small><strong>{selectedStudent.phone || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Email Address</small><strong className="text-primary">{selectedStudent.email || "Not Provided"}</strong></div>
-                    <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar || "Not Provided"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar ? "[Aadhaar Redacted]" : "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Blood Group</small><strong className="text-danger">{selectedStudent.bloodGroup || "Unknown"}</strong></div>
                     <div className="col-sm-12"><small className="text-muted d-block">Highest Qualification</small><strong>{selectedStudent.qualification || "12th Pass"}</strong></div>
                   </div>
@@ -527,7 +523,6 @@ function StudentList() {
         </div>
       )}
 
-      {/* EDIT MODAL */}
       {editStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className="modal-content-custom p-4 bg-white shadow-lg" style={{ maxWidth: '900px', width: '95%', borderRadius: '18px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -641,7 +636,6 @@ function StudentList() {
         </div>
       )}
 
-      {/* RESPONSE SHEET MODAL */}
       {viewPaperStudent && (() => {
         const stats = calculateScore(viewPaperStudent.paper, viewPaperStudent.student);
         return (
@@ -702,7 +696,6 @@ function StudentList() {
         );
       })()}
 
-      {/* Certificate Modal */}
       {certStudent && (
         <div className="modal-overlay no-print-bg" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, overflowY: 'auto' }}>
           <div className="modal-content-custom bg-white mx-auto" style={{ maxWidth: '98%', width: '1250px', borderRadius: '15px', position: 'relative', top: '160px' }}>

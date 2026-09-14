@@ -19,12 +19,10 @@ function OnlineTest() {
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(30 * 60);
 
-  // Submission Lifecycle & Thanks Card Data
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [summaryData, setSummaryData] = useState(null);
   const [redirectTimer, setRedirectTimer] = useState(15);
 
-  // Anti-Cheat Warnings (3 -> 2 -> 1 -> Auto Submit)
   const [warningsLeft, setWarningsLeft] = useState(3);
   const warningsLeftRef = useRef(3);
   warningsLeftRef.current = warningsLeft;
@@ -38,14 +36,12 @@ function OnlineTest() {
   questionsRef.current = questions;
   const isSubmittedRef = useRef(false);
 
-  // 1. Auth Guard & Live Strict Question Bank Loader
   useEffect(() => {
     if (!student?._id && !student?.studentId) {
       navigate('/Test');
       return;
     }
 
-    // A. Verify Reset Status directly from server
     const verifyResetStatus = async () => {
       try {
         const idToQuery = student._id || student.studentId;
@@ -72,14 +68,12 @@ function OnlineTest() {
 
     verifyResetStatus();
 
-    // B. Strict Question Bank Loader (Only fetch EXACT questions added by Admin)
     const loadQuestionsFromSource = async () => {
       setIsQuestionsLoading(true);
-      const studentCourse = (student.course || "DCA").trim();
+      const studentCourse = (student.course || "DCA").trim().toUpperCase();
       let extractedQuestions = [];
 
       try {
-        // Step 1: Hit API with course parameter
         const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(studentCourse)}`, {
           cache: 'no-store'
         });
@@ -88,11 +82,9 @@ function OnlineTest() {
           const rawData = await res.json();
           let rawList = Array.isArray(rawData) ? rawData : (rawData.questions || rawData.data || []);
 
-          // Double check course filtering on frontend
           let filtered = rawList.filter(q => {
             const qCourse = (q.course || "").trim().toUpperCase();
-            const sCourse = studentCourse.toUpperCase();
-            return !q.course || qCourse === sCourse || sCourse.includes(qCourse);
+            return !q.course || qCourse === studentCourse || studentCourse.includes(qCourse);
           });
 
           if (filtered.length > 0) {
@@ -105,9 +97,8 @@ function OnlineTest() {
         console.warn("Server question fetch error:", e);
       }
 
-      // Step 2: Fallback to LocalStorage question bank (matching ManageQuestions key)
       if (extractedQuestions.length === 0) {
-        const localSaved = localStorage.getItem(`cyntax_questions_${studentCourse}`);
+        const localSaved = localStorage.getItem(`cyntax_questions_${studentCourse}`) || localStorage.getItem('cyntax_questions_DCA');
         if (localSaved) {
           try {
             const parsed = JSON.parse(localSaved);
@@ -120,7 +111,6 @@ function OnlineTest() {
         }
       }
 
-      // Normalize Questions Format
       const sanitized = extractedQuestions.map((q, idx) => ({
         id: q.id || q._id || idx + 1,
         q: q.q || q.question || `Question ${idx + 1}`,
@@ -135,7 +125,6 @@ function OnlineTest() {
     loadQuestionsFromSource();
   }, [student?._id, student?.studentId, student?.course, navigate, BASE_URL]);
 
-  // 2. 3-Second Blue Countdown
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
@@ -149,13 +138,11 @@ function OnlineTest() {
     }
   }, [countdown]);
 
-  // Clean Exit to Home Page
   const handleExitToHome = useCallback(() => {
     sessionStorage.removeItem('activeExamStudent');
     navigate('/');
   }, [navigate]);
 
-  // 3. BULLETPROOF SUBMISSION & RESPONSE SHEET CREATION
   const executeFinalSubmission = useCallback(async () => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
@@ -234,7 +221,6 @@ function OnlineTest() {
       responses: detailedResponses
     };
 
-    // Instant local backup on student phone
     localStorage.setItem(`cyntax_test_done_${student.studentId}`, JSON.stringify({
       hasGivenTest: true,
       testScore: correctCount,
@@ -255,7 +241,6 @@ function OnlineTest() {
 
     const { _id, __v, createdAt, updatedAt, ...cleanStudentData } = student;
 
-    // Full multi-layer payload so backend does not strip responses
     const updatedPayload = {
       ...cleanStudentData,
       hasGivenTest: true,
@@ -300,7 +285,6 @@ function OnlineTest() {
     }
   }, [BASE_URL, student]);
 
-  // 4. 15-Second Auto Redirect Timer
   useEffect(() => {
     if (isSubmitted) {
       if (redirectTimer > 0) {
@@ -314,7 +298,6 @@ function OnlineTest() {
     }
   }, [isSubmitted, redirectTimer, handleExitToHome]);
 
-  // 5. Anti-Cheat Security: Keyboard, Right-Click, Navigation, and Tab-Switch Locks
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
 
@@ -369,7 +352,6 @@ function OnlineTest() {
     };
   }, [isTestReady, isSubmitted, executeFinalSubmission]);
 
-  // 6. 30-Minute Reverse Timer
   useEffect(() => {
     if (!isTestReady || isSubmitted) return;
     if (timeLeft <= 0) {
@@ -386,9 +368,6 @@ function OnlineTest() {
     return `${m}:${s}`;
   };
 
-  // -------------------------------------------------------------
-  // SCREEN 1: 3-SECOND BLUE COUNTDOWN OVERLAY
-  // -------------------------------------------------------------
   if (!isTestReady) {
     return (
       <div style={{
@@ -412,9 +391,6 @@ function OnlineTest() {
     );
   }
 
-  // -------------------------------------------------------------
-  // SCREEN 2: 15-SECOND PROFESSIONAL THANKS SCREEN
-  // -------------------------------------------------------------
   if (isSubmitted) {
     return (
       <div style={{
@@ -520,16 +496,12 @@ function OnlineTest() {
 
   const currentQ = questions[currentIndex];
 
-  // -------------------------------------------------------------
-  // SCREEN 3: COMPLETE EXAM INTERFACE
-  // -------------------------------------------------------------
   return (
     <div style={{
       position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column',
       backgroundColor: '#f8fafc', zIndex: 9999999, userSelect: 'none',
       WebkitUserSelect: 'none', overscrollBehavior: 'none'
     }}>
-      {/* Top Bar */}
       <header style={{
         backgroundColor: '#1e293b', color: 'white',
         padding: '10px 15px', display: 'flex', alignItems: 'center',
@@ -575,10 +547,7 @@ function OnlineTest() {
         </div>
       </header>
 
-      {/* Main Question + Palette Container */}
       <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-        
-        {/* Left Side: Active Question Display */}
         <div style={{
           flex: 1, padding: '15px 20px', overflowY: 'auto',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
@@ -595,7 +564,6 @@ function OnlineTest() {
               {currentQ.q}
             </h5>
 
-            {/* Multiple Choice Options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {currentQ.o && currentQ.o.map((opt, idx) => {
                 const isSelected = userAnswers[currentQ.id] === idx;
@@ -626,7 +594,6 @@ function OnlineTest() {
             </div>
           </div>
 
-          {/* Navigation Buttons */}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '15px', marginTop: '20px' }}>
             <button
               disabled={currentIndex === 0}
@@ -658,7 +625,6 @@ function OnlineTest() {
           </div>
         </div>
 
-        {/* Right Side: TCS Question Palette */}
         <div style={{
           width: '280px', backgroundColor: '#ffffff', borderLeft: '2px solid #e2e8f0',
           display: 'flex', flexDirection: 'column', height: '100%',

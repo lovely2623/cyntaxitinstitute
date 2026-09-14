@@ -17,7 +17,6 @@ function ManageQuestions() {
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const storageKey = `cyntax_questions_${course}`;
 
-  // 1. Dual Loader: Pehle local storage load kare fir remote API se exact match laye
   const loadQuestions = useCallback(async () => {
     setIsLoading(true);
     const localData = localStorage.getItem(storageKey);
@@ -54,7 +53,6 @@ function ManageQuestions() {
     loadQuestions();
   }, [loadQuestions]);
 
-  // 2. Add Question Handler
   const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!form.q.trim() || !form.o1.trim() || !form.o2.trim() || !form.o3.trim() || !form.o4.trim()) {
@@ -68,7 +66,7 @@ function ManageQuestions() {
       q: form.q.trim(),
       o: [form.o1.trim(), form.o2.trim(), form.o3.trim(), form.o4.trim()],
       a: parseInt(form.a, 10),
-      course: course
+      course: course.trim().toUpperCase()
     };
 
     const updated = [...questions, newQ];
@@ -93,15 +91,14 @@ function ManageQuestions() {
         }
         alert(`Question successfully database mein save ho gaya! Total: ${updated.length}`);
       } else {
-        alert("Server par save nahi ho paya, local device par save hai.");
+        alert("Server par save nahi ho paya, local storage me temporary save hai.");
       }
     } catch (err) {
       console.error("Remote save error:", err);
-      alert("Question locally save ho gaya hai.");
+      alert("Network issue! Question locally save hai.");
     }
   };
 
-  // 3. Delete Handler
   const handleDelete = async (questionObj) => {
     const targetId = questionObj._id || questionObj.id;
     if (!window.confirm("Bhai ye question delete karna hai?")) return;
@@ -152,7 +149,6 @@ function ManageQuestions() {
       </div>
 
       <div className="row">
-        {/* Left: Add Question Form */}
         <div className="col-lg-5 mb-4">
           <div className="card shadow-sm border-0 rounded-4 p-4">
             <h5 className="fw-bold mb-3">Add New Question ({course})</h5>
@@ -238,7 +234,6 @@ function ManageQuestions() {
           </div>
         </div>
 
-        {/* Right: Question List */}
         <div className="col-lg-7">
           <div className="card shadow-sm border-0 rounded-4 p-4">
             <h5 className="fw-bold mb-3 d-flex justify-content-between align-items-center">
@@ -251,7 +246,7 @@ function ManageQuestions() {
 
             {questions.length === 0 ? (
               <div className="p-4 text-center text-muted">
-                Abhi is course mein question nahi dale gaye hain.
+                Abhi is course mein custom question nahi dale hain.
               </div>
             ) : (
               <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
