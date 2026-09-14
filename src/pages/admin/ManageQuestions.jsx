@@ -17,7 +17,6 @@ function ManageQuestions() {
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const storageKey = `cyntax_questions_${course}`;
 
-  // 1. Direct Server Load (Server is the Ultimate Source of Truth)
   const loadQuestions = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -31,7 +30,7 @@ function ManageQuestions() {
         setQuestions(filtered);
         localStorage.setItem(storageKey, JSON.stringify(filtered));
       } else {
-        throw new Error("Failed to fetch");
+        throw new Error("Failed to fetch questions from server");
       }
     } catch (err) {
       console.warn("Server fetch failed, falling back to local storage:", err);
@@ -51,7 +50,6 @@ function ManageQuestions() {
     loadQuestions();
   }, [loadQuestions]);
 
-  // 2. Add Question Handler (Server first, then sync state)
   const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!form.q.trim() || !form.o1.trim() || !form.o2.trim() || !form.o3.trim() || !form.o4.trim()) {
@@ -84,7 +82,7 @@ function ManageQuestions() {
         setForm({ q: '', o1: '', o2: '', o3: '', o4: '', a: 0 });
         alert(`Question successfully database mein save ho gaya! Total: ${updated.length}`);
       } else {
-        alert("Server error: Question save nahi ho paya!");
+        alert("Server error: Question save nahi ho saka.");
       }
     } catch (err) {
       console.error("Save error:", err);
@@ -92,7 +90,6 @@ function ManageQuestions() {
     }
   };
 
-  // 3. Complete Hard Delete Handler (Permanently removes from Database & LocalStorage)
   const handleDelete = async (questionObj) => {
     const targetId = questionObj._id || questionObj.id;
     if (!window.confirm("Bhai ye question pakka delete karna hai? Yeh database se hamesha ke liye hat jayega!")) return;
@@ -103,7 +100,6 @@ function ManageQuestions() {
       });
 
       if (res.ok) {
-        // Sirf tab frontend se remove karein jab server confirm kare
         const updated = questions.filter(q => {
           if (questionObj._id && q._id) return q._id !== questionObj._id;
           return q.id !== questionObj.id;
@@ -116,7 +112,7 @@ function ManageQuestions() {
       }
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Network error! Question delete nahi ho paya.");
+      alert("Network error! Server tak request nahi pahunchi.");
     }
   };
 
@@ -150,7 +146,6 @@ function ManageQuestions() {
       </div>
 
       <div className="row">
-        {/* Left: Add Question Form */}
         <div className="col-lg-5 mb-4">
           <div className="card shadow-sm border-0 rounded-4 p-4">
             <h5 className="fw-bold mb-3">Add New Question ({course})</h5>
@@ -236,7 +231,6 @@ function ManageQuestions() {
           </div>
         </div>
 
-        {/* Right: Question List */}
         <div className="col-lg-7">
           <div className="card shadow-sm border-0 rounded-4 p-4">
             <h5 className="fw-bold mb-3 d-flex justify-content-between align-items-center">

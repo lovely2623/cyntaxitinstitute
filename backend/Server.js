@@ -54,7 +54,6 @@ const studentSchema = new mongoose.Schema({
   joiningDate: { type: Date, default: Date.now },
   photo: String, 
   status: { type: String, default: 'Active' },
-  // EXAM & RESULT FIELDS (strict storage)
   hasGivenTest: { type: Boolean, default: false },
   testScore: { type: Number, default: 0 },
   testGrade: { type: String, default: null },
@@ -63,7 +62,6 @@ const studentSchema = new mongoose.Schema({
   paperSnapshot: { type: Object, default: null },
   examPaperData: { type: String, default: null },
   details: { type: Object, default: {} },
-  // CERTIFICATE FIELDS
   isCertificateIssued: { type: Boolean, default: false },
   certificateDetails: { type: Object, default: null }
 }, { strict: false });
@@ -93,7 +91,6 @@ const newsSchema = new mongoose.Schema({
 });
 const News = mongoose.model('News', newsSchema);
 
-// NEW: QUESTION SCHEMA & MODEL
 const questionSchema = new mongoose.Schema({
   id: { type: Number },
   q: { type: String, required: true },
@@ -106,7 +103,7 @@ const Question = mongoose.models.Question || mongoose.model('Question', question
 
 // --- ROUTES ---
 
-// QUESTION MANAGEMENT ROUTES
+// 1. GET ALL QUESTIONS (BY COURSE)
 app.get('/api/questions', async (req, res) => {
   try {
     const { course } = req.query;
@@ -121,6 +118,7 @@ app.get('/api/questions', async (req, res) => {
   }
 });
 
+// 2. ADD QUESTION
 app.post('/api/questions', async (req, res) => {
   try {
     const { q, o, a, course, id } = req.body;
@@ -141,17 +139,29 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
+// 3. BULLETPROOF DELETE QUESTION (Handles both MongoDB ObjectId and Numeric ID)
 app.delete('/api/questions/:id', async (req, res) => {
   try {
     const targetId = req.params.id;
-    await Question.deleteMany({
-      $or: [
-        { _id: mongoose.Types.ObjectId.isValid(targetId) ? targetId : null },
-        { id: Number(targetId) }
-      ]
-    });
-    res.json({ success: true, message: "Question deleted" });
+    let conditions = [];
+
+    if (mongoose.Types.ObjectId.isValid(targetId)) {
+      conditions.push({ _id: targetId });
+    }
+
+    const numericId = Number(targetId);
+    if (!isNaN(numericId)) {
+      conditions.push({ id: numericId });
+    }
+
+    if (conditions.length === 0) {
+      return res.status(400).json({ error: "Invalid question ID format" });
+    }
+
+    const result = await Question.deleteMany({ $or: conditions });
+    res.json({ success: true, message: "Question deleted successfully", count: result.deletedCount });
   } catch (err) {
+    console.error("Delete question error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -252,7 +262,6 @@ app.get('/api/students', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Single student fetch by ID or StudentId
 app.get('/api/students/:id', async (req, res) => {
   try {
     const target = req.params.id;
@@ -278,7 +287,6 @@ app.post('/api/students', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Update Student
 app.put('/api/students/:id', async (req, res) => {
   try {
     const target = req.params.id;
@@ -293,7 +301,6 @@ app.put('/api/students/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// NEW: Issue Certificate Route
 app.put('/api/students/issue-certificate/:id', async (req, res) => {
   try {
     const updated = await Student.findByIdAndUpdate(
