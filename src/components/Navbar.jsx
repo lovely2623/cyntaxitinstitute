@@ -50,13 +50,13 @@ function Navbar() {
         <div className="top-bar-left-content">
           <div className='info-item'>
             <i className="fas fa-map-marker-alt"></i>
-            <span>Solan</span>
+            <span>Shimla</span>
           </div>
 
           <div className='info-item hide-on-mobile'>
-            <a href="mailto:cyntaxcodinghub@gmail.com">
+            <a href="mailto:mycyntax@gmail.com">
               <i className="fas fa-envelope"></i>
-              <span>cyntaxcodinghub@gmail.com</span>
+              <span>mycyntax@gmail.com</span>
             </a>
           </div>
 
@@ -79,7 +79,7 @@ function Navbar() {
         <div className="nav-container">
           <div className="logo" onClick={() => navigate('/')}>
             <img src={logo} alt="Logo" className="logo-img" />
-            <h1 className="logo-text-branding">Cyntax Computer Institute</h1>
+            <h1 className="logo-text-branding">MyCyntax Computer Institute</h1>
           </div>
 
           <div className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
@@ -94,9 +94,9 @@ function Navbar() {
             <li><NavLink to="/Gallery" onClick={closeMenu}>Gallery</NavLink></li>
             <li><NavLink to="/Verification" onClick={closeMenu}>Verification</NavLink></li>
             
-            {/* DEDICATED STUDENT ONLINE EXAM PORTAL LINK */}
+            {/* ONLINE EXAM LINK - NORMAL LINK BEHAVIOR */}
             <li>
-              <NavLink to="/Test" onClick={closeMenu} className="nav-test-link">
+              <NavLink to="/Test" onClick={closeMenu}>
                 Online Exam
               </NavLink>
             </li>
