@@ -24,7 +24,13 @@ const defaultBank = {
 
 function OnlineTest() {
   const navigate = useNavigate();
-  const student = JSON.parse(sessionStorage.getItem('activeExamStudent') || '{}');
+  const [student, setStudent] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('activeExamStudent') || '{}');
+    } catch {
+      return {};
+    }
+  });
 
   const [countdown, setCountdown] = useState(3);
   const [isTestReady, setIsTestReady] = useState(false);
@@ -50,18 +56,48 @@ function OnlineTest() {
   userAnswersRef.current = userAnswers;
   const isSubmittedRef = useRef(false);
 
-  // 1. Auth Guard & Question Bank Loader
+  // 1. Auth Guard & Question Bank Loader (With Server Reset Check)
   useEffect(() => {
-    if (!isSubmittedRef.current && !student._id) {
+    if (!student?._id && !student?.studentId) {
       navigate('/Test');
       return;
     }
 
-    const savedCustom = localStorage.getItem(`cyntax_questions_${student.course}`);
+    // Sync state with server to ensure admin reset is reflected immediately
+    const verifyResetStatus = async () => {
+      try {
+        const idToQuery = student._id || student.studentId;
+        const res = await fetch(`${BASE_URL}/api/students/${idToQuery}`);
+        if (res.ok) {
+          const freshData = await res.json();
+          const testAlreadyDone = freshData.hasGivenTest === true || freshData.hasGivenTest === "true";
+
+          if (!testAlreadyDone) {
+            // Admin has reset the exam: remove old completion locks from this device
+            localStorage.removeItem(`cyntax_test_done_${freshData.studentId}`);
+            localStorage.removeItem(`cyntax_test_done_${student.studentId}`);
+            sessionStorage.setItem('activeExamStudent', JSON.stringify(freshData));
+            setStudent(freshData);
+          } else if (!isSubmittedRef.current) {
+            alert("Aapka test pehle se submit ho chuka hai!");
+            navigate('/Test');
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Live status check error, falling back to local state:", err);
+      }
+    };
+
+    verifyResetStatus();
+
+    // Check Question Bank: Prioritize course specific custom questions
+    const courseName = student.course || "";
+    const savedCustom = localStorage.getItem(`cyntax_questions_${courseName}`);
     if (savedCustom) {
       try {
         const parsed = JSON.parse(savedCustom);
-        if (parsed && parsed.length > 0) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           setQuestions(parsed);
           return;
         }
@@ -70,7 +106,7 @@ function OnlineTest() {
       }
     }
 
-    const cKey = (student.course || "").toUpperCase();
+    const cKey = courseName.toUpperCase();
     if (cKey.includes("STENO")) {
       setQuestions(defaultBank.Steno);
     } else if (cKey.includes("DCA") || cKey.includes("ADCA")) {
@@ -78,7 +114,7 @@ function OnlineTest() {
     } else {
       setQuestions(defaultBank["Short Term"]);
     }
-  }, [student, navigate]);
+  }, [student?._id, student?.studentId, student?.course, navigate, BASE_URL]);
 
   // 2. 3-Second Blue Countdown
   useEffect(() => {
@@ -113,7 +149,7 @@ function OnlineTest() {
       const selectedOptionIdx = userAnswersRef.current[q.id];
       const isAttempted = selectedOptionIdx !== undefined && selectedOptionIdx !== null;
 
-      // Smart Correct Index Detection: Index, Option Text, ya Letter Match
+      // Smart Correct Index Detection
       let correctIdx = -1;
       const rawAns = q.a !== undefined ? q.a : q.correctAnswer;
 
@@ -123,18 +159,15 @@ function OnlineTest() {
         correctIdx = Number(rawAns);
       } else if (typeof rawAns === 'string') {
         const cleanAns = rawAns.trim().toLowerCase();
-        // Check if answer is stored as "A", "B", "C", "D"
         if (cleanAns === 'a') correctIdx = 0;
         else if (cleanAns === 'b') correctIdx = 1;
         else if (cleanAns === 'c') correctIdx = 2;
         else if (cleanAns === 'd') correctIdx = 3;
         else {
-          // Check if answer is stored as exact option text
           correctIdx = q.o.findIndex(opt => String(opt).trim().toLowerCase() === cleanAns);
         }
       }
 
-      // Default fallback to 0 agar question me galat index save hua ho
       if (correctIdx === -1) correctIdx = 0;
 
       const isCorrect = isAttempted && Number(selectedOptionIdx) === correctIdx;
@@ -154,7 +187,6 @@ function OnlineTest() {
       };
     });
 
-    // Professional Percentage Grading Formula (Dynamic for any number of questions)
     const percentage = actualTotalQuestions > 0 ? (correctCount / actualTotalQuestions) * 100 : 0;
     let grade = "Fail";
 
@@ -191,7 +223,6 @@ function OnlineTest() {
       paperSnapshot: paperSnapshot
     }));
 
-    // Switch UI instantly to Thanks Screen without waiting for network response
     setSummaryData({
       name: student.name || "Student",
       rollNo: student.studentId || "N/A",
@@ -203,7 +234,6 @@ function OnlineTest() {
     });
     setIsSubmitted(true);
 
-    // Backend database update
     const { _id, __v, createdAt, updatedAt, ...cleanStudentData } = student;
 
     const updatedPayload = {
@@ -213,6 +243,16 @@ function OnlineTest() {
       testDate: currentDate,
       testGrade: grade,
       submittedExamPaper: paperSnapshot,
+      paperSnapshot: paperSnapshot,
+      details: {
+        ...(student.details || {}),
+        hasGivenTest: true,
+        testScore: correctCount,
+        testDate: currentDate,
+        testGrade: grade,
+        submittedExamPaper: paperSnapshot,
+        paperSnapshot: paperSnapshot
+      },
       certificateDetails: {
         ...(student.certificateDetails || {}),
         studentName: student.name,
@@ -411,7 +451,6 @@ function OnlineTest() {
             </p>
           </div>
 
-          {/* 15-Second Dynamic Counter */}
           <div style={{
             backgroundColor: '#eff6ff', border: '1px dashed #3b82f6',
             borderRadius: '12px', padding: '12px', marginBottom: '20px',
@@ -421,7 +460,6 @@ function OnlineTest() {
             Auto redirecting to Home Page in <b>{redirectTimer}</b> seconds...
           </div>
 
-          {/* Bottom Exit Button */}
           <button 
             onClick={handleExitToHome}
             style={{

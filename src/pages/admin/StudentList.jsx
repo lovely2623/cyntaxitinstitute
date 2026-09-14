@@ -48,7 +48,6 @@ function StudentList() {
     if (!s) return {};
     const d = s.details || s.additionalDetails || {};
 
-    // Helper: Valid string check
     const getVal = (...keys) => {
       for (const val of keys) {
         if (val !== undefined && val !== null) {
@@ -61,7 +60,6 @@ function StudentList() {
       return "";
     };
 
-    // Date of birth parsing - ensures YYYY-MM-DD for <input type="date">
     let cleanDob = "";
     const rawDob = getVal(s.dob, d.dob);
     if (rawDob) {
@@ -154,26 +152,49 @@ function StudentList() {
         testGrade: null,
         testDate: null,
         submittedExamPaper: null,
-        certificateDetails: { ...(student.certificateDetails || {}), hasGivenTest: false, testScore: 0 }
+        paperSnapshot: null,
+        details: {
+          ...(student.details || {}),
+          hasGivenTest: false,
+          testScore: 0,
+          testGrade: null,
+          testDate: null,
+          submittedExamPaper: null,
+          paperSnapshot: null
+        },
+        certificateDetails: {
+          ...(student.certificateDetails || {}),
+          hasGivenTest: false,
+          testScore: 0,
+          grade: null
+        }
       };
+
       const updated = students.map(s => s._id === student._id ? { ...s, ...payload } : s);
       setStudents(updated);
       localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
-      localStorage.removeItem(`cyntax_test_done_${student.studentId}`);
+      
+      const sId = student.studentId || student.rollNo || student.regNo;
+      if (sId) {
+        localStorage.removeItem(`cyntax_test_done_${sId}`);
+      }
+
       try {
-        await fetch(`${BASE_URL}/api/students/${student._id}`, {
+        const res = await fetch(`${BASE_URL}/api/students/${student._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        alert("Test reset ho gaya! Status: Pending");
+        if (!res.ok) throw new Error();
+        alert("Test reset ho gaya! Student ab kisi bhi phone se bina access denied ke test re-appear kar sakta hai.");
       } catch {
+        alert("Server update mein dikkat aayi! Re-syncing...");
+      } finally {
         fetchStudents();
       }
     }
   };
 
-  // Photo upload handler for edit modal
   const handleEditPhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -292,14 +313,22 @@ function StudentList() {
 
   const isTestDone = (s) => (
     s.hasGivenTest === true || s.hasGivenTest === "yes" || s.hasGivenTest === "true" ||
+    s.details?.hasGivenTest === true ||
     s.certificateDetails?.hasGivenTest === true || !!localStorage.getItem(`cyntax_test_done_${s.studentId}`)
   );
 
   const getExamPaper = (s) => {
-    if (s.submittedExamPaper?.responses) return s.submittedExamPaper;
+    if (s.submittedExamPaper?.responses?.length) return s.submittedExamPaper;
+    if (s.paperSnapshot?.responses?.length) return s.paperSnapshot;
+    if (s.details?.submittedExamPaper?.responses?.length) return s.details.submittedExamPaper;
+    if (s.details?.paperSnapshot?.responses?.length) return s.details.paperSnapshot;
+
     const local = localStorage.getItem(`cyntax_test_done_${s.studentId}`);
     if (local) {
-      try { return JSON.parse(local).paperSnapshot || null; } catch {}
+      try { 
+        const parsed = JSON.parse(local);
+        return parsed.paperSnapshot || parsed.submittedExamPaper || null; 
+      } catch {}
     }
     return null;
   };
@@ -318,9 +347,9 @@ function StudentList() {
       const grade = pct >= 80 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail";
       return { total, correct, grade };
     }
-    const fallbackScore = Number(student?.testScore) || 0;
-    const fallbackTotal = paper?.totalQuestions || 2;
-    const pct = (fallbackScore / fallbackTotal) * 100;
+    const fallbackScore = Number(student?.testScore ?? student?.details?.testScore ?? 0);
+    const fallbackTotal = paper?.totalQuestions || 50;
+    const pct = fallbackTotal > 0 ? (fallbackScore / fallbackTotal) * 100 : 0;
     const grade = pct >= 80 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail";
     return { total: fallbackTotal, correct: fallbackScore, grade };
   };

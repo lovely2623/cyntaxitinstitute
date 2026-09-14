@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 function ManageQuestions() {
   const [course, setCourse] = useState('DCA');
@@ -13,26 +13,42 @@ function ManageQuestions() {
     a: 0
   });
 
+  const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const storageKey = `cyntax_questions_${course}`;
 
-  const loadQuestions = () => {
-    const data = localStorage.getItem(`cyntax_questions_${course}`);
-    if (data) {
+  const loadQuestions = useCallback(async () => {
+    // 1. First load from local storage
+    const localData = localStorage.getItem(storageKey);
+    let loaded = [];
+    if (localData) {
       try {
-        setQuestions(JSON.parse(data));
+        loaded = JSON.parse(localData);
+        setQuestions(Array.isArray(loaded) ? loaded : []);
       } catch (e) {
         setQuestions([]);
       }
-    } else {
-      setQuestions([]);
     }
-  };
+
+    // 2. Sync with backend API so questions don't disappear on other devices
+    try {
+      const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(course)}`);
+      if (res.ok) {
+        const remoteData = await res.json();
+        if (Array.isArray(remoteData) && remoteData.length > 0) {
+          setQuestions(remoteData);
+          localStorage.setItem(storageKey, JSON.stringify(remoteData));
+        }
+      }
+    } catch {
+      // Offline fallback: keep local questions intact
+    }
+  }, [course, storageKey, BASE_URL]);
 
   useEffect(() => {
     loadQuestions();
-  }, [course]);
+  }, [loadQuestions]);
 
-  const handleAddQuestion = (e) => {
+  const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!form.q || !form.o1 || !form.o2 || !form.o3 || !form.o4) {
       alert("Saari fields bharein!");
@@ -43,22 +59,40 @@ function ManageQuestions() {
       id: Date.now(),
       q: form.q,
       o: [form.o1, form.o2, form.o3, form.o4],
-      a: parseInt(form.a)
+      a: parseInt(form.a, 10),
+      course: course
     };
 
     const updated = [...questions, newQ];
     setQuestions(updated);
     localStorage.setItem(storageKey, JSON.stringify(updated));
 
+    // Persist to server
+    try {
+      await fetch(`${BASE_URL}/api/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newQ)
+      });
+    } catch (err) {
+      console.warn("Could not save question to remote API, saved locally:", err);
+    }
+
     setForm({ q: '', o1: '', o2: '', o3: '', o4: '', a: 0 });
     alert(`Question Add Ho Gaya! Total: ${updated.length}`);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Bhai ye question delete karna hai?")) {
       const updated = questions.filter(q => q.id !== id);
       setQuestions(updated);
       localStorage.setItem(storageKey, JSON.stringify(updated));
+
+      try {
+        await fetch(`${BASE_URL}/api/questions/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn("Remote delete failed, updated locally:", err);
+      }
     }
   };
 
@@ -92,10 +126,10 @@ function ManageQuestions() {
                 <textarea 
                   className="form-control" 
                   rows="3" 
-                  placeholder="Enter Question text..."
-                  value={form.q}
-                  onChange={(e) => setForm({ ...form, q: e.target.value })}
-                  required
+                  placeholder="Enter Question text..." 
+                  value={form.q} 
+                  onChange={(e) => setForm({ ...form, q: e.target.value })} 
+                  required 
                 />
               </div>
 
@@ -105,9 +139,9 @@ function ManageQuestions() {
                   type="text" 
                   className="form-control" 
                   placeholder="Option 1" 
-                  value={form.o1}
-                  onChange={(e) => setForm({ ...form, o1: e.target.value })}
-                  required
+                  value={form.o1} 
+                  onChange={(e) => setForm({ ...form, o1: e.target.value })} 
+                  required 
                 />
               </div>
 
@@ -117,9 +151,9 @@ function ManageQuestions() {
                   type="text" 
                   className="form-control" 
                   placeholder="Option 2" 
-                  value={form.o2}
-                  onChange={(e) => setForm({ ...form, o2: e.target.value })}
-                  required
+                  value={form.o2} 
+                  onChange={(e) => setForm({ ...form, o2: e.target.value })} 
+                  required 
                 />
               </div>
 
@@ -129,9 +163,9 @@ function ManageQuestions() {
                   type="text" 
                   className="form-control" 
                   placeholder="Option 3" 
-                  value={form.o3}
-                  onChange={(e) => setForm({ ...form, o3: e.target.value })}
-                  required
+                  value={form.o3} 
+                  onChange={(e) => setForm({ ...form, o3: e.target.value })} 
+                  required 
                 />
               </div>
 
@@ -141,9 +175,9 @@ function ManageQuestions() {
                   type="text" 
                   className="form-control" 
                   placeholder="Option 4" 
-                  value={form.o4}
-                  onChange={(e) => setForm({ ...form, o4: e.target.value })}
-                  required
+                  value={form.o4} 
+                  onChange={(e) => setForm({ ...form, o4: e.target.value })} 
+                  required 
                 />
               </div>
 
@@ -151,7 +185,7 @@ function ManageQuestions() {
                 <label className="small fw-bold text-success">Correct Option</label>
                 <select 
                   className="form-select border-success" 
-                  value={form.a}
+                  value={form.a} 
                   onChange={(e) => setForm({ ...form, a: e.target.value })}
                 >
                   <option value={0}>Option A is Correct</option>
@@ -185,7 +219,7 @@ function ManageQuestions() {
                 {questions.map((q, idx) => (
                   <div key={q.id} className="card p-3 mb-2 border rounded-3 bg-light position-relative">
                     <button 
-                      className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                      className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2" 
                       onClick={() => handleDelete(q.id)}
                     >
                       <i className="fas fa-trash"></i>
