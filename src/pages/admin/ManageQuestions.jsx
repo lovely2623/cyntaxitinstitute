@@ -17,20 +17,9 @@ function ManageQuestions() {
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const storageKey = `cyntax_questions_${course}`;
 
+  // 1. Direct Server Load (Server is the Ultimate Source of Truth)
   const loadQuestions = useCallback(async () => {
     setIsLoading(true);
-    const localData = localStorage.getItem(storageKey);
-    if (localData) {
-      try {
-        const parsed = JSON.parse(localData);
-        if (Array.isArray(parsed)) {
-          setQuestions(parsed);
-        }
-      } catch (e) {
-        console.error("Local parse error:", e);
-      }
-    }
-
     try {
       const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(course)}`, {
         cache: 'no-store'
@@ -41,9 +30,18 @@ function ManageQuestions() {
         const filtered = list.filter(q => !q.course || q.course.toUpperCase() === course.toUpperCase());
         setQuestions(filtered);
         localStorage.setItem(storageKey, JSON.stringify(filtered));
+      } else {
+        throw new Error("Failed to fetch");
       }
     } catch (err) {
-      console.warn("Server questions fetch failed, running on offline storage:", err);
+      console.warn("Server fetch failed, falling back to local storage:", err);
+      const localData = localStorage.getItem(storageKey);
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed)) setQuestions(parsed);
+        } catch {}
+      }
     } finally {
       setIsLoading(false);
     }
@@ -53,6 +51,7 @@ function ManageQuestions() {
     loadQuestions();
   }, [loadQuestions]);
 
+  // 2. Add Question Handler (Server first, then sync state)
   const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!form.q.trim() || !form.o1.trim() || !form.o2.trim() || !form.o3.trim() || !form.o4.trim()) {
@@ -69,12 +68,6 @@ function ManageQuestions() {
       course: course.trim().toUpperCase()
     };
 
-    const updated = [...questions, newQ];
-    setQuestions(updated);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
-
-    setForm({ q: '', o1: '', o2: '', o3: '', o4: '', a: 0 });
-
     try {
       const res = await fetch(`${BASE_URL}/api/questions`, {
         method: 'POST',
@@ -84,38 +77,46 @@ function ManageQuestions() {
 
       if (res.ok) {
         const savedData = await res.json();
-        if (savedData && (savedData._id || savedData.id)) {
-          const syncedList = updated.map(item => item.id === tempId ? { ...item, ...savedData } : item);
-          setQuestions(syncedList);
-          localStorage.setItem(storageKey, JSON.stringify(syncedList));
-        }
+        const finalItem = (savedData && (savedData._id || savedData.id)) ? savedData : newQ;
+        const updated = [...questions, finalItem];
+        setQuestions(updated);
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        setForm({ q: '', o1: '', o2: '', o3: '', o4: '', a: 0 });
         alert(`Question successfully database mein save ho gaya! Total: ${updated.length}`);
       } else {
-        alert("Server par save nahi ho paya, local storage me temporary save hai.");
+        alert("Server error: Question save nahi ho paya!");
       }
     } catch (err) {
-      console.error("Remote save error:", err);
-      alert("Network issue! Question locally save hai.");
+      console.error("Save error:", err);
+      alert("Network error! Server online nahi hai.");
     }
   };
 
+  // 3. Complete Hard Delete Handler (Permanently removes from Database & LocalStorage)
   const handleDelete = async (questionObj) => {
     const targetId = questionObj._id || questionObj.id;
-    if (!window.confirm("Bhai ye question delete karna hai?")) return;
-
-    const updated = questions.filter(q => (q._id ? q._id !== targetId : q.id !== targetId));
-    setQuestions(updated);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
+    if (!window.confirm("Bhai ye question pakka delete karna hai? Yeh database se hamesha ke liye hat jayega!")) return;
 
     try {
       const res = await fetch(`${BASE_URL}/api/questions/${targetId}`, {
         method: 'DELETE'
       });
-      if (!res.ok) {
-        console.warn("Backend par delete fail hua.");
+
+      if (res.ok) {
+        // Sirf tab frontend se remove karein jab server confirm kare
+        const updated = questions.filter(q => {
+          if (questionObj._id && q._id) return q._id !== questionObj._id;
+          return q.id !== questionObj.id;
+        });
+        setQuestions(updated);
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        alert("Question successfully delete ho gaya!");
+      } else {
+        alert("Server se delete nahi ho saka. Kripya dobara try karein.");
       }
     } catch (err) {
-      console.error("Remote delete error:", err);
+      console.error("Delete error:", err);
+      alert("Network error! Question delete nahi ho paya.");
     }
   };
 
@@ -149,6 +150,7 @@ function ManageQuestions() {
       </div>
 
       <div className="row">
+        {/* Left: Add Question Form */}
         <div className="col-lg-5 mb-4">
           <div className="card shadow-sm border-0 rounded-4 p-4">
             <h5 className="fw-bold mb-3">Add New Question ({course})</h5>
@@ -234,6 +236,7 @@ function ManageQuestions() {
           </div>
         </div>
 
+        {/* Right: Question List */}
         <div className="col-lg-7">
           <div className="card shadow-sm border-0 rounded-4 p-4">
             <h5 className="fw-bold mb-3 d-flex justify-content-between align-items-center">
@@ -246,7 +249,7 @@ function ManageQuestions() {
 
             {questions.length === 0 ? (
               <div className="p-4 text-center text-muted">
-                Abhi is course mein custom question nahi dale hain.
+                Abhi is course mein koi question add nahi hai.
               </div>
             ) : (
               <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
@@ -256,6 +259,7 @@ function ManageQuestions() {
                       type="button"
                       className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2" 
                       onClick={() => handleDelete(q)}
+                      title="Delete Question"
                     >
                       <i className="fas fa-trash"></i>
                     </button>

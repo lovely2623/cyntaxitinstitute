@@ -68,6 +68,7 @@ function OnlineTest() {
 
     verifyResetStatus();
 
+    // STRICT: Hamesha Database se live questions mangwayein
     const loadQuestionsFromSource = async () => {
       setIsQuestionsLoading(true);
       const studentCourse = (student.course || "DCA").trim().toUpperCase();
@@ -97,6 +98,7 @@ function OnlineTest() {
         console.warn("Server question fetch error:", e);
       }
 
+      // Agar server down ho toh sirf tab course specific cache uthayein
       if (extractedQuestions.length === 0) {
         const localSaved = localStorage.getItem(`cyntax_questions_${studentCourse}`) || localStorage.getItem('cyntax_questions_DCA');
         if (localSaved) {
