@@ -43,7 +43,7 @@ function StudentList() {
     fetchStudents();
   }, [fetchStudents]);
 
-  // COMPLETE MULTI-LAYER PARSER: Har field ko root aur nested details dono se accurately fetch karta hai
+  // Complete Multi-Layer Parser
   const parseStudent = useCallback((s) => {
     if (!s) return {};
     const d = s.details || s.additionalDetails || {};
@@ -153,6 +153,7 @@ function StudentList() {
         testDate: null,
         submittedExamPaper: null,
         paperSnapshot: null,
+        examPaperData: null,
         details: {
           ...(student.details || {}),
           hasGivenTest: false,
@@ -160,7 +161,8 @@ function StudentList() {
           testGrade: null,
           testDate: null,
           submittedExamPaper: null,
-          paperSnapshot: null
+          paperSnapshot: null,
+          examPaperData: null
         },
         certificateDetails: {
           ...(student.certificateDetails || {}),
@@ -317,11 +319,21 @@ function StudentList() {
     s.certificateDetails?.hasGivenTest === true || !!localStorage.getItem(`cyntax_test_done_${s.studentId}`)
   );
 
+  // Deep inspection for Response Sheet paper
   const getExamPaper = (s) => {
     if (s.submittedExamPaper?.responses?.length) return s.submittedExamPaper;
     if (s.paperSnapshot?.responses?.length) return s.paperSnapshot;
     if (s.details?.submittedExamPaper?.responses?.length) return s.details.submittedExamPaper;
     if (s.details?.paperSnapshot?.responses?.length) return s.details.paperSnapshot;
+
+    // Check stringified exam paper
+    const stringified = s.examPaperData || s.details?.examPaperData;
+    if (stringified && typeof stringified === 'string') {
+      try {
+        const parsed = JSON.parse(stringified);
+        if (parsed?.responses?.length) return parsed;
+      } catch {}
+    }
 
     const local = localStorage.getItem(`cyntax_test_done_${s.studentId}`);
     if (local) {
@@ -343,12 +355,12 @@ function StudentList() {
           correct++;
         }
       });
-      const pct = (correct / total) * 100;
+      const pct = total > 0 ? (correct / total) * 100 : 0;
       const grade = pct >= 80 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail";
       return { total, correct, grade };
     }
     const fallbackScore = Number(student?.testScore ?? student?.details?.testScore ?? 0);
-    const fallbackTotal = paper?.totalQuestions || 50;
+    const fallbackTotal = paper?.totalQuestions || (fallbackScore > 0 ? fallbackScore : 0);
     const pct = fallbackTotal > 0 ? (fallbackScore / fallbackTotal) * 100 : 0;
     const grade = pct >= 80 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail";
     return { total: fallbackTotal, correct: fallbackScore, grade };
@@ -668,7 +680,7 @@ function StudentList() {
                           <span className={`badge ${isCorrect ? 'bg-success' : !isAttempted ? 'bg-secondary' : 'bg-danger'} ms-2`}>{isCorrect ? 'Correct (+1)' : !isAttempted ? 'Unattempted (0)' : 'Incorrect (0)'}</span>
                         </div>
                         <div className="mt-2 ms-2">
-                          {r.options.map((opt, optIdx) => {
+                          {r.options && r.options.map((opt, optIdx) => {
                             const isSelected = Number(r.selectedAnswerIndex) === optIdx;
                             const isCorrectOpt = Number(r.correctAnswerIndex) === optIdx;
                             const optClass = isCorrectOpt ? 'opt-correct' : isSelected ? 'opt-wrong' : 'opt-normal';

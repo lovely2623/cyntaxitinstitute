@@ -17,7 +17,7 @@ function ManageQuestions() {
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const storageKey = `cyntax_questions_${course}`;
 
-  // 1. Dual Loader: Pehle local dikhaye taaki UI instant load ho, fir server se sync kare
+  // 1. Dual Loader: Pehle local storage load kare fir remote API se exact match laye
   const loadQuestions = useCallback(async () => {
     setIsLoading(true);
     const localData = localStorage.getItem(storageKey);
@@ -37,14 +37,14 @@ function ManageQuestions() {
         cache: 'no-store'
       });
       if (res.ok) {
-        const remoteData = await res.json();
-        if (Array.isArray(remoteData)) {
-          setQuestions(remoteData);
-          localStorage.setItem(storageKey, JSON.stringify(remoteData));
-        }
+        const raw = await res.json();
+        const list = Array.isArray(raw) ? raw : (raw.questions || raw.data || []);
+        const filtered = list.filter(q => !q.course || q.course.toUpperCase() === course.toUpperCase());
+        setQuestions(filtered);
+        localStorage.setItem(storageKey, JSON.stringify(filtered));
       }
     } catch (err) {
-      console.warn("Server questions fetch failed, running on offline/cached storage:", err);
+      console.warn("Server questions fetch failed, running on offline storage:", err);
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +54,7 @@ function ManageQuestions() {
     loadQuestions();
   }, [loadQuestions]);
 
-  // 2. Bulletproof Add Question Handler
+  // 2. Add Question Handler
   const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!form.q.trim() || !form.o1.trim() || !form.o2.trim() || !form.o3.trim() || !form.o4.trim()) {
@@ -71,12 +71,10 @@ function ManageQuestions() {
       course: course
     };
 
-    // Instant optimistic update
     const updated = [...questions, newQ];
     setQuestions(updated);
     localStorage.setItem(storageKey, JSON.stringify(updated));
 
-    // Reset form immediately
     setForm({ q: '', o1: '', o2: '', o3: '', o4: '', a: 0 });
 
     try {
@@ -88,7 +86,6 @@ function ManageQuestions() {
 
       if (res.ok) {
         const savedData = await res.json();
-        // Agar backend MongoDB se inserted object deta hai toh id sync karein
         if (savedData && (savedData._id || savedData.id)) {
           const syncedList = updated.map(item => item.id === tempId ? { ...item, ...savedData } : item);
           setQuestions(syncedList);
@@ -96,15 +93,15 @@ function ManageQuestions() {
         }
         alert(`Question successfully database mein save ho gaya! Total: ${updated.length}`);
       } else {
-        alert("Server par save nahi ho paya, par local device par temporary saved hai.");
+        alert("Server par save nahi ho paya, local device par save hai.");
       }
     } catch (err) {
       console.error("Remote save error:", err);
-      alert("Network issue! Question local storage mein save ho chuka hai.");
+      alert("Question locally save ho gaya hai.");
     }
   };
 
-  // 3. Complete Delete Handler (_id aur id dono support karta hai)
+  // 3. Delete Handler
   const handleDelete = async (questionObj) => {
     const targetId = questionObj._id || questionObj.id;
     if (!window.confirm("Bhai ye question delete karna hai?")) return;
@@ -254,7 +251,7 @@ function ManageQuestions() {
 
             {questions.length === 0 ? (
               <div className="p-4 text-center text-muted">
-                Abhi is course mein custom question nahi dale hain. (Default system questions run honge).
+                Abhi is course mein question nahi dale gaye hain.
               </div>
             ) : (
               <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
@@ -269,10 +266,10 @@ function ManageQuestions() {
                     </button>
                     <h6 className="fw-bold text-dark pe-4">Q{idx + 1}. {q.q}</h6>
                     <div className="small text-muted mt-2">
-                      <div>A: {q.o[0]} {Number(q.a) === 0 && <b className="text-success">(Correct)</b>}</div>
-                      <div>B: {q.o[1]} {Number(q.a) === 1 && <b className="text-success">(Correct)</b>}</div>
-                      <div>C: {q.o[2]} {Number(q.a) === 2 && <b className="text-success">(Correct)</b>}</div>
-                      <div>D: {q.o[3]} {Number(q.a) === 3 && <b className="text-success">(Correct)</b>}</div>
+                      <div>A: {q.o && q.o[0]} {Number(q.a) === 0 && <b className="text-success">(Correct)</b>}</div>
+                      <div>B: {q.o && q.o[1]} {Number(q.a) === 1 && <b className="text-success">(Correct)</b>}</div>
+                      <div>C: {q.o && q.o[2]} {Number(q.a) === 2 && <b className="text-success">(Correct)</b>}</div>
+                      <div>D: {q.o && q.o[3]} {Number(q.a) === 3 && <b className="text-success">(Correct)</b>}</div>
                     </div>
                   </div>
                 ))}

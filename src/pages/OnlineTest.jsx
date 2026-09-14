@@ -1,27 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const defaultBank = {
-  DCA: Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
-    q: `[DCA Q${i + 1}] Which component of a computer system is commonly called its brain?`,
-    o: ["Central Processing Unit (CPU)", "Arithmetic Logic Unit", "Cathode Ray Monitor", "Hard Disk Drive"],
-    a: 0
-  })),
-  Steno: Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
-    q: `[Steno Q${i + 1}] Pitman Shorthand system is fundamentally based on which principle?`,
-    o: ["Phonetic Sounds", "Grammar Syntax", "Alphabetical Spellings", "Punctuation Signs"],
-    a: 0
-  })),
-  "Short Term": Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
-    q: `[Short Term Q${i + 1}] Which markup language is universally used for structuring web pages?`,
-    o: ["HTML5", "CSS3", "Photoshop", "Notepad"],
-    a: 0
-  }))
-};
-
 function OnlineTest() {
   const navigate = useNavigate();
   const [student, setStudent] = useState(() => {
@@ -35,6 +14,7 @@ function OnlineTest() {
   const [countdown, setCountdown] = useState(3);
   const [isTestReady, setIsTestReady] = useState(false);
   const [questions, setQuestions] = useState([]);
+  const [isQuestionsLoading, setIsQuestionsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(30 * 60);
@@ -54,9 +34,11 @@ function OnlineTest() {
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
   const userAnswersRef = useRef({});
   userAnswersRef.current = userAnswers;
+  const questionsRef = useRef([]);
+  questionsRef.current = questions;
   const isSubmittedRef = useRef(false);
 
-  // 1. Auth Guard & LIVE Question Bank Loader
+  // 1. Auth Guard & Live Strict Question Bank Loader
   useEffect(() => {
     if (!student?._id && !student?.studentId) {
       navigate('/Test');
@@ -70,7 +52,7 @@ function OnlineTest() {
         const res = await fetch(`${BASE_URL}/api/students/${idToQuery}`, { cache: 'no-store' });
         if (res.ok) {
           const freshData = await res.json();
-          const testAlreadyDone = freshData.hasGivenTest === true || freshData.hasGivenTest === "true";
+          const testAlreadyDone = freshData.hasGivenTest === true || freshData.hasGivenTest === "true" || freshData.details?.hasGivenTest === true;
 
           if (!testAlreadyDone) {
             localStorage.removeItem(`cyntax_test_done_${freshData.studentId}`);
@@ -84,62 +66,70 @@ function OnlineTest() {
           }
         }
       } catch (err) {
-        console.warn("Live status check error, falling back to local state:", err);
+        console.warn("Live status check error, fallback to local:", err);
       }
     };
 
     verifyResetStatus();
 
-    // B. Fetch Latest Questions Directly From Server API
+    // B. Strict Question Bank Loader (Only fetch EXACT questions added by Admin)
     const loadQuestionsFromSource = async () => {
-      const courseName = student.course || "DCA";
-      let loadedQuestions = null;
+      setIsQuestionsLoading(true);
+      const studentCourse = (student.course || "DCA").trim();
+      let extractedQuestions = [];
 
       try {
-        // Step 1: Server se direct fresh questions mangwao (No cache)
-        const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(courseName)}`, {
+        // Step 1: Hit API with course parameter
+        const res = await fetch(`${BASE_URL}/api/questions?course=${encodeURIComponent(studentCourse)}`, {
           cache: 'no-store'
         });
 
         if (res.ok) {
-          const remoteData = await res.json();
-          if (Array.isArray(remoteData) && remoteData.length > 0) {
-            loadedQuestions = remoteData;
-            localStorage.setItem(`cyntax_questions_${courseName}`, JSON.stringify(remoteData));
+          const rawData = await res.json();
+          let rawList = Array.isArray(rawData) ? rawData : (rawData.questions || rawData.data || []);
+
+          // Double check course filtering on frontend
+          let filtered = rawList.filter(q => {
+            const qCourse = (q.course || "").trim().toUpperCase();
+            const sCourse = studentCourse.toUpperCase();
+            return !q.course || qCourse === sCourse || sCourse.includes(qCourse);
+          });
+
+          if (filtered.length > 0) {
+            extractedQuestions = filtered;
+          } else if (rawList.length > 0) {
+            extractedQuestions = rawList;
           }
         }
       } catch (e) {
-        console.warn("Server question fetch error, checking local storage:", e);
+        console.warn("Server question fetch error:", e);
       }
 
-      // Step 2: Agar server fail ho ya empty ho, local storage check karo
-      if (!loadedQuestions || loadedQuestions.length === 0) {
-        const savedCustom = localStorage.getItem(`cyntax_questions_${courseName}`);
-        if (savedCustom) {
+      // Step 2: Fallback to LocalStorage question bank (matching ManageQuestions key)
+      if (extractedQuestions.length === 0) {
+        const localSaved = localStorage.getItem(`cyntax_questions_${studentCourse}`);
+        if (localSaved) {
           try {
-            const parsed = JSON.parse(savedCustom);
+            const parsed = JSON.parse(localSaved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              loadedQuestions = parsed;
+              extractedQuestions = parsed;
             }
           } catch (err) {
-            console.error("Local parse error:", err);
+            console.error("Local storage parse error:", err);
           }
         }
       }
 
-      // Step 3: Agar dono jagah custom question na ho, tab default bank par jao
-      if (loadedQuestions && loadedQuestions.length > 0) {
-        setQuestions(loadedQuestions);
-      } else {
-        const cKey = courseName.toUpperCase();
-        if (cKey.includes("STENO")) {
-          setQuestions(defaultBank.Steno);
-        } else if (cKey.includes("DCA") || cKey.includes("ADCA")) {
-          setQuestions(defaultBank.DCA);
-        } else {
-          setQuestions(defaultBank["Short Term"]);
-        }
-      }
+      // Normalize Questions Format
+      const sanitized = extractedQuestions.map((q, idx) => ({
+        id: q.id || q._id || idx + 1,
+        q: q.q || q.question || `Question ${idx + 1}`,
+        o: Array.isArray(q.o) ? q.o : (Array.isArray(q.options) ? q.options : [q.o1, q.o2, q.o3, q.o4].filter(Boolean)),
+        a: q.a !== undefined ? q.a : (q.correctAnswer !== undefined ? q.correctAnswer : 0)
+      }));
+
+      setQuestions(sanitized);
+      setIsQuestionsLoading(false);
     };
 
     loadQuestionsFromSource();
@@ -165,16 +155,17 @@ function OnlineTest() {
     navigate('/');
   }, [navigate]);
 
-  // 3. BULLETPROOF ANSWER EVALUATION & GRADING LOGIC
+  // 3. BULLETPROOF SUBMISSION & RESPONSE SHEET CREATION
   const executeFinalSubmission = useCallback(async () => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
 
-    const actualTotalQuestions = questions.length;
+    const currentQuestionBank = questionsRef.current;
+    const actualTotalQuestions = currentQuestionBank.length;
     let attempted = 0;
     let correctCount = 0;
 
-    const detailedResponses = questions.map((q, idx) => {
+    const detailedResponses = currentQuestionBank.map((q, idx) => {
       const selectedOptionIdx = userAnswersRef.current[q.id];
       const isAttempted = selectedOptionIdx !== undefined && selectedOptionIdx !== null;
 
@@ -243,7 +234,7 @@ function OnlineTest() {
       responses: detailedResponses
     };
 
-    // Instant local backup
+    // Instant local backup on student phone
     localStorage.setItem(`cyntax_test_done_${student.studentId}`, JSON.stringify({
       hasGivenTest: true,
       testScore: correctCount,
@@ -264,6 +255,7 @@ function OnlineTest() {
 
     const { _id, __v, createdAt, updatedAt, ...cleanStudentData } = student;
 
+    // Full multi-layer payload so backend does not strip responses
     const updatedPayload = {
       ...cleanStudentData,
       hasGivenTest: true,
@@ -272,6 +264,7 @@ function OnlineTest() {
       testGrade: grade,
       submittedExamPaper: paperSnapshot,
       paperSnapshot: paperSnapshot,
+      examPaperData: JSON.stringify(paperSnapshot),
       details: {
         ...(student.details || {}),
         hasGivenTest: true,
@@ -279,7 +272,8 @@ function OnlineTest() {
         testDate: currentDate,
         testGrade: grade,
         submittedExamPaper: paperSnapshot,
-        paperSnapshot: paperSnapshot
+        paperSnapshot: paperSnapshot,
+        examPaperData: JSON.stringify(paperSnapshot)
       },
       certificateDetails: {
         ...(student.certificateDetails || {}),
@@ -304,7 +298,7 @@ function OnlineTest() {
     } catch (err) {
       console.error("Database update error:", err);
     }
-  }, [BASE_URL, questions, student]);
+  }, [BASE_URL, student]);
 
   // 4. 15-Second Auto Redirect Timer
   useEffect(() => {
@@ -504,8 +498,24 @@ function OnlineTest() {
     );
   }
 
+  if (isQuestionsLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
+        <div className="spinner-border text-primary mb-3" style={{ width: '3rem', height: '3rem' }}></div>
+        <h5 className="fw-bold text-dark">Exam Question Bank Load Ho Raha Hai...</h5>
+        <small className="text-muted">Kripya wait karein, latest questions prepare kiye ja rahe hain</small>
+      </div>
+    );
+  }
+
   if (questions.length === 0) {
-    return <div className="p-5 text-center"><h3>Loading Assessment Questions...</h3></div>;
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', textAlign: 'center' }}>
+        <h4 className="fw-bold text-danger mb-2">Koi Question Available Nahi Hai!</h4>
+        <p className="text-muted">Admin panel se {student.course || "DCA"} ke liye questions add karein.</p>
+        <button className="btn btn-primary rounded-pill px-4" onClick={handleExitToHome}>Home Par Jayein</button>
+      </div>
+    );
   }
 
   const currentQ = questions[currentIndex];
@@ -587,7 +597,7 @@ function OnlineTest() {
 
             {/* Multiple Choice Options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {currentQ.o.map((opt, idx) => {
+              {currentQ.o && currentQ.o.map((opt, idx) => {
                 const isSelected = userAnswers[currentQ.id] === idx;
                 return (
                   <div
