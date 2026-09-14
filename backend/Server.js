@@ -139,7 +139,7 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
-// 3. BULLETPROOF DELETE QUESTION (Handles both MongoDB ObjectId and Numeric ID)
+// 3. BULLETPROOF DELETE QUESTION
 app.delete('/api/questions/:id', async (req, res) => {
   try {
     const targetId = req.params.id;
@@ -163,6 +163,39 @@ app.delete('/api/questions/:id', async (req, res) => {
   } catch (err) {
     console.error("Delete question error:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. STRICT STUDENT LOGIN & AUTHENTICATION (Roll No + DOB Verification)
+app.post('/api/students/login', async (req, res) => {
+  try {
+    const { studentId, dob } = req.body;
+    if (!studentId || !dob) {
+      return res.status(400).json({ success: false, message: "Roll Number aur Date of Birth dono daalna zaroori hai!" });
+    }
+
+    const student = await Student.findOne({ studentId: studentId.trim().toUpperCase() });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Roll Number galat hai! Student record nahi mila." });
+    }
+
+    // Date Normalization (YYYY-MM-DD comparison)
+    const inputDob = dob.trim().split('T')[0];
+    const studentDob = new Date(student.dob).toISOString().split('T')[0];
+
+    if (inputDob !== studentDob) {
+      return res.status(401).json({ success: false, message: "Galat Date of Birth (Password)! Access Denied." });
+    }
+
+    const isDone = student.hasGivenTest === true || student.details?.hasGivenTest === true;
+    if (isDone) {
+      return res.status(403).json({ success: false, message: "Aapka test pehle hi submit ho chuka hai!" });
+    }
+
+    return res.status(200).json({ success: true, student });
+  } catch (err) {
+    console.error("Student login error:", err);
+    return res.status(500).json({ success: false, message: "Server error during verification" });
   }
 });
 

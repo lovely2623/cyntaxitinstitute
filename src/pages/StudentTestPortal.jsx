@@ -10,17 +10,15 @@ function StudentTestPortal() {
   const navigate = useNavigate();
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
 
+  // Strict DOB validation: only permits legitimate Date of Birth matches without bypasses
   const checkDobMatch = (dbDobRaw, userPassRaw) => {
     if (!dbDobRaw || !userPassRaw) return false;
     const inputClean = String(userPassRaw).trim();
     const inputDigits = inputClean.replace(/[^0-9]/g, '');
 
-    if (inputClean === "123456") return true;
-
     const dbClean = String(dbDobRaw).trim();
-    if (inputClean.toLowerCase() === dbClean.toLowerCase()) return true;
-
     const normalizedDb = dbClean.split('T')[0];
+
     if (inputClean === normalizedDb) return true;
 
     let d = '', m = '', y = '';
@@ -28,57 +26,89 @@ function StudentTestPortal() {
 
     if (parts.length === 3) {
       if (parts[0].length === 4) {
-        y = parts[0]; m = parts[1]; d = parts[2];
+        y = parts[0];
+        m = parts[1].padStart(2, '0');
+        d = parts[2].padStart(2, '0');
       } else {
-        d = parts[0]; m = parts[1]; y = parts[2];
+        d = parts[0].padStart(2, '0');
+        m = parts[1].padStart(2, '0');
+        y = parts[2];
       }
     } else {
-      const digitsOnlyDb = dbClean.replace(/[^0-9]/g, '');
-      if (digitsOnlyDb === inputDigits) return true;
-      if (digitsOnlyDb.length === 8) {
-        y = digitsOnlyDb.substring(0, 4);
-        m = digitsOnlyDb.substring(4, 6);
-        d = digitsOnlyDb.substring(6, 8);
+      const dbDate = new Date(dbDobRaw);
+      if (!isNaN(dbDate.getTime())) {
+        y = String(dbDate.getFullYear());
+        m = String(dbDate.getMonth() + 1).padStart(2, '0');
+        d = String(dbDate.getDate()).padStart(2, '0');
       }
     }
 
     if (d && m && y) {
-      const dPadded = d.padStart(2, '0');
-      const mPadded = m.padStart(2, '0');
-      const dSingle = String(parseInt(d, 10));
-      const mSingle = String(parseInt(m, 10));
-
-      const matchPatterns = [
-        `${dPadded}${mPadded}${y}`,
-        `${y}${mPadded}${dPadded}`,
-        `${dSingle}${mSingle}${y}`,
-        `${dPadded}-${mPadded}-${y}`,
-        `${dPadded}/${mPadded}/${y}`,
-        `${y}-${mPadded}-${dPadded}`,
-        `${y}/${mPadded}/${dPadded}`
+      const validPatterns = [
+        `${d}${m}${y}`,               // DDMMYYYY (e.g., 15082002)
+        `${y}${m}${d}`,               // YYYYMMDD
+        `${d}-${m}-${y}`,             // DD-MM-YYYY
+        `${d}/${m}/${y}`,             // DD/MM/YYYY
+        `${y}-${m}-${d}`,             // YYYY-MM-DD
+        `${y}/${m}/${d}`              // YYYY/MM/DD
       ];
 
-      if (matchPatterns.includes(inputClean) || matchPatterns.includes(inputDigits)) {
-        return true;
-      }
+      return validPatterns.includes(inputClean) || validPatterns.includes(inputDigits);
     }
+
     return false;
   };
 
   const handleStudentLogin = async (e) => {
     e.preventDefault();
-    if (!rollNo.trim() || !studentPassword.trim()) {
+    const cleanRoll = rollNo.trim().toUpperCase();
+    const cleanPass = studentPassword.trim();
+
+    if (!cleanRoll || !cleanPass) {
       alert("Roll Number aur Password (DOB) dono enter karein!");
       return;
     }
 
     setLoading(true);
+
+    try {
+      // 1. First attempt: Direct verification via backend secure authentication route
+      const loginRes = await fetch(`${BASE_URL}/api/students/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: cleanRoll,
+          dob: cleanPass
+        })
+      });
+
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        if (loginData.success && loginData.student) {
+          localStorage.removeItem(`cyntax_test_done_${loginData.student.studentId}`);
+          sessionStorage.removeItem('activeExamStudent');
+          sessionStorage.setItem('activeExamStudent', JSON.stringify(loginData.student));
+          navigate('/online-test');
+          return;
+        }
+      } else if (loginRes.status === 401 || loginRes.status === 403 || loginRes.status === 404) {
+        const errData = await loginRes.json();
+        alert(errData.message || "Invalid Details! Access Denied.");
+        setLoading(false);
+        return;
+      }
+    } catch (apiErr) {
+      console.warn("Backend login route failed, trying database fallback verification:", apiErr);
+    }
+
+    // 2. Fallback: Verify against client-side parsed student database record
     try {
       const response = await fetch(`${BASE_URL}/api/students`, { cache: 'no-cache' });
       const students = await response.json();
 
       const matchedStudent = students.find(
-        (s) => s.studentId && s.studentId.trim().toUpperCase() === rollNo.trim().toUpperCase()
+        (s) => (s.studentId && s.studentId.trim().toUpperCase() === cleanRoll) ||
+               (s.rollNo && s.rollNo.trim().toUpperCase() === cleanRoll)
       );
 
       if (!matchedStudent) {
@@ -97,20 +127,22 @@ function StudentTestPortal() {
 
       if (isAlreadyGiven) {
         alert(
-          `🛑 Access Denied!\nDear ${matchedStudent.name}, aap already apna online test submit kar chuke hain.\nDubara test attempt karna allowed nahi hai!`
+          `Access Denied!\nDear ${matchedStudent.name}, aap already apna online test submit kar chuke hain.\nDubara test attempt karna allowed nahi hai!`
         );
         setLoading(false);
         return;
       }
 
-      const isValidPassword = checkDobMatch(matchedStudent.dob, studentPassword);
+      const isValidPassword = checkDobMatch(matchedStudent.dob, cleanPass);
 
       if (!isValidPassword) {
-        alert(`Galat Password!\nPassword aapki Date of Birth (DOB) hai jo admission form me dali thi.\nExample: DDMMYYYY ya YYYY-MM-DD`);
+        alert(`Galat Password!\nPassword aapki Date of Birth (DOB) hai jo admission form me dali thi.\nExample: DDMMYYYY (jaise 15082002) ya YYYY-MM-DD`);
         setLoading(false);
         return;
       }
 
+      localStorage.removeItem(`cyntax_test_done_${matchedStudent.studentId}`);
+      sessionStorage.removeItem('activeExamStudent');
       sessionStorage.setItem('activeExamStudent', JSON.stringify(matchedStudent));
       navigate('/online-test');
 

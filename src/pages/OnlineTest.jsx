@@ -42,33 +42,6 @@ function OnlineTest() {
       return;
     }
 
-    const verifyResetStatus = async () => {
-      try {
-        const idToQuery = student._id || student.studentId;
-        const res = await fetch(`${BASE_URL}/api/students/${idToQuery}`, { cache: 'no-store' });
-        if (res.ok) {
-          const freshData = await res.json();
-          const testAlreadyDone = freshData.hasGivenTest === true || freshData.hasGivenTest === "true" || freshData.details?.hasGivenTest === true;
-
-          if (!testAlreadyDone) {
-            localStorage.removeItem(`cyntax_test_done_${freshData.studentId}`);
-            localStorage.removeItem(`cyntax_test_done_${student.studentId}`);
-            sessionStorage.setItem('activeExamStudent', JSON.stringify(freshData));
-            setStudent(freshData);
-          } else if (!isSubmittedRef.current) {
-            alert("Aapka test pehle se submit ho chuka hai!");
-            navigate('/Test');
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn("Live status check error, fallback to local:", err);
-      }
-    };
-
-    verifyResetStatus();
-
-    // STRICT: Hamesha Database se live questions mangwayein
     const loadQuestionsFromSource = async () => {
       setIsQuestionsLoading(true);
       const studentCourse = (student.course || "DCA").trim().toUpperCase();
@@ -83,42 +56,45 @@ function OnlineTest() {
           const rawData = await res.json();
           let rawList = Array.isArray(rawData) ? rawData : (rawData.questions || rawData.data || []);
 
-          let filtered = rawList.filter(q => {
+          // STRICT EXACT MATCH ONLY: Kisi doosre course ke questions mix nahi honge
+          extractedQuestions = rawList.filter(q => {
             const qCourse = (q.course || "").trim().toUpperCase();
-            return !q.course || qCourse === studentCourse || studentCourse.includes(qCourse);
+            return qCourse === studentCourse;
           });
-
-          if (filtered.length > 0) {
-            extractedQuestions = filtered;
-          } else if (rawList.length > 0) {
-            extractedQuestions = rawList;
-          }
         }
       } catch (e) {
-        console.warn("Server question fetch error:", e);
+        console.warn("Server fetch error, checking local storage:", e);
       }
 
-      // Agar server down ho toh sirf tab course specific cache uthayein
+      // Offline fallback: Sirf tab chale agar server unreachable ho
       if (extractedQuestions.length === 0) {
-        const localSaved = localStorage.getItem(`cyntax_questions_${studentCourse}`) || localStorage.getItem('cyntax_questions_DCA');
+        const localSaved = localStorage.getItem(`cyntax_questions_${studentCourse}`);
         if (localSaved) {
           try {
             const parsed = JSON.parse(localSaved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              extractedQuestions = parsed;
+              extractedQuestions = parsed.filter(q => (q.course || "").trim().toUpperCase() === studentCourse);
             }
-          } catch (err) {
-            console.error("Local storage parse error:", err);
-          }
+          } catch (err) {}
         }
       }
 
-      const sanitized = extractedQuestions.map((q, idx) => ({
-        id: q.id || q._id || idx + 1,
-        q: q.q || q.question || `Question ${idx + 1}`,
-        o: Array.isArray(q.o) ? q.o : (Array.isArray(q.options) ? q.options : [q.o1, q.o2, q.o3, q.o4].filter(Boolean)),
-        a: q.a !== undefined ? q.a : (q.correctAnswer !== undefined ? q.correctAnswer : 0)
-      }));
+      // Deduplication: Kisi bhi karan duplicate questions repeat na hon
+      const seenIds = new Set();
+      const sanitized = [];
+
+      extractedQuestions.forEach((q, idx) => {
+        const uniqueId = q._id || q.id || idx + 1;
+        if (!seenIds.has(uniqueId)) {
+          seenIds.add(uniqueId);
+          sanitized.push({
+            id: uniqueId,
+            q: q.q || q.question || `Question ${idx + 1}`,
+            o: Array.isArray(q.o) ? q.o : (Array.isArray(q.options) ? q.options : [q.o1, q.o2, q.o3, q.o4].filter(Boolean)),
+            a: q.a !== undefined ? q.a : (q.correctAnswer !== undefined ? q.correctAnswer : 0)
+          });
+        }
+      });
 
       setQuestions(sanitized);
       setIsQuestionsLoading(false);
@@ -198,17 +174,11 @@ function OnlineTest() {
     const percentage = actualTotalQuestions > 0 ? (correctCount / actualTotalQuestions) * 100 : 0;
     let grade = "Fail";
 
-    if (percentage >= 85) {
-      grade = "A++";
-    } else if (percentage >= 65) {
-      grade = "A+";
-    } else if (percentage >= 50) {
-      grade = "A";
-    } else if (percentage >= 35) {
-      grade = "B";
-    } else {
-      grade = "Fail";
-    }
+    if (percentage >= 85) grade = "A++";
+    else if (percentage >= 65) grade = "A+";
+    else if (percentage >= 50) grade = "A";
+    else if (percentage >= 35) grade = "B";
+    else grade = "Fail";
 
     const currentDate = new Date().toISOString().split('T')[0];
 
@@ -290,9 +260,7 @@ function OnlineTest() {
   useEffect(() => {
     if (isSubmitted) {
       if (redirectTimer > 0) {
-        const rTimer = setTimeout(() => {
-          setRedirectTimer(prev => prev - 1);
-        }, 1000);
+        const rTimer = setTimeout(() => setRedirectTimer(prev => prev - 1), 1000);
         return () => clearTimeout(rTimer);
       } else {
         handleExitToHome();
@@ -304,9 +272,7 @@ function OnlineTest() {
     if (!isTestReady || isSubmitted) return;
 
     window.history.pushState(null, null, window.location.href);
-    const trapBack = () => {
-      window.history.pushState(null, null, window.location.href);
-    };
+    const trapBack = () => window.history.pushState(null, null, window.location.href);
 
     const blockAllKeys = (e) => {
       e.preventDefault();
@@ -317,9 +283,7 @@ function OnlineTest() {
     const blockContextMenu = (e) => e.preventDefault();
 
     const blockTouchMove = (e) => {
-      if (e.touches.length > 1 || e.pageY < 25) {
-        e.preventDefault();
-      }
+      if (e.touches.length > 1 || e.pageY < 25) e.preventDefault();
     };
 
     const handleVisibility = () => {
@@ -490,7 +454,7 @@ function OnlineTest() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', textAlign: 'center' }}>
         <h4 className="fw-bold text-danger mb-2">Koi Question Available Nahi Hai!</h4>
-        <p className="text-muted">Admin panel se {student.course || "DCA"} ke liye questions add karein.</p>
+        <p className="text-muted">Admin panel se {student.course || "General"} ke liye questions add karein.</p>
         <button className="btn btn-primary rounded-pill px-4" onClick={handleExitToHome}>Home Par Jayein</button>
       </div>
     );
