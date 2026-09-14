@@ -187,7 +187,7 @@ function StudentList() {
           body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error();
-        alert("Test reset ho gaya! Student ab kisi bhi phone se test re-appear kar sakta hai.");
+        alert("Test reset ho gaya! Student ab dobara exam de sakta hai.");
       } catch {
         alert("Server update mein dikkat aayi! Re-syncing...");
       } finally {
@@ -315,30 +315,45 @@ function StudentList() {
   const isTestDone = (s) => (
     s.hasGivenTest === true || s.hasGivenTest === "yes" || s.hasGivenTest === "true" ||
     s.details?.hasGivenTest === true ||
-    s.certificateDetails?.hasGivenTest === true || !!localStorage.getItem(`cyntax_test_done_${s.studentId}`)
+    s.certificateDetails?.hasGivenTest === true || 
+    !!localStorage.getItem(`cyntax_test_done_${s.studentId}`)
   );
 
+  // BULLETPROOF MULTI-LAYER PAPER EXTRACTOR
   const getExamPaper = (s) => {
+    if (!s) return null;
+
+    // Layer 1: Direct Object Check
     if (s.submittedExamPaper?.responses?.length) return s.submittedExamPaper;
     if (s.paperSnapshot?.responses?.length) return s.paperSnapshot;
+
+    // Layer 2: Nested Details Object Check
     if (s.details?.submittedExamPaper?.responses?.length) return s.details.submittedExamPaper;
     if (s.details?.paperSnapshot?.responses?.length) return s.details.paperSnapshot;
 
-    const stringified = s.examPaperData || s.details?.examPaperData;
-    if (stringified && typeof stringified === 'string') {
+    // Layer 3: Stringified Data Check (Root & Details)
+    const rawStringData = s.examPaperData || s.details?.examPaperData || s.paperSnapshot || s.submittedExamPaper;
+    if (typeof rawStringData === 'string' && rawStringData.startsWith('{')) {
       try {
-        const parsed = JSON.parse(stringified);
+        const parsed = JSON.parse(rawStringData);
         if (parsed?.responses?.length) return parsed;
-      } catch {}
+        if (parsed?.paperSnapshot?.responses?.length) return parsed.paperSnapshot;
+      } catch (e) {}
     }
 
-    const local = localStorage.getItem(`cyntax_test_done_${s.studentId}`);
-    if (local) {
-      try { 
-        const parsed = JSON.parse(local);
-        return parsed.paperSnapshot || parsed.submittedExamPaper || null; 
-      } catch {}
+    // Layer 4: Local Storage Backup Check
+    const sId = s.studentId || s.rollNo || s.regNo;
+    if (sId) {
+      const local = localStorage.getItem(`cyntax_test_done_${sId}`);
+      if (local) {
+        try {
+          const parsed = JSON.parse(local);
+          if (parsed?.paperSnapshot?.responses?.length) return parsed.paperSnapshot;
+          if (parsed?.responses?.length) return parsed;
+        } catch (e) {}
+      }
     }
+
     return null;
   };
 
@@ -347,20 +362,21 @@ function StudentList() {
       const total = paper.responses.length;
       let correct = 0;
       paper.responses.forEach(r => {
-        if (r.selectedAnswerIndex !== null && r.selectedAnswerIndex !== undefined &&
-           (r.status === 'correct' || Number(r.selectedAnswerIndex) === Number(r.correctAnswerIndex))) {
-          correct++;
-        }
+        const isAttempted = r.selectedAnswerIndex !== null && r.selectedAnswerIndex !== undefined;
+        const isCorrect = isAttempted && (r.status === 'correct' || Number(r.selectedAnswerIndex) === Number(r.correctAnswerIndex));
+        if (isCorrect) correct++;
       });
       const pct = total > 0 ? (correct / total) * 100 : 0;
-      const grade = pct >= 80 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail";
+      const grade = pct >= 85 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail";
       return { total, correct, grade };
     }
+
     const fallbackScore = Number(student?.testScore ?? student?.details?.testScore ?? 0);
-    const fallbackTotal = paper?.totalQuestions || (fallbackScore > 0 ? fallbackScore : 0);
-    const pct = fallbackTotal > 0 ? (fallbackScore / fallbackTotal) * 100 : 0;
-    const grade = pct >= 80 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail";
-    return { total: fallbackTotal, correct: fallbackScore, grade };
+    const fallbackTotal = Number(paper?.totalQuestions ?? student?.submittedExamPaper?.totalQuestions ?? 0);
+    const totalCount = fallbackTotal > 0 ? fallbackTotal : (fallbackScore > 0 ? fallbackScore : 0);
+    const pct = totalCount > 0 ? (fallbackScore / totalCount) * 100 : 0;
+    const grade = student?.testGrade || (pct >= 85 ? "A++" : pct >= 65 ? "A+" : pct >= 50 ? "A" : pct >= 35 ? "B" : "Fail");
+    return { total: totalCount, correct: fallbackScore, grade };
   };
 
   const handlePrint = () => {
@@ -440,7 +456,13 @@ function StudentList() {
                       </td>
                       <td>
                         {testDone ? (
-                          <button className="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onClick={() => setViewPaperStudent({ student: s, paper })}>
+                          <button 
+                            className="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" 
+                            onClick={() => {
+                              const activePaper = getExamPaper(raw);
+                              setViewPaperStudent({ student: s, paper: activePaper });
+                            }}
+                          >
                             <i className="fas fa-file-alt me-1"></i> View Paper
                           </button>
                         ) : <span className="text-muted small">No Paper</span>}
@@ -524,7 +546,7 @@ function StudentList() {
         </div>
       )}
 
-      {/* EDIT MODAL - SCROLLABLE INLINE BUTTONS (LAPTOP DISPLAY SAFE) */}
+      {/* EDIT MODAL */}
       {editStudent && (
         <div 
           className="modal-overlay no-print" 
@@ -547,7 +569,6 @@ function StudentList() {
               overflow: 'hidden'
             }}
           >
-            {/* Header */}
             <div 
               style={{ 
                 padding: '16px 24px', 
@@ -568,7 +589,6 @@ function StudentList() {
               ></button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleUpdate} style={{ padding: '24px' }}>
               <div className="row g-3">
                 <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Academic & Course Details</h6></div>
@@ -698,7 +718,6 @@ function StudentList() {
                   <input type="file" className="form-control" accept="image/*" onChange={handleEditPhotoUpload} />
                 </div>
 
-                {/* DIRECT INLINE ACTION BUTTONS (Form ke scroll me last me daal diya gaya hai) */}
                 <div className="col-12 mt-4 pt-4 border-top d-flex justify-content-end align-items-center gap-3">
                   <button 
                     type="button" 
@@ -722,6 +741,87 @@ function StudentList() {
           </div>
         </div>
       )}
+
+      {/* RESPONSE SHEET MODAL */}
+      {viewPaperStudent && (() => {
+        const stats = calculateScore(viewPaperStudent.paper, viewPaperStudent.student);
+        const paperData = viewPaperStudent.paper;
+        const studentInfo = viewPaperStudent.student;
+        const responsesList = paperData?.responses || [];
+
+        return (
+          <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 10000, overflowY: 'auto', padding: '20px 10px' }}>
+            <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: '#ffffff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+              <div className="d-flex justify-content-between align-items-center p-3 bg-dark text-white border-bottom">
+                <h5 className="mb-0 fw-bold"><i className="fas fa-file-invoice me-2 text-warning"></i> Candidate Exam Response Sheet</h5>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-success btn-sm rounded-pill px-3 fw-bold" onClick={handlePrint}><i className="fas fa-print me-1"></i> Print PDF</button>
+                  <button className="btn btn-light btn-sm rounded-pill px-3 fw-bold" onClick={() => setViewPaperStudent(null)}>✕ Close</button>
+                </div>
+              </div>
+
+              <div id="printableResponseContent" className="p-4" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
+                <div className="text-center mb-4 pb-2 border-bottom">
+                  <h3 style={{ fontWeight: '900', color: '#0000FF', margin: 0 }}>CYNTAX CODING HUB & IT INSTITUTE</h3>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Candidate Assessment & Official Evaluation Sheet</p>
+                </div>
+
+                <div className="card-header-box" style={{ border: '2px solid #0000FF', borderRadius: '12px', padding: '16px', backgroundColor: '#f8fafc', marginBottom: '25px' }}>
+                  <div className="row g-2">
+                    <div className="col-sm-6"><span className="text-muted small d-block">Candidate:</span><strong className="fs-6 text-primary">{studentInfo.name}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Roll No:</span><strong className="fs-6 font-monospace">{studentInfo.studentId}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Course:</span><strong>{studentInfo.course}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Exam Date:</span><strong>{paperData?.submittedAt || paperData?.examDate || studentInfo.testDate || 'Recorded'}</strong></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Score Obtained:</span><span className={`badge ${stats.grade === 'Fail' ? 'bg-danger' : 'bg-success'} fs-6`}>{stats.correct} / {stats.total}</span></div>
+                    <div className="col-sm-6"><span className="text-muted small d-block">Overall Grade:</span><span className={`badge ${stats.grade === 'Fail' ? 'bg-danger' : 'bg-primary'} fs-6`}>{stats.grade}</span></div>
+                  </div>
+                </div>
+
+                {responsesList.length > 0 ? (
+                  responsesList.map((r, qIdx) => {
+                    const isAttempted = r.selectedAnswerIndex !== null && r.selectedAnswerIndex !== undefined;
+                    const isCorrect = isAttempted && (r.status === 'correct' || Number(r.selectedAnswerIndex) === Number(r.correctAnswerIndex));
+                    
+                    return (
+                      <div key={qIdx} className="question-box" style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', marginBottom: '16px', backgroundColor: isCorrect ? '#f0fdf4' : !isAttempted ? '#f8fafc' : '#fef2f2', pageBreakInside: 'avoid' }}>
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <span className="fw-bold text-dark">Q{r.qIndex || qIdx + 1}. {r.questionText}</span>
+                          <span className={`badge ${isCorrect ? 'bg-success' : !isAttempted ? 'bg-secondary' : 'bg-danger'} ms-2`}>
+                            {isCorrect ? 'Correct (+1)' : !isAttempted ? 'Unattempted (0)' : 'Incorrect (0)'}
+                          </span>
+                        </div>
+
+                        <div className="mt-2 ms-1">
+                          {r.options && r.options.map((opt, optIdx) => {
+                            const isSelected = isAttempted && Number(r.selectedAnswerIndex) === optIdx;
+                            const isCorrectOpt = Number(r.correctAnswerIndex) === optIdx;
+                            const optClass = isCorrectOpt ? 'opt-correct' : isSelected ? 'opt-wrong' : 'opt-normal';
+
+                            return (
+                              <div key={optIdx} className={`opt-row ${optClass}`} style={{ padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
+                                <span><b>{String.fromCharCode(65 + optIdx)}.</b> {opt}</span>
+                                <span>
+                                  {isSelected && <span className="badge bg-dark ms-2">Candidate's Choice</span>}
+                                  {isCorrectOpt && <span className="badge bg-success ms-2">✓ Correct Answer</span>}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="alert alert-warning text-center py-4">
+                    <h5>Paper Snapshot Not Found in Current Cache</h5>
+                    <p className="small mb-0 text-muted">Test score ({stats.correct}/{stats.total}) record ho chuka hai, par detailed paper format synchronize nahi hua.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* CERTIFICATE MODAL */}
       {certStudent && (

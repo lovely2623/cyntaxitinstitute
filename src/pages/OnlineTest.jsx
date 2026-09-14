@@ -56,17 +56,15 @@ function OnlineTest() {
           const rawData = await res.json();
           let rawList = Array.isArray(rawData) ? rawData : (rawData.questions || rawData.data || []);
 
-          // STRICT EXACT MATCH ONLY: Kisi doosre course ke questions mix nahi honge
           extractedQuestions = rawList.filter(q => {
             const qCourse = (q.course || "").trim().toUpperCase();
             return qCourse === studentCourse;
           });
         }
       } catch (e) {
-        console.warn("Server fetch error, checking local storage:", e);
+        console.warn("Server fetch error, checking local fallback:", e);
       }
 
-      // Offline fallback: Sirf tab chale agar server unreachable ho
       if (extractedQuestions.length === 0) {
         const localSaved = localStorage.getItem(`cyntax_questions_${studentCourse}`);
         if (localSaved) {
@@ -79,7 +77,6 @@ function OnlineTest() {
         }
       }
 
-      // Deduplication: Kisi bhi karan duplicate questions repeat na hon
       const seenIds = new Set();
       const sanitized = [];
 
@@ -121,6 +118,7 @@ function OnlineTest() {
     navigate('/');
   }, [navigate]);
 
+  // GUARANTEED BULLETPROOF SUBMISSION & DUAL-STORAGE PAYLOAD
   const executeFinalSubmission = useCallback(async () => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
@@ -193,7 +191,9 @@ function OnlineTest() {
       responses: detailedResponses
     };
 
-    localStorage.setItem(`cyntax_test_done_${student.studentId}`, JSON.stringify({
+    // 1. Instant local storage save
+    const studentIdentifier = student.studentId || student.rollNo || "STUDENT";
+    localStorage.setItem(`cyntax_test_done_${studentIdentifier}`, JSON.stringify({
       hasGivenTest: true,
       testScore: correctCount,
       testGrade: grade,
@@ -202,7 +202,7 @@ function OnlineTest() {
 
     setSummaryData({
       name: student.name || "Student",
-      rollNo: student.studentId || "N/A",
+      rollNo: studentIdentifier,
       course: student.course || "General",
       total: actualTotalQuestions,
       attempted: attempted,
@@ -211,7 +211,9 @@ function OnlineTest() {
     });
     setIsSubmitted(true);
 
+    // 2. Prepare robust server payload
     const { _id, __v, createdAt, updatedAt, ...cleanStudentData } = student;
+    const stringifiedPaper = JSON.stringify(paperSnapshot);
 
     const updatedPayload = {
       ...cleanStudentData,
@@ -221,7 +223,7 @@ function OnlineTest() {
       testGrade: grade,
       submittedExamPaper: paperSnapshot,
       paperSnapshot: paperSnapshot,
-      examPaperData: JSON.stringify(paperSnapshot),
+      examPaperData: stringifiedPaper,
       details: {
         ...(student.details || {}),
         hasGivenTest: true,
@@ -230,13 +232,13 @@ function OnlineTest() {
         testGrade: grade,
         submittedExamPaper: paperSnapshot,
         paperSnapshot: paperSnapshot,
-        examPaperData: JSON.stringify(paperSnapshot)
+        examPaperData: stringifiedPaper
       },
       certificateDetails: {
         ...(student.certificateDetails || {}),
         studentName: student.name,
         fatherName: student.fatherName,
-        regNo: student.studentId,
+        regNo: studentIdentifier,
         courseName: student.course,
         duration: student.courseDuration || "6 Months",
         grade: grade,
@@ -246,14 +248,19 @@ function OnlineTest() {
       }
     };
 
+    // Target route handles ID or studentId
+    const targetUrl = student._id 
+      ? `${BASE_URL}/api/students/${student._id}` 
+      : `${BASE_URL}/api/students/${studentIdentifier}`;
+
     try {
-      await fetch(`${BASE_URL}/api/students/${student._id}`, {
+      await fetch(targetUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedPayload)
       });
     } catch (err) {
-      console.error("Database update error:", err);
+      console.error("Database response update error:", err);
     }
   }, [BASE_URL, student]);
 
