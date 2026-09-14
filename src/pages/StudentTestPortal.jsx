@@ -10,52 +10,47 @@ function StudentTestPortal() {
   const navigate = useNavigate();
   const BASE_URL = "https://cyntaxitinstitute.onrender.com";
 
-  // Strict DOB validation: only permits legitimate Date of Birth matches without bypasses
-  const checkDobMatch = (dbDobRaw, userPassRaw) => {
+  // Client-side timezone-safe DOB comparison fallback
+  const checkDobMatchLocal = (dbDobRaw, userPassRaw) => {
     if (!dbDobRaw || !userPassRaw) return false;
+
     const inputClean = String(userPassRaw).trim();
     const inputDigits = inputClean.replace(/[^0-9]/g, '');
 
-    const dbClean = String(dbDobRaw).trim();
-    const normalizedDb = dbClean.split('T')[0];
-
-    if (inputClean === normalizedDb) return true;
-
     let d = '', m = '', y = '';
-    const parts = normalizedDb.split(/[-/.]/);
+    const rawStr = String(dbDobRaw).trim();
 
-    if (parts.length === 3) {
+    if (rawStr.includes('-') || rawStr.includes('/')) {
+      const parts = rawStr.split('T')[0].split(/[-/]/);
       if (parts[0].length === 4) {
-        y = parts[0];
-        m = parts[1].padStart(2, '0');
-        d = parts[2].padStart(2, '0');
+        y = parts[0]; m = parts[1]; d = parts[2];
       } else {
-        d = parts[0].padStart(2, '0');
-        m = parts[1].padStart(2, '0');
-        y = parts[2];
+        d = parts[0]; m = parts[1]; y = parts[2];
       }
     } else {
-      const dbDate = new Date(dbDobRaw);
-      if (!isNaN(dbDate.getTime())) {
-        y = String(dbDate.getFullYear());
-        m = String(dbDate.getMonth() + 1).padStart(2, '0');
-        d = String(dbDate.getDate()).padStart(2, '0');
+      const dateObj = new Date(dbDobRaw);
+      if (!isNaN(dateObj.getTime())) {
+        y = String(dateObj.getUTCFullYear());
+        m = String(dateObj.getUTCMonth() + 1);
+        d = String(dateObj.getUTCDate());
       }
     }
 
     if (d && m && y) {
+      const dPad = d.padStart(2, '0');
+      const mPad = m.padStart(2, '0');
+
       const validPatterns = [
-        `${d}${m}${y}`,               // DDMMYYYY (e.g., 15082002)
-        `${y}${m}${d}`,               // YYYYMMDD
-        `${d}-${m}-${y}`,             // DD-MM-YYYY
-        `${d}/${m}/${y}`,             // DD/MM/YYYY
-        `${y}-${m}-${d}`,             // YYYY-MM-DD
-        `${y}/${m}/${d}`              // YYYY/MM/DD
+        `${dPad}${mPad}${y}`,
+        `${y}${mPad}${dPad}`,
+        `${dPad}-${mPad}-${y}`,
+        `${dPad}/${mPad}/${y}`,
+        `${y}-${mPad}-${dPad}`,
+        `${y}/${mPad}/${dPad}`
       ];
 
       return validPatterns.includes(inputClean) || validPatterns.includes(inputDigits);
     }
-
     return false;
   };
 
@@ -71,8 +66,8 @@ function StudentTestPortal() {
 
     setLoading(true);
 
+    // Step 1: Server Authentication Route
     try {
-      // 1. First attempt: Direct verification via backend secure authentication route
       const loginRes = await fetch(`${BASE_URL}/api/students/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,26 +77,24 @@ function StudentTestPortal() {
         })
       });
 
-      if (loginRes.ok) {
-        const loginData = await loginRes.json();
-        if (loginData.success && loginData.student) {
-          localStorage.removeItem(`cyntax_test_done_${loginData.student.studentId}`);
-          sessionStorage.removeItem('activeExamStudent');
-          sessionStorage.setItem('activeExamStudent', JSON.stringify(loginData.student));
-          navigate('/online-test');
-          return;
-        }
+      const loginData = await loginRes.json();
+
+      if (loginRes.ok && loginData.success && loginData.student) {
+        localStorage.removeItem(`cyntax_test_done_${loginData.student.studentId}`);
+        sessionStorage.removeItem('activeExamStudent');
+        sessionStorage.setItem('activeExamStudent', JSON.stringify(loginData.student));
+        navigate('/online-test');
+        return;
       } else if (loginRes.status === 401 || loginRes.status === 403 || loginRes.status === 404) {
-        const errData = await loginRes.json();
-        alert(errData.message || "Invalid Details! Access Denied.");
+        alert(loginData.message || "Invalid Credentials! Access Denied.");
         setLoading(false);
         return;
       }
     } catch (apiErr) {
-      console.warn("Backend login route failed, trying database fallback verification:", apiErr);
+      console.warn("Direct login route unavailable, running local verification:", apiErr);
     }
 
-    // 2. Fallback: Verify against client-side parsed student database record
+    // Step 2: Fallback Client Verification
     try {
       const response = await fetch(`${BASE_URL}/api/students`, { cache: 'no-cache' });
       const students = await response.json();
@@ -120,23 +113,21 @@ function StudentTestPortal() {
       const localData = localStorage.getItem(`cyntax_test_done_${matchedStudent.studentId}`);
       const isAlreadyGiven = 
         matchedStudent.hasGivenTest === true ||
-        matchedStudent.hasGivenTest === "yes" ||
         matchedStudent.hasGivenTest === "true" ||
-        matchedStudent.certificateDetails?.hasGivenTest === true ||
+        matchedStudent.details?.hasGivenTest === true ||
         !!localData;
 
       if (isAlreadyGiven) {
-        alert(
-          `Access Denied!\nDear ${matchedStudent.name}, aap already apna online test submit kar chuke hain.\nDubara test attempt karna allowed nahi hai!`
-        );
+        alert(`Access Denied!\nDear ${matchedStudent.name}, aap already apna online test submit kar chuke hain.`);
         setLoading(false);
         return;
       }
 
-      const isValidPassword = checkDobMatch(matchedStudent.dob, cleanPass);
+      const targetDob = matchedStudent.dob || matchedStudent.details?.dob;
+      const isValidPassword = checkDobMatchLocal(targetDob, cleanPass);
 
       if (!isValidPassword) {
-        alert(`Galat Password!\nPassword aapki Date of Birth (DOB) hai jo admission form me dali thi.\nExample: DDMMYYYY (jaise 15082002) ya YYYY-MM-DD`);
+        alert(`Galat Password!\nPassword aapki Date of Birth hai (Example: DDMMYYYY jaise 15082002 ya YYYY-MM-DD).`);
         setLoading(false);
         return;
       }
@@ -148,7 +139,7 @@ function StudentTestPortal() {
 
     } catch (err) {
       console.error("Student login error:", err);
-      alert("Server connection fail! Dobara prayas karein.");
+      alert("Server connection error! Dobara prayas karein.");
     } finally {
       setLoading(false);
     }
@@ -291,14 +282,14 @@ function StudentTestPortal() {
                 color: '#334155',
                 marginBottom: '8px'
               }}>
-                DOB Password (DDMMYYYY)
+                DOB Password (DDMMYYYY ya Date)
               </label>
               <div className="portal-input-wrapper">
                 <i className="fas fa-key portal-input-icon"></i>
                 <input 
                   type={showPassword ? "text" : "password"} 
                   className="portal-input-field"
-                  placeholder="e.g. 15082002" 
+                  placeholder="e.g. 15082002 ya 2002-08-15" 
                   value={studentPassword}
                   onChange={(e) => setStudentPassword(e.target.value)}
                   autoCorrect="off"
@@ -320,7 +311,7 @@ function StudentTestPortal() {
                 fontSize: '11px',
                 color: '#64748b'
               }}>
-                * Admission ke time jo Date of Birth di thi wahi password hai.
+                * Format: <b>DDMMYYYY</b> (e.g. 15082002) ya date format (<b>2002-08-15</b>).
               </small>
             </div>
 

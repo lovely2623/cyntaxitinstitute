@@ -139,7 +139,7 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
-// 3. BULLETPROOF DELETE QUESTION
+// 3. BULLETPROOF DELETE QUESTION (ObjectId & Numeric ID Safe)
 app.delete('/api/questions/:id', async (req, res) => {
   try {
     const targetId = req.params.id;
@@ -166,7 +166,7 @@ app.delete('/api/questions/:id', async (req, res) => {
   }
 });
 
-// 4. STRICT STUDENT LOGIN & AUTHENTICATION (Roll No + DOB Verification)
+// 4. TIMEZONE-AWARE STRICT STUDENT LOGIN (Roll No + Exact DOB Verification)
 app.post('/api/students/login', async (req, res) => {
   try {
     const { studentId, dob } = req.body;
@@ -174,20 +174,72 @@ app.post('/api/students/login', async (req, res) => {
       return res.status(400).json({ success: false, message: "Roll Number aur Date of Birth dono daalna zaroori hai!" });
     }
 
-    const student = await Student.findOne({ studentId: studentId.trim().toUpperCase() });
+    const cleanRoll = studentId.trim().toUpperCase();
+    const student = await Student.findOne({
+      $or: [{ studentId: cleanRoll }, { rollNo: cleanRoll }]
+    });
+
     if (!student) {
       return res.status(404).json({ success: false, message: "Roll Number galat hai! Student record nahi mila." });
     }
 
-    // Date Normalization (YYYY-MM-DD comparison)
-    const inputDob = dob.trim().split('T')[0];
-    const studentDob = new Date(student.dob).toISOString().split('T')[0];
-
-    if (inputDob !== studentDob) {
-      return res.status(401).json({ success: false, message: "Galat Date of Birth (Password)! Access Denied." });
+    const rawDbDob = student.dob || student.details?.dob;
+    if (!rawDbDob) {
+      return res.status(400).json({ success: false, message: "Student record mein DOB available nahi hai. Admin se sampark karein." });
     }
 
-    const isDone = student.hasGivenTest === true || student.details?.hasGivenTest === true;
+    // Comprehensive extraction of possible date representations
+    const validPatterns = new Set();
+    const addDateVariations = (y, m, d) => {
+      if (!y || !m || !d) return;
+      const dP = String(d).padStart(2, '0');
+      const mP = String(m).padStart(2, '0');
+      const yP = String(y);
+
+      validPatterns.add(`${dP}${mP}${yP}`);
+      validPatterns.add(`${yP}${mP}${dP}`);
+      validPatterns.add(`${yP}-${mP}-${dP}`);
+      validPatterns.add(`${dP}-${mP}-${yP}`);
+      validPatterns.add(`${dP}/${mP}/${yP}`);
+      validPatterns.add(`${yP}/${mP}/${dP}`);
+    };
+
+    // 1. Direct String Split variation (preserves user-entered plain date without time shift)
+    const rawStr = String(rawDbDob).trim();
+    if (rawStr.includes('-') || rawStr.includes('/')) {
+      const parts = rawStr.split('T')[0].split(/[-/]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          addDateVariations(parts[0], parts[1], parts[2]);
+        } else {
+          addDateVariations(parts[2], parts[1], parts[0]);
+        }
+      }
+    }
+
+    // 2. Date Object Parsing (both UTC and Local components to counter timezone shift)
+    const dObj = new Date(rawDbDob);
+    if (!isNaN(dObj.getTime())) {
+      addDateVariations(dObj.getUTCFullYear(), dObj.getUTCMonth() + 1, dObj.getUTCDate());
+      addDateVariations(dObj.getFullYear(), dObj.getMonth() + 1, dObj.getDate());
+    }
+
+    const inputClean = String(dob).trim();
+    const inputDigits = inputClean.replace(/[^0-9]/g, '');
+
+    const isMatch = validPatterns.has(inputClean) || validPatterns.has(inputDigits);
+
+    if (!isMatch) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Galat Password! Password aapki Date of Birth hai jo admission me dali thi (e.g. DDMMYYYY ya YYYY-MM-DD)." 
+      });
+    }
+
+    const isDone = student.hasGivenTest === true || 
+                   student.hasGivenTest === "true" || 
+                   student.details?.hasGivenTest === true;
+
     if (isDone) {
       return res.status(403).json({ success: false, message: "Aapka test pehle hi submit ho chuka hai!" });
     }
@@ -195,7 +247,7 @@ app.post('/api/students/login', async (req, res) => {
     return res.status(200).json({ success: true, student });
   } catch (err) {
     console.error("Student login error:", err);
-    return res.status(500).json({ success: false, message: "Server error during verification" });
+    return res.status(500).json({ success: false, message: "Server verification error" });
   }
 });
 
