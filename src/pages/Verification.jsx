@@ -40,7 +40,7 @@ function Verification() {
       <div className="container">
         <div className="v-hero-content text-center mb-5">
           <h1 className="display-5 fw-bold text-dark">E-Verification Portal</h1>
-          <p className="lead text-secondary">Cyntax Coding Hub Official Student Authentication System</p>
+          <p className="lead text-secondary">Cyntax Computer Institute Official Student Authentication System</p>
         </div>
 
         <div className="row justify-content-center">

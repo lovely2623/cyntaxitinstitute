@@ -79,7 +79,7 @@ function Navbar() {
         <div className="nav-container">
           <div className="logo" onClick={() => navigate('/')}>
             <img src={logo} alt="Logo" className="logo-img" />
-            <h1 className="logo-text-branding">MyCyntax Computer Institute</h1>
+            <h1 className="logo-text-branding">Cyntax Computer Institute</h1>
           </div>
 
           <div className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>

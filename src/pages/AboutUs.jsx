@@ -8,7 +8,7 @@ function AboutUs() {
     <div className="about-page">
       {/* Hero Section */}
       <div className="about-header">
-        <h1>About Cyntax Coding Hub</h1>
+        <h1>About Cyntax Computer Institute</h1>
         <p>Hum sirf sikhaate nahi, career banate hain.</p>
       </div>
 
@@ -42,15 +42,15 @@ function AboutUs() {
               <span className="quote-icon">“</span>
               <h2>Director's Message</h2>
               <p>
-                "Namaste! Mera naam **Mohit** hai. Maine Cyntax Coding Hub ki shuruat is soch ke sath ki thi ki 
-                Solan aur aas-paas ke ilako ke bacho ko wahi advanced level ki computer training mil sake jo bade shehro mein milti hai. 
+                "Namaste! Mera naam **Mohit** hai. Maine Cyntax Computer Institute ki shuruat is soch ke sath ki thi ki 
+                shimla aur aas-paas ke ilako ke bacho ko wahi advanced level ki computer training mil sake jo bade shehro mein milti hai. 
                 Humne pichle 5 saalo mein dekha hai ki kaise sahi guidance ek bache ki life badal sakti hai. 
                 Hamare yahan hum DCA ho ya Steno, har bache pe personal dhyan dete hain. 
                 Aaiye, humare sath judiye aur apne sapno ko udaan dijiye."
               </p>
               <div className="signature">
-                <h4> Lovely Mohit Thakur</h4>
-                <p>Founder & Director, Cyntax Coding Hub</p>
+                <h4> Mohit Thakur</h4>
+                <p>Founder & Director, Cyntax Computer Institute</p>
               </div>
             </div>
           </div>

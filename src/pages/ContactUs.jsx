@@ -69,13 +69,13 @@ function ContactUs() {
             <i className="fas fa-envelope"></i>
             <h3>Email Us</h3>
             <p>Apne documents ya query mail karein:</p>
-            <a href="mailto:cyntaxcodinghub.com">cyntaxcodinghub.com</a>
+            <a href="mailto:mycyntax@gmail.com">mycyntax@gmail.com</a>
           </div>
 
           <div className="info-card">
             <i className="fas fa-map-marker-alt"></i>
             <h3>Visit Our Center</h3>
-            <p>Solan, Himachal Pradesh - 173212</p>
+            <p>Shimla, Himachal Pradesh - 171014</p>
           </div>
         </div>
 
