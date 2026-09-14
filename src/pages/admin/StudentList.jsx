@@ -524,35 +524,30 @@ function StudentList() {
         </div>
       )}
 
-      {/* EDIT MODAL - FIXED STICKY HEADER & FOOTER WITH CLEAR UPDATE BUTTON */}
+      {/* EDIT MODAL - SCROLLABLE INLINE BUTTONS (LAPTOP DISPLAY SAFE) */}
       {editStudent && (
         <div 
           className="modal-overlay no-print" 
           style={{ 
             position: 'fixed', 
             inset: 0, 
-            backgroundColor: 'rgba(15, 23, 42, 0.8)', 
+            backgroundColor: 'rgba(15, 23, 42, 0.85)', 
             zIndex: 99999, 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            padding: '15px' 
+            overflowY: 'auto',
+            padding: '40px 15px'
           }}
         >
           <div 
             style={{ 
               backgroundColor: '#ffffff',
               maxWidth: '920px', 
-              width: '100%', 
-              height: '88vh', 
+              margin: '0 auto', 
               borderRadius: '20px', 
-              display: 'flex', 
-              flexDirection: 'column', 
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
               overflow: 'hidden'
             }}
           >
-            {/* 1. Modal Fixed Header */}
+            {/* Header */}
             <div 
               style={{ 
                 padding: '16px 24px', 
@@ -560,8 +555,7 @@ function StudentList() {
                 color: '#ffffff', 
                 display: 'flex', 
                 justifyContent: 'space-between', 
-                alignItems: 'center',
-                flexShrink: 0 
+                alignItems: 'center' 
               }}
             >
               <h5 className="fw-bold mb-0 text-white">
@@ -574,171 +568,157 @@ function StudentList() {
               ></button>
             </div>
 
-            {/* 2. Scrollable Form Content (minHeight: 0 prevents flex overflow clipping) */}
-            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '24px' }}>
-              <form id="activeStudentEditForm" onSubmit={handleUpdate}>
-                <div className="row g-3">
-                  <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Academic & Course Details</h6></div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Registration ID *</label>
-                    <input type="text" className="form-control font-monospace fw-bold text-primary" value={editStudent.studentId || ""} onChange={(e) => setEditStudent({ ...editStudent, studentId: e.target.value.toUpperCase() })} required />
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Course *</label>
-                    <select className="form-select" value={editStudent.course || "DCA"} onChange={(e) => setEditStudent({ ...editStudent, course: e.target.value })}>
-                      <option value="DCA">DCA</option>
-                      <option value="ADCA">ADCA</option>
-                      <option value="Steno">Stenography & Shorthand</option>
-                      <option value="Short Term">Short Term / Web Dev</option>
-                      <option value="Tally">Tally Prime & Accounting</option>
-                      <option value="Basic">Basic Computer</option>
-                    </select>
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Course Duration</label>
-                    <input type="text" className="form-control" value={editStudent.courseDuration || ""} onChange={(e) => setEditStudent({ ...editStudent, courseDuration: e.target.value })} />
-                  </div>
-
-                  <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Personal & Identity Details</h6></div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Student Full Name *</label>
-                    <input type="text" className="form-control" value={editStudent.name || ""} onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })} required />
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Gender</label>
-                    <select className="form-select" value={editStudent.gender || "Male"} onChange={(e) => setEditStudent({ ...editStudent, gender: e.target.value })}>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Date of Birth (Login Password) *</label>
-                    <input type="date" className="form-control" value={editStudent.dob || ""} onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} required />
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-danger">Aadhaar Card Number *</label>
-                    <input type="text" className="form-control font-monospace border-danger" maxLength="12" value={editStudent.aadhaar || ""} onChange={(e) => setEditStudent({ ...editStudent, aadhaar: e.target.value.replace(/[^0-9]/g, '') })} required />
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Phone Number *</label>
-                    <input type="tel" className="form-control" maxLength="10" value={editStudent.phone || ""} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value.replace(/[^0-9]/g, '') })} required />
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-dark">Email Address</label>
-                    <input type="email" className="form-control" value={editStudent.email || ""} onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} placeholder="student@example.com" />
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-dark">Highest Qualification</label>
-                    <select className="form-select" value={editStudent.qualification || "12th Pass"} onChange={(e) => setEditStudent({ ...editStudent, qualification: e.target.value })}>
-                      <option value="10th Pass">10th Matriculation</option>
-                      <option value="12th Pass">12th Intermediate</option>
-                      <option value="Undergraduate">Undergraduate</option>
-                      <option value="Graduate">Graduate</option>
-                      <option value="Postgraduate">Postgraduate</option>
-                      <option value="Other">Other Diploma</option>
-                    </select>
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-dark">Blood Group</label>
-                    <select className="form-select" value={editStudent.bloodGroup || "Unknown"} onChange={(e) => setEditStudent({ ...editStudent, bloodGroup: e.target.value })}>
-                      <option value="Unknown">Unknown</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                    </select>
-                  </div>
-
-                  <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Family Background & Address</h6></div>
-                  
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-dark">Father's Name</label>
-                    <input type="text" className="form-control" value={editStudent.fatherName || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-dark">Father's Occupation</label>
-                    <input type="text" className="form-control" value={editStudent.fatherOccupation || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherOccupation: e.target.value })} />
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-dark">Mother's Name</label>
-                    <input type="text" className="form-control" value={editStudent.motherName || ""} onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} />
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-dark">Annual Family Income</label>
-                    <select className="form-select" value={editStudent.familyIncome || "Below 1 Lakh"} onChange={(e) => setEditStudent({ ...editStudent, familyIncome: e.target.value })}>
-                      <option value="Below 1 Lakh">Below ₹1,00,000</option>
-                      <option value="1 Lakh - 2.5 Lakhs">₹1,00,000 - ₹2,50,000</option>
-                      <option value="2.5 Lakhs - 5 Lakhs">₹2,50,000 - ₹5,00,000</option>
-                      <option value="Above 5 Lakhs">Above ₹5,00,000</option>
-                    </select>
-                  </div>
-                  
-                  <div className="col-12">
-                    <label className="small fw-bold text-dark">Permanent Address</label>
-                    <textarea className="form-control" rows="2" value={editStudent.address || ""} onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })}></textarea>
-                  </div>
-
-                  <div className="col-12 mt-3"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Profile Photograph</h6></div>
-                  <div className="col-12 d-flex align-items-center gap-3">
-                    {editStudent.photo && (
-                      <img src={editStudent.photo} alt="Student" style={{ width: '65px', height: '65px', objectFit: 'cover', borderRadius: '10px', border: '2px solid #0000FF' }} />
-                    )}
-                    <input type="file" className="form-control" accept="image/*" onChange={handleEditPhotoUpload} />
-                  </div>
+            {/* Form */}
+            <form onSubmit={handleUpdate} style={{ padding: '24px' }}>
+              <div className="row g-3">
+                <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Academic & Course Details</h6></div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Registration ID *</label>
+                  <input type="text" className="form-control font-monospace fw-bold text-primary" value={editStudent.studentId || ""} onChange={(e) => setEditStudent({ ...editStudent, studentId: e.target.value.toUpperCase() })} required />
                 </div>
-              </form>
-            </div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Course *</label>
+                  <select className="form-select" value={editStudent.course || "DCA"} onChange={(e) => setEditStudent({ ...editStudent, course: e.target.value })}>
+                    <option value="DCA">DCA</option>
+                    <option value="ADCA">ADCA</option>
+                    <option value="Steno">Stenography & Shorthand</option>
+                    <option value="Short Term">Short Term / Web Dev</option>
+                    <option value="Tally">Tally Prime & Accounting</option>
+                    <option value="Basic">Basic Computer</option>
+                  </select>
+                </div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Course Duration</label>
+                  <input type="text" className="form-control" value={editStudent.courseDuration || ""} onChange={(e) => setEditStudent({ ...editStudent, courseDuration: e.target.value })} />
+                </div>
 
-            {/* 3. Modal Fixed Bottom Action Bar (flexShrink: 0 ensures it is ALWAYS visible) */}
-            <div 
-              style={{ 
-                padding: '16px 24px', 
-                backgroundColor: '#f1f5f9', 
-                borderTop: '2px solid #cbd5e1', 
-                display: 'flex', 
-                justifyContent: 'flex-end', 
-                alignItems: 'center', 
-                gap: '12px',
-                flexShrink: 0 
-              }}
-            >
-              <button 
-                type="button" 
-                className="btn btn-outline-secondary px-4 rounded-pill fw-bold" 
-                onClick={() => setEditStudent(null)}
-              >
-                Cancel
-              </button>
-              
-              <button 
-                type="submit" 
-                form="activeStudentEditForm" 
-                className="btn btn-warning px-5 rounded-pill fw-bold text-dark shadow-sm"
-                style={{ fontSize: '15px' }}
-              >
-                <i className="fas fa-check-circle me-1"></i> Update Student Data
-              </button>
-            </div>
+                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Personal & Identity Details</h6></div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Student Full Name *</label>
+                  <input type="text" className="form-control" value={editStudent.name || ""} onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })} required />
+                </div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Gender</label>
+                  <select className="form-select" value={editStudent.gender || "Male"} onChange={(e) => setEditStudent({ ...editStudent, gender: e.target.value })}>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Date of Birth (Login Password) *</label>
+                  <input type="date" className="form-control" value={editStudent.dob || ""} onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} required />
+                </div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-danger">Aadhaar Card Number *</label>
+                  <input type="text" className="form-control font-monospace border-danger" maxLength="12" value={editStudent.aadhaar || ""} onChange={(e) => setEditStudent({ ...editStudent, aadhaar: e.target.value.replace(/[^0-9]/g, '') })} required />
+                </div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Phone Number *</label>
+                  <input type="tel" className="form-control" maxLength="10" value={editStudent.phone || ""} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value.replace(/[^0-9]/g, '') })} required />
+                </div>
+                
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Email Address</label>
+                  <input type="email" className="form-control" value={editStudent.email || ""} onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} placeholder="student@example.com" />
+                </div>
+                
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Highest Qualification</label>
+                  <select className="form-select" value={editStudent.qualification || "12th Pass"} onChange={(e) => setEditStudent({ ...editStudent, qualification: e.target.value })}>
+                    <option value="10th Pass">10th Matriculation</option>
+                    <option value="12th Pass">12th Intermediate</option>
+                    <option value="Undergraduate">Undergraduate</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Postgraduate">Postgraduate</option>
+                    <option value="Other">Other Diploma</option>
+                  </select>
+                </div>
+                
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Blood Group</label>
+                  <select className="form-select" value={editStudent.bloodGroup || "Unknown"} onChange={(e) => setEditStudent({ ...editStudent, bloodGroup: e.target.value })}>
+                    <option value="Unknown">Unknown</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
 
+                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Family Background & Address</h6></div>
+                
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Father's Name</label>
+                  <input type="text" className="form-control" value={editStudent.fatherName || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
+                </div>
+                
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Father's Occupation</label>
+                  <input type="text" className="form-control" value={editStudent.fatherOccupation || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherOccupation: e.target.value })} />
+                </div>
+                
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Mother's Name</label>
+                  <input type="text" className="form-control" value={editStudent.motherName || ""} onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} />
+                </div>
+                
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Annual Family Income</label>
+                  <select className="form-select" value={editStudent.familyIncome || "Below 1 Lakh"} onChange={(e) => setEditStudent({ ...editStudent, familyIncome: e.target.value })}>
+                    <option value="Below 1 Lakh">Below ₹1,00,000</option>
+                    <option value="1 Lakh - 2.5 Lakhs">₹1,00,000 - ₹2,50,000</option>
+                    <option value="2.5 Lakhs - 5 Lakhs">₹2,50,000 - ₹5,00,000</option>
+                    <option value="Above 5 Lakhs">Above ₹5,00,000</option>
+                  </select>
+                </div>
+                
+                <div className="col-12">
+                  <label className="small fw-bold text-dark">Permanent Address</label>
+                  <textarea className="form-control" rows="2" value={editStudent.address || ""} onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })}></textarea>
+                </div>
+
+                <div className="col-12 mt-3"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Profile Photograph</h6></div>
+                <div className="col-12 d-flex align-items-center gap-3">
+                  {editStudent.photo && (
+                    <img src={editStudent.photo} alt="Student" style={{ width: '65px', height: '65px', objectFit: 'cover', borderRadius: '10px', border: '2px solid #0000FF' }} />
+                  )}
+                  <input type="file" className="form-control" accept="image/*" onChange={handleEditPhotoUpload} />
+                </div>
+
+                {/* DIRECT INLINE ACTION BUTTONS (Form ke scroll me last me daal diya gaya hai) */}
+                <div className="col-12 mt-4 pt-4 border-top d-flex justify-content-end align-items-center gap-3">
+                  <button 
+                    type="button" 
+                    className="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold" 
+                    onClick={() => setEditStudent(null)}
+                  >
+                    Cancel
+                  </button>
+                  
+                  <button 
+                    type="submit" 
+                    className="btn btn-warning px-5 py-2 rounded-pill fw-bold text-dark shadow"
+                    style={{ fontSize: '16px' }}
+                  >
+                    <i className="fas fa-save me-2"></i> Update Student Data
+                  </button>
+                </div>
+
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -14,8 +14,6 @@ import Verification from './pages/Verification';
 import OnlineTest from './pages/OnlineTest';
 import StudentTestPortal from './pages/StudentTestPortal';
 
-
-
 // ADMIN PAGES IMPORT
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
@@ -25,16 +23,24 @@ import ManageContent from './pages/admin/ManageContent';
 import Certificate from './pages/admin/Certificate';
 import ManageQuestions from './pages/admin/ManageQuestions';
 
-// --- SCROLL TO TOP LOGIC ---
-const ScrollToTop = () => {
+// --- SCROLL TO TOP & SESSION WATCHDOG ---
+const RouteWatchdog = () => {
   const { pathname } = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    // Agar admin layout se bahar kisi bhi page par navigation ho, session clear ho jaye
+    const currentPath = pathname.toLowerCase();
+    const isAdminArea = currentPath.startsWith('/adminlayout') || currentPath.startsWith('/login');
+    if (!isAdminArea && localStorage.getItem('isAdminAuthenticated') === 'true') {
+      localStorage.removeItem('isAdminAuthenticated');
+    }
   }, [pathname]);
+
   return null;
 };
 
-// Home page component
 function Home() {
   return (
     <>
@@ -46,7 +52,6 @@ function Home() {
 }
 
 function App() {
-  // --- AUTO UPDATE LOGIC ---
   useEffect(() => {
     const checkUpdates = async () => {
       try {
@@ -68,7 +73,6 @@ function App() {
       }
     };
 
-    // Har 30 second mein check karega (1 second se browser aur network choke nahi hoga)
     const interval = setInterval(() => {
       checkUpdates();
     }, 30000);
@@ -78,7 +82,7 @@ function App() {
 
   return (
     <Router>
-      <ScrollToTop /> 
+      <RouteWatchdog /> 
       
       <div>
         <Navbar />
@@ -94,10 +98,10 @@ function App() {
           <Route path="/Verification" element={<Verification />} />
           <Route path="/Test" element={<StudentTestPortal />} />
 
-          {/* EXAM PORTAL (Full Screen Lockdown) */}
+          {/* EXAM PORTAL */}
           <Route path="/online-test" element={<OnlineTest />} />
 
-          {/* ADMIN PANEL ROUTES (Sabhi admin child routes ek sath) */}
+          {/* ADMIN PANEL ROUTES */}
           <Route path="/AdminLayout" element={<AdminLayout />}>
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="StudentList" element={<StudentList />} />

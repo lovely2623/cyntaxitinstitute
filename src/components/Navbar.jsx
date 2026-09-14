@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import './Navbar.css';
 import logo from '../assets/images/logo.png';
 
@@ -7,9 +7,25 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Automatic logout when leaving admin routes
+  useEffect(() => {
+    const currentPath = location.pathname.toLowerCase();
+    const isAdminRoute = currentPath.startsWith('/adminlayout') || currentPath.startsWith('/login');
+
+    if (!isAdminRoute) {
+      if (localStorage.getItem('isAdminAuthenticated') === 'true') {
+        localStorage.removeItem('isAdminAuthenticated');
+      }
+      setIsAuthenticated(false);
+    } else {
+      setIsAuthenticated(localStorage.getItem('isAdminAuthenticated') === 'true');
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -32,8 +48,8 @@ function Navbar() {
   const handleLogout = () => {
     if (window.confirm("Mohit Sir, Logout karna hai?")) {
       localStorage.removeItem('isAdminAuthenticated');
+      setIsAuthenticated(false);
       navigate('/');
-      window.location.reload();
     }
   };
 
@@ -94,7 +110,7 @@ function Navbar() {
             <li><NavLink to="/Gallery" onClick={closeMenu}>Gallery</NavLink></li>
             <li><NavLink to="/Verification" onClick={closeMenu}>Verification</NavLink></li>
             
-            {/* ONLINE EXAM LINK - NORMAL LINK BEHAVIOR */}
+            {/* ONLINE EXAM LINK */}
             <li>
               <NavLink to="/Test" onClick={closeMenu}>
                 Online Exam
