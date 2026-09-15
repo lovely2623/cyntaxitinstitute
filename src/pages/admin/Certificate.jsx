@@ -115,14 +115,14 @@ const handleDownloadPDF = async () => {
                     <div className="meta-info"><strong>REG. NO:</strong> {formData.regNo}</div>
                     <div className="gov-badges-container">
                         <div className="badge-box"><img src={msmeImg} alt="MSME" className="mini-badge" /><span>MSME Regd.</span></div>
-                        <div className="badge-box"><img src={isoImg} alt="ISO" className="mini-badge" /><span>ISO 9001:2008</span></div>
+                        <div className="badge-box"><img src={isoImg} alt="ISO" className="mini-badge" /><span>ISO 9001:2015</span></div>
                     </div>
                   </div>
                 </header>
 
                 <div className="brand-section text-center">
                   <img src={logoImg} alt="Cyntax Logo" className="main-cert-logo" />
-                  <h1 className="main-title">CYNTAX CODING HUB</h1>
+                  <h1 className="main-title">Cyntax Computer Institute</h1>
                   <p className="sub-title">CENTRE FOR ADVANCED COMPUTING & SOFTWARE DEVELOPMENT</p>
                   <div className="divider-line"><span className="dot"></span></div>
                 </div>
@@ -141,7 +141,7 @@ const handleDownloadPDF = async () => {
 
                 <footer className="cert-footer">
                   <div className="footer-col text-start"><p><strong>Place:</strong> Shimla, HP</p><p><strong>Date:</strong> {new Date(formData.issueDate).toLocaleDateString()}</p></div>
-                  <div className="seal-center"><div className="official-maroon-seal"><span className="seal-text">CCH</span></div></div>
+                  <div className="seal-center"><div className="official-maroon-seal"><span className="seal-text">CCI</span></div></div>
                   <div className="footer-col text-center"><div className="signature-line"></div><p className="m-0 fw-bold">Director</p><p className="tiny-text m-0">Authorized Signatory</p></div>
                 </footer>
               </div>

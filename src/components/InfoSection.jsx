@@ -5,29 +5,57 @@ import './InfoSection.css';
 
 function InfoSection() {
   const navigate = useNavigate();
-  const [newsList, setNewsList] = useState([]);
-  const [pdfList, setPdfList] = useState([]);
+
+  // Instant local cache load so the UI never waits for Render cold-start
+  const [newsList, setNewsList] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cyntax_cached_news');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [pdfList, setPdfList] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cyntax_cached_pdfs');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const BASE_URL = 'https://cyntaxitinstitute.onrender.com';
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const newsRes = await axios.get(`${BASE_URL}/api/news`);
-        const pdfRes = await axios.get(`${BASE_URL}/api/pdfs`);
-        setNewsList(newsRes.data);
-        setPdfList(pdfRes.data);
+        const [newsRes, pdfRes] = await Promise.all([
+          axios.get(`${BASE_URL}/api/news`, { timeout: 15000 }).catch(() => null),
+          axios.get(`${BASE_URL}/api/pdfs`, { timeout: 15000 }).catch(() => null)
+        ]);
+
+        if (newsRes && Array.isArray(newsRes.data)) {
+          setNewsList(newsRes.data);
+          localStorage.setItem('cyntax_cached_news', JSON.stringify(newsRes.data));
+        }
+        if (pdfRes && Array.isArray(pdfRes.data)) {
+          setPdfList(pdfRes.data);
+          localStorage.setItem('cyntax_cached_pdfs', JSON.stringify(pdfRes.data));
+        }
       } catch (err) {
-        console.error("Data fetch error:", err);
+        console.warn("Background info fetch failed, running on cached data:", err);
       }
     };
+
     fetchData();
-  }, []);
+  }, [BASE_URL]);
 
   return (
     <section className="info-section">
       <div className="info-container">
         
-        {/* News Box (Fixed Double Issue) */}
+        {/* News Box */}
         <div className="info-box">
           <div className="box-header">
             <i className="fas fa-bullhorn"></i>
@@ -37,14 +65,13 @@ function InfoSection() {
             <div className="scroll-content">
               {newsList.length > 0 ? (
                 newsList.map((news, index) => (
-                  <p key={news._id || index}><span>{news.tag}</span> {news.text}</p>
+                  <p key={news._id || index}><span>{news.tag || 'NEW'}</span> {news.text}</p>
                 ))
               ) : (
                 <p>Loading Latest News...</p>
               )}
-              {/* Infinite scroll ko smooth rakhne ke liye sirf tab dikhao jab news list badi ho */}
               {newsList.length > 3 && newsList.map((news, index) => (
-                <p key={`copy-${index}`}><span>{news.tag}</span> {news.text}</p>
+                <p key={`copy-${index}`}><span>{news.tag || 'NEW'}</span> {news.text}</p>
               ))}
             </div>
           </div>

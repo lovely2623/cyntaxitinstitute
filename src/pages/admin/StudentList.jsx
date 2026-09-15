@@ -319,19 +319,15 @@ function StudentList() {
     !!localStorage.getItem(`cyntax_test_done_${s.studentId}`)
   );
 
-  // BULLETPROOF MULTI-LAYER PAPER EXTRACTOR
   const getExamPaper = (s) => {
     if (!s) return null;
 
-    // Layer 1: Direct Object Check
     if (s.submittedExamPaper?.responses?.length) return s.submittedExamPaper;
     if (s.paperSnapshot?.responses?.length) return s.paperSnapshot;
 
-    // Layer 2: Nested Details Object Check
     if (s.details?.submittedExamPaper?.responses?.length) return s.details.submittedExamPaper;
     if (s.details?.paperSnapshot?.responses?.length) return s.details.paperSnapshot;
 
-    // Layer 3: Stringified Data Check (Root & Details)
     const rawStringData = s.examPaperData || s.details?.examPaperData || s.paperSnapshot || s.submittedExamPaper;
     if (typeof rawStringData === 'string' && rawStringData.startsWith('{')) {
       try {
@@ -341,7 +337,6 @@ function StudentList() {
       } catch (e) {}
     }
 
-    // Layer 4: Local Storage Backup Check
     const sId = s.studentId || s.rollNo || s.regNo;
     if (sId) {
       const local = localStorage.getItem(`cyntax_test_done_${sId}`);
@@ -524,7 +519,7 @@ function StudentList() {
                     <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Mobile Number</small><strong>{selectedStudent.phone || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Email Address</small><strong className="text-primary">{selectedStudent.email || "Not Provided"}</strong></div>
-                    <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar ? "[Aadhaar Redacted]" : "Not Provided"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Blood Group</small><strong className="text-danger">{selectedStudent.bloodGroup || "Unknown"}</strong></div>
                     <div className="col-sm-12"><small className="text-muted d-block">Highest Qualification</small><strong>{selectedStudent.qualification || "12th Pass"}</strong></div>
                   </div>
