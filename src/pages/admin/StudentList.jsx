@@ -514,6 +514,13 @@ function StudentList() {
 
   return (
     <div className={`container-fluid mt-4 fade-in pb-5 ${certStudent ? 'p-0' : ''}`}>
+      <style>{`
+        .student-search-input::placeholder {
+          color: rgba(255, 255, 255, 0.85) !important;
+          opacity: 1 !important;
+        }
+      `}</style>
+
       <div className="card shadow-lg border-0 rounded-4 overflow-hidden no-print">
         <div className="card-header bg-dark py-3 px-4 d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
           <div className="d-flex align-items-center gap-3">
@@ -529,8 +536,15 @@ function StudentList() {
               </select>
             </div>
             <div className="position-relative" style={{ minWidth: '240px' }}>
-              <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
-              <input type="text" className="form-control form-control-sm ps-5 border-0 text-white" placeholder="Search name, roll no..." style={{ backgroundColor: '#2c3e50', borderRadius: '8px', height: '36px' }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <i className="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-white-50"></i>
+              <input 
+                type="text" 
+                className="form-control form-control-sm ps-5 border-0 text-white student-search-input" 
+                placeholder="Search name, roll no..." 
+                style={{ backgroundColor: '#2c3e50', borderRadius: '8px', height: '36px' }} 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+              />
             </div>
             <button className="btn btn-warning btn-sm rounded-pill px-3 fw-bold" onClick={fetchStudents}><i className="fas fa-sync-alt"></i> Refresh</button>
           </div>
