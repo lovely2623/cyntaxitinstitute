@@ -6,7 +6,6 @@ import './InfoSection.css';
 function InfoSection() {
   const navigate = useNavigate();
 
-  // Instant local cache load so the UI never waits for Render cold-start
   const [newsList, setNewsList] = useState(() => {
     try {
       const cached = localStorage.getItem('cyntax_cached_news');
@@ -50,6 +49,44 @@ function InfoSection() {
 
     fetchData();
   }, [BASE_URL]);
+
+  // Handle PDF Open / Download
+  const handlePdfOpen = (e, link, title) => {
+    e.preventDefault();
+    if (!link) {
+      alert("PDF file data unavailable!");
+      return;
+    }
+
+    if (link.startsWith('data:application/pdf;base64,')) {
+      try {
+        const base64Data = link.split(',')[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const fileURL = URL.createObjectURL(blob);
+
+        const newWindow = window.open(fileURL, '_blank');
+        if (!newWindow) {
+          // Fallback if popup blocker is active
+          const downloadLink = document.createElement('a');
+          downloadLink.href = fileURL;
+          downloadLink.download = `${(title || 'Document').replace(/\s+/g, '_')}.pdf`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+        }
+      } catch (err) {
+        window.open(link, '_blank');
+      }
+    } else {
+      window.open(link, '_blank');
+    }
+  };
 
   return (
     <section className="info-section">
@@ -102,10 +139,16 @@ function InfoSection() {
           </div>
           <div className="pdf-list">
             {pdfList.length > 0 ? pdfList.map((pdf, index) => (
-              <a key={pdf._id || index} href={pdf.link} target="_blank" rel="noreferrer" className="pdf-item">
+              <div 
+                key={pdf._id || index} 
+                onClick={(e) => handlePdfOpen(e, pdf.link, pdf.title)}
+                className="pdf-item"
+                style={{ cursor: 'pointer' }}
+                title="Click to open/download PDF"
+              >
                 <div className="pdf-icon">PDF</div>
                 <div className="pdf-text text-truncate">{pdf.title}</div>
-              </a>
+              </div>
             )) : (
               <p className="p-3 text-muted">No PDFs available.</p>
             )}
