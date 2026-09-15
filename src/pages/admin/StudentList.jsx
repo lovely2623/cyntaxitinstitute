@@ -46,6 +46,7 @@ function StudentList() {
   const parseStudent = useCallback((s) => {
     if (!s) return {};
     const d = s.details || s.additionalDetails || {};
+    const ac = s.academics || {};
 
     const getVal = (...keys) => {
       for (const val of keys) {
@@ -71,20 +72,40 @@ function StudentList() {
       }
     }
 
+    let cleanAdmissionDate = "";
+    const rawAdm = getVal(s.admissionDate, s.joiningDate, d.admissionDate, d.joiningDate);
+    if (rawAdm) {
+      cleanAdmissionDate = rawAdm.includes("T") ? rawAdm.split("T")[0] : rawAdm;
+    }
+
     const regId = getVal(s.studentId, s.rollNo, s.regNo, d.studentId, d.rollNo, d.regNo);
     const aadhaarVal = getVal(
       s.aadhaar, s.adaharNumber, s.adharNumber, s.aadharNumber, s.aadhaarNumber, s.adahar, s.adhar, s.aadhar,
       d.aadhaar, d.adaharNumber, d.adharNumber, d.aadharNumber, d.aadhaarNumber, d.adahar, d.adhar, d.aadhar
     );
 
+    const rawFullName = getVal(s.name, d.name);
+    let parsedFirst = getVal(s.firstName, d.firstName);
+    let parsedLast = getVal(s.lastName, d.lastName);
+
+    if (!parsedFirst && rawFullName) {
+      const parts = rawFullName.split(" ");
+      parsedFirst = parts[0] || "";
+      parsedLast = parts.slice(1).join(" ") || "";
+    }
+
     return {
       ...s,
       _id: s._id,
       studentId: regId,
-      name: getVal(s.name, d.name),
+      name: rawFullName,
+      firstName: parsedFirst,
+      lastName: parsedLast,
       gender: getVal(s.gender, d.gender) || "Male",
       dob: cleanDob,
+      admissionDate: cleanAdmissionDate || new Date().toISOString().split('T')[0],
       phone: getVal(s.phone, d.phone),
+      parentPhone: getVal(s.parentPhone, d.parentPhone),
       email: getVal(s.email, d.email),
       aadhaar: aadhaarVal,
       fatherName: getVal(s.fatherName, d.fatherName),
@@ -93,10 +114,36 @@ function StudentList() {
       familyIncome: getVal(s.familyIncome, d.familyIncome) || "Below 1 Lakh",
       qualification: getVal(s.qualification, d.qualification) || "12th Pass",
       bloodGroup: getVal(s.bloodGroup, d.bloodGroup) || "Unknown",
-      address: getVal(s.address, d.address),
+      address: getVal(s.address, d.address, d.fullAddress),
+      addressStreet: getVal(s.addressStreet, d.addressStreet),
+      city: getVal(s.city, d.city),
+      district: getVal(s.district, d.district),
+      state: getVal(s.state, d.state) || "Himachal Pradesh",
+      pincode: getVal(s.pincode, d.pincode),
       course: getVal(s.course, d.course) || "DCA",
       courseDuration: getVal(s.courseDuration, d.courseDuration) || "6 Months",
-      photo: getVal(s.photo, d.photo) || "https://via.placeholder.com/150"
+      photo: getVal(s.photo, d.photo) || "https://via.placeholder.com/150",
+
+      // 10th
+      tenthSchool: getVal(ac.tenth?.school, s.tenthSchool, d.tenthSchool),
+      tenthBoard: getVal(ac.tenth?.board, s.tenthBoard, d.tenthBoard),
+      tenthYear: getVal(ac.tenth?.year, s.tenthYear, d.tenthYear),
+      tenthPercentage: getVal(ac.tenth?.percentage, s.tenthPercentage, d.tenthPercentage),
+      tenthDoc: ac.tenth?.document || s.tenthDoc || d.tenthDoc || "",
+
+      // 12th
+      twelfthSchool: getVal(ac.twelfth?.school, s.twelfthSchool, d.twelfthSchool),
+      twelfthBoard: getVal(ac.twelfth?.board, s.twelfthBoard, d.twelfthBoard),
+      twelfthYear: getVal(ac.twelfth?.year, s.twelfthYear, d.twelfthYear),
+      twelfthPercentage: getVal(ac.twelfth?.percentage, s.twelfthPercentage, d.twelfthPercentage),
+      twelfthDoc: ac.twelfth?.document || s.twelfthDoc || d.twelfthDoc || "",
+
+      // College
+      collegeName: getVal(ac.college?.college, s.collegeName, d.collegeName),
+      collegeUniversity: getVal(ac.college?.university, s.collegeUniversity, d.collegeUniversity),
+      collegeYear: getVal(ac.college?.year, s.collegeYear, d.collegeYear),
+      collegePercentage: getVal(ac.college?.percentage, s.collegePercentage, d.collegePercentage),
+      collegeDoc: ac.college?.document || s.collegeDoc || d.collegeDoc || ""
     };
   }, []);
 
@@ -199,12 +246,16 @@ function StudentList() {
   const handleEditPhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Photo size must be less than 2MB!");
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 300;
+          const maxDim = 320;
           let width = img.width;
           let height = img.height;
 
@@ -224,10 +275,26 @@ function StudentList() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
           setEditStudent(prev => ({ ...prev, photo: compressedBase64 }));
         };
         img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditDocUpload = (e, fieldName) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Document file size must be less than 2MB!");
+        e.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEditStudent(prev => ({ ...prev, [fieldName]: event.target.result }));
       };
       reader.readAsDataURL(file);
     }
@@ -238,16 +305,26 @@ function StudentList() {
     const targetId = editStudent._id;
     const regId = (editStudent.studentId || "").trim().toUpperCase();
     const aadhaarVal = (editStudent.aadhaar || "").trim();
+    const fullName = `${(editStudent.firstName || "").trim()} ${(editStudent.lastName || "").trim()}`.trim() || editStudent.name;
+
+    const fullAddress = editStudent.addressStreet || editStudent.city || editStudent.district || editStudent.pincode
+      ? `${(editStudent.addressStreet || "").trim()}, ${(editStudent.city || "").trim()}, Dist: ${(editStudent.district || "").trim()}, ${(editStudent.state || "").trim()} - ${(editStudent.pincode || "").trim()}`.replace(/^, |, $/g, '')
+      : (editStudent.address || "").trim();
 
     const fullPayload = {
       ...editStudent,
       studentId: regId,
       rollNo: regId,
       regNo: regId,
-      name: (editStudent.name || "").trim(),
+      name: fullName,
+      firstName: (editStudent.firstName || "").trim(),
+      lastName: (editStudent.lastName || "").trim(),
       gender: editStudent.gender || "Male",
       dob: editStudent.dob || "",
+      admissionDate: editStudent.admissionDate || "",
+      joiningDate: editStudent.admissionDate || "",
       phone: (editStudent.phone || "").trim(),
+      parentPhone: (editStudent.parentPhone || "").trim(),
       email: (editStudent.email || "").trim(),
       aadhaar: aadhaarVal,
       adaharNumber: aadhaarVal,
@@ -260,32 +337,82 @@ function StudentList() {
       familyIncome: editStudent.familyIncome || "Below 1 Lakh",
       qualification: editStudent.qualification || "12th Pass",
       bloodGroup: editStudent.bloodGroup || "Unknown",
-      address: (editStudent.address || "").trim(),
+      address: fullAddress,
+      addressStreet: (editStudent.addressStreet || "").trim(),
+      city: (editStudent.city || "").trim(),
+      district: (editStudent.district || "").trim(),
+      state: (editStudent.state || "").trim(),
+      pincode: (editStudent.pincode || "").trim(),
       course: editStudent.course || "DCA",
       courseDuration: editStudent.courseDuration || "6 Months",
       photo: editStudent.photo || "https://via.placeholder.com/150",
+
+      academics: {
+        tenth: {
+          school: (editStudent.tenthSchool || "").trim(),
+          board: (editStudent.tenthBoard || "").trim(),
+          year: (editStudent.tenthYear || "").trim(),
+          percentage: (editStudent.tenthPercentage || "").trim(),
+          document: editStudent.tenthDoc || ""
+        },
+        twelfth: {
+          school: (editStudent.twelfthSchool || "").trim(),
+          board: (editStudent.twelfthBoard || "").trim(),
+          year: (editStudent.twelfthYear || "").trim(),
+          percentage: (editStudent.twelfthPercentage || "").trim(),
+          document: editStudent.twelfthDoc || ""
+        },
+        college: {
+          college: (editStudent.collegeName || "").trim(),
+          university: (editStudent.collegeUniversity || "").trim(),
+          year: (editStudent.collegeYear || "").trim(),
+          percentage: (editStudent.collegePercentage || "").trim(),
+          document: editStudent.collegeDoc || ""
+        }
+      },
+
       details: {
         ...(editStudent.details || {}),
         studentId: regId,
         rollNo: regId,
         regNo: regId,
-        name: (editStudent.name || "").trim(),
+        name: fullName,
+        firstName: (editStudent.firstName || "").trim(),
+        lastName: (editStudent.lastName || "").trim(),
         gender: editStudent.gender || "Male",
         dob: editStudent.dob || "",
+        admissionDate: editStudent.admissionDate || "",
         phone: (editStudent.phone || "").trim(),
+        parentPhone: (editStudent.parentPhone || "").trim(),
         email: (editStudent.email || "").trim(),
         aadhaar: aadhaarVal,
-        adaharNumber: aadhaarVal,
-        adharNumber: aadhaarVal,
-        aadharNumber: aadhaarVal,
-        aadhaarNumber: aadhaarVal,
         fatherName: (editStudent.fatherName || "").trim(),
         fatherOccupation: (editStudent.fatherOccupation || "").trim(),
         motherName: (editStudent.motherName || "").trim(),
         familyIncome: editStudent.familyIncome || "Below 1 Lakh",
         qualification: editStudent.qualification || "12th Pass",
         bloodGroup: editStudent.bloodGroup || "Unknown",
-        address: (editStudent.address || "").trim(),
+        addressStreet: (editStudent.addressStreet || "").trim(),
+        city: (editStudent.city || "").trim(),
+        district: (editStudent.district || "").trim(),
+        state: (editStudent.state || "").trim(),
+        pincode: (editStudent.pincode || "").trim(),
+        fullAddress: fullAddress,
+        tenthSchool: (editStudent.tenthSchool || "").trim(),
+        tenthBoard: (editStudent.tenthBoard || "").trim(),
+        tenthYear: (editStudent.tenthYear || "").trim(),
+        tenthPercentage: (editStudent.tenthPercentage || "").trim(),
+        tenthDoc: editStudent.tenthDoc || "",
+        twelfthSchool: (editStudent.twelfthSchool || "").trim(),
+        twelfthBoard: (editStudent.twelfthBoard || "").trim(),
+        twelfthYear: (editStudent.twelfthYear || "").trim(),
+        twelfthPercentage: (editStudent.twelfthPercentage || "").trim(),
+        twelfthDoc: editStudent.twelfthDoc || "",
+        collegeName: (editStudent.collegeName || "").trim(),
+        collegeUniversity: (editStudent.collegeUniversity || "").trim(),
+        collegeYear: (editStudent.collegeYear || "").trim(),
+        collegePercentage: (editStudent.collegePercentage || "").trim(),
+        collegeDoc: editStudent.collegeDoc || "",
         course: editStudent.course || "DCA",
         courseDuration: editStudent.courseDuration || "6 Months",
         photo: editStudent.photo || "https://via.placeholder.com/150"
@@ -304,10 +431,10 @@ function StudentList() {
         body: JSON.stringify(fullPayload)
       });
       if (!res.ok) throw new Error();
-      alert("Student data successfully update ho gaya!");
+      alert("Student data successfully updated!");
       fetchStudents();
     } catch {
-      alert("Update fail! Reverting changes...");
+      alert("Update failed! Reverting changes...");
       fetchStudents();
     }
   };
@@ -495,10 +622,10 @@ function StudentList() {
         </div>
       </div>
 
-      {/* VIEW MODAL */}
+      {/* VIEW BIODATA MODAL */}
       {selectedStudent && (
         <div className="modal-overlay no-print" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setSelectedStudent(null)}>
-          <div className="modal-content-custom bg-white shadow-lg" style={{ maxWidth: '850px', width: '95%', borderRadius: '18px', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-content-custom bg-white shadow-lg" style={{ maxWidth: '900px', width: '95%', borderRadius: '18px', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
             <div className="bg-primary p-3 text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0 fw-bold"><i className="fas fa-id-card me-2"></i> Student Complete Bio-Data</h5>
               <button className="btn-close btn-close-white" onClick={() => setSelectedStudent(null)}></button>
@@ -511,26 +638,68 @@ function StudentList() {
                   <span className="badge bg-dark font-monospace mb-2">{selectedStudent.studentId}</span>
                   <div><span className="badge bg-info text-dark">{selectedStudent.course}</span></div>
                   <small className="text-muted d-block mt-1">Duration: {selectedStudent.courseDuration}</small>
+                  <small className="text-muted d-block mt-1">Admission: <b>{selectedStudent.admissionDate || "N/A"}</b></small>
                 </div>
                 <div className="col-md-9">
                   <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Personal & Identity Details</h6>
                   <div className="row g-2 mb-3">
                     <div className="col-sm-6"><small className="text-muted d-block">Gender</small><strong>{selectedStudent.gender || "Male"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Date of Birth</small><strong>{selectedStudent.dob || "Not Provided"}</strong></div>
-                    <div className="col-sm-6"><small className="text-muted d-block">Mobile Number</small><strong>{selectedStudent.phone || "Not Provided"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Student Mobile Number</small><strong>{selectedStudent.phone || "Not Provided"}</strong></div>
+                    <div className="col-sm-6"><small className="text-muted d-block">Parents Mobile Number</small><strong>{selectedStudent.parentPhone || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Email Address</small><strong className="text-primary">{selectedStudent.email || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Aadhaar Card Number</small><strong className="text-danger font-monospace">{selectedStudent.aadhaar || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Blood Group</small><strong className="text-danger">{selectedStudent.bloodGroup || "Unknown"}</strong></div>
-                    <div className="col-sm-12"><small className="text-muted d-block">Highest Qualification</small><strong>{selectedStudent.qualification || "12th Pass"}</strong></div>
                   </div>
+
                   <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Family Background & Occupation</h6>
                   <div className="row g-2 mb-3">
                     <div className="col-sm-6"><small className="text-muted d-block">Father's Name</small><strong>{selectedStudent.fatherName || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Father's Occupation</small><strong>{selectedStudent.fatherOccupation || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Mother's Name</small><strong>{selectedStudent.motherName || "Not Provided"}</strong></div>
                     <div className="col-sm-6"><small className="text-muted d-block">Annual Family Income</small><strong className="text-success">{selectedStudent.familyIncome || "Below 1 Lakh"}</strong></div>
-                    <div className="col-sm-12"><small className="text-muted d-block">Permanent Address</small><strong>{selectedStudent.address || "Not Provided"}</strong></div>
+                    <div className="col-sm-12"><small className="text-muted d-block">Residential Address</small><strong>{selectedStudent.address || "Not Provided"}</strong></div>
                   </div>
+
+                  <h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Academic Qualifications & Attached Documents</h6>
+                  <div className="row g-2">
+                    <div className="col-12 p-2 bg-light rounded-3 mb-2">
+                      <div className="fw-bold text-dark mb-1">10th Standard:</div>
+                      <div className="small text-muted">
+                        School: <b>{selectedStudent.tenthSchool || "N/A"}</b> | Board: <b>{selectedStudent.tenthBoard || "N/A"}</b> | Year: <b>{selectedStudent.tenthYear || "N/A"}</b> | Percentage: <b>{selectedStudent.tenthPercentage || "N/A"}</b>
+                      </div>
+                      {selectedStudent.tenthDoc ? (
+                        <a href={selectedStudent.tenthDoc} download={`10th_Certificate_${selectedStudent.studentId}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-success mt-1 py-0 px-2 fw-bold">
+                          <i className="fas fa-file-download me-1"></i> View 10th Certificate
+                        </a>
+                      ) : <span className="small text-muted d-block mt-1">No 10th document attached</span>}
+                    </div>
+
+                    <div className="col-12 p-2 bg-light rounded-3 mb-2">
+                      <div className="fw-bold text-dark mb-1">12th Standard:</div>
+                      <div className="small text-muted">
+                        School/College: <b>{selectedStudent.twelfthSchool || "N/A"}</b> | Board: <b>{selectedStudent.twelfthBoard || "N/A"}</b> | Year: <b>{selectedStudent.twelfthYear || "N/A"}</b> | Percentage: <b>{selectedStudent.twelfthPercentage || "N/A"}</b>
+                      </div>
+                      {selectedStudent.twelfthDoc ? (
+                        <a href={selectedStudent.twelfthDoc} download={`12th_Certificate_${selectedStudent.studentId}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-success mt-1 py-0 px-2 fw-bold">
+                          <i className="fas fa-file-download me-1"></i> View 12th Certificate
+                        </a>
+                      ) : <span className="small text-muted d-block mt-1">No 12th document attached</span>}
+                    </div>
+
+                    <div className="col-12 p-2 bg-light rounded-3">
+                      <div className="fw-bold text-dark mb-1">Graduation / Degree:</div>
+                      <div className="small text-muted">
+                        College: <b>{selectedStudent.collegeName || "N/A"}</b> | University: <b>{selectedStudent.collegeUniversity || "N/A"}</b> | Year: <b>{selectedStudent.collegeYear || "N/A"}</b> | Percentage: <b>{selectedStudent.collegePercentage || "N/A"}</b>
+                      </div>
+                      {selectedStudent.collegeDoc ? (
+                        <a href={selectedStudent.collegeDoc} download={`Degree_${selectedStudent.studentId}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-success mt-1 py-0 px-2 fw-bold">
+                          <i className="fas fa-file-download me-1"></i> View Degree Document
+                        </a>
+                      ) : <span className="small text-muted d-block mt-1">No college document attached</span>}
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -541,7 +710,7 @@ function StudentList() {
         </div>
       )}
 
-      {/* EDIT MODAL */}
+      {/* FULLY SYNCHRONIZED COMPREHENSIVE EDIT MODAL */}
       {editStudent && (
         <div 
           className="modal-overlay no-print" 
@@ -551,22 +720,22 @@ function StudentList() {
             backgroundColor: 'rgba(15, 23, 42, 0.85)', 
             zIndex: 99999, 
             overflowY: 'auto',
-            padding: '40px 15px'
+            padding: '30px 15px'
           }}
         >
           <div 
             style={{ 
               backgroundColor: '#ffffff',
-              maxWidth: '920px', 
+              maxWidth: '1050px', 
               margin: '0 auto', 
-              borderRadius: '20px', 
+              borderRadius: '24px', 
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
               overflow: 'hidden'
             }}
           >
             <div 
               style={{ 
-                padding: '16px 24px', 
+                padding: '18px 25px', 
                 backgroundColor: '#1e293b', 
                 color: '#ffffff', 
                 display: 'flex', 
@@ -575,7 +744,7 @@ function StudentList() {
               }}
             >
               <h5 className="fw-bold mb-0 text-white">
-                <i className="fas fa-user-edit text-warning me-2"></i> Update Student Information
+                <i className="fas fa-user-edit text-warning me-2"></i> Update Complete Student Profile & Credentials
               </h5>
               <button 
                 type="button" 
@@ -584,81 +753,109 @@ function StudentList() {
               ></button>
             </div>
 
-            <form onSubmit={handleUpdate} style={{ padding: '24px' }}>
+            <form onSubmit={handleUpdate} style={{ padding: '28px' }}>
+              
+              {/* Profile Photo Preview & Change */}
+              <div className="text-center mb-4 pb-3 border-bottom">
+                <div className="d-inline-block position-relative">
+                  <img 
+                    src={editStudent.photo || "https://via.placeholder.com/150"} 
+                    alt="Student Preview" 
+                    style={{
+                      width: '110px',
+                      height: '110px',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                      border: '4px solid #0000FF',
+                      boxShadow: '0 6px 16px rgba(0, 0, 255, 0.2)'
+                    }}
+                  />
+                  <label 
+                    htmlFor="editPhotoUploadInput" 
+                    className="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow"
+                    style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    title="Change Student Photo"
+                  >
+                    <i className="fas fa-camera"></i>
+                  </label>
+                  <input 
+                    id="editPhotoUploadInput"
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleEditPhotoUpload}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+                <div className="mt-2">
+                  <span className="fw-bold text-dark d-block">Student Photograph</span>
+                  <small className="text-muted">Click the camera button to replace (Max: 2MB JPG/PNG)</small>
+                </div>
+              </div>
+
               <div className="row g-3">
-                <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Academic & Course Details</h6></div>
+                {/* 1. REGISTRATION & COURSE */}
+                <div className="col-12"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">1. Registration & Course Details</h6></div>
                 
-                <div className="col-md-4">
+                <div className="col-md-3">
                   <label className="small fw-bold text-dark">Registration ID *</label>
                   <input type="text" className="form-control font-monospace fw-bold text-primary" value={editStudent.studentId || ""} onChange={(e) => setEditStudent({ ...editStudent, studentId: e.target.value.toUpperCase() })} required />
                 </div>
-                
-                <div className="col-md-4">
-                  <label className="small fw-bold text-dark">Course *</label>
+
+                <div className="col-md-3">
+                  <label className="small fw-bold text-dark">Course Enrolled *</label>
                   <select className="form-select" value={editStudent.course || "DCA"} onChange={(e) => setEditStudent({ ...editStudent, course: e.target.value })}>
-                    <option value="DCA">DCA</option>
-                    <option value="ADCA">ADCA</option>
+                    <option value="DCA">DCA (Diploma in Computer Applications)</option>
+                    <option value="ADCA">ADCA (Advanced Diploma)</option>
                     <option value="Steno">Stenography & Shorthand</option>
-                    <option value="Short Term">Short Term / Web Dev</option>
+                    <option value="Short Term">Short Term / Web Development</option>
                     <option value="Tally">Tally Prime & Accounting</option>
-                    <option value="Basic">Basic Computer</option>
+                    <option value="Basic">Basic Computer Operations</option>
                   </select>
                 </div>
-                
-                <div className="col-md-4">
+
+                <div className="col-md-3">
                   <label className="small fw-bold text-dark">Course Duration</label>
                   <input type="text" className="form-control" value={editStudent.courseDuration || ""} onChange={(e) => setEditStudent({ ...editStudent, courseDuration: e.target.value })} />
                 </div>
 
-                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Personal & Identity Details</h6></div>
-                
-                <div className="col-md-4">
-                  <label className="small fw-bold text-dark">Student Full Name *</label>
-                  <input type="text" className="form-control" value={editStudent.name || ""} onChange={(e) => setEditStudent({ ...editStudent, name: e.target.value })} required />
+                <div className="col-md-3">
+                  <label className="small fw-bold text-dark">Admission Date *</label>
+                  <input type="date" className="form-control" value={editStudent.admissionDate || ""} onChange={(e) => setEditStudent({ ...editStudent, admissionDate: e.target.value })} required />
                 </div>
-                
+
+                {/* 2. PERSONAL DETAILS */}
+                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">2. Personal & Identity Details</h6></div>
+
                 <div className="col-md-4">
-                  <label className="small fw-bold text-dark">Gender</label>
+                  <label className="small fw-bold text-dark">First Name *</label>
+                  <input type="text" className="form-control" value={editStudent.firstName || ""} onChange={(e) => setEditStudent({ ...editStudent, firstName: e.target.value })} required />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Last Name</label>
+                  <input type="text" className="form-control" value={editStudent.lastName || ""} onChange={(e) => setEditStudent({ ...editStudent, lastName: e.target.value })} />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Gender *</label>
                   <select className="form-select" value={editStudent.gender || "Male"} onChange={(e) => setEditStudent({ ...editStudent, gender: e.target.value })}>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                
+
                 <div className="col-md-4">
                   <label className="small fw-bold text-dark">Date of Birth (Login Password) *</label>
                   <input type="date" className="form-control" value={editStudent.dob || ""} onChange={(e) => setEditStudent({ ...editStudent, dob: e.target.value })} required />
                 </div>
-                
+
                 <div className="col-md-4">
                   <label className="small fw-bold text-danger">Aadhaar Card Number *</label>
                   <input type="text" className="form-control font-monospace border-danger" maxLength="12" value={editStudent.aadhaar || ""} onChange={(e) => setEditStudent({ ...editStudent, aadhaar: e.target.value.replace(/[^0-9]/g, '') })} required />
                 </div>
-                
+
                 <div className="col-md-4">
-                  <label className="small fw-bold text-dark">Phone Number *</label>
-                  <input type="tel" className="form-control" maxLength="10" value={editStudent.phone || ""} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value.replace(/[^0-9]/g, '') })} required />
-                </div>
-                
-                <div className="col-md-4">
-                  <label className="small fw-bold text-dark">Email Address</label>
-                  <input type="email" className="form-control" value={editStudent.email || ""} onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} placeholder="student@example.com" />
-                </div>
-                
-                <div className="col-md-6">
-                  <label className="small fw-bold text-dark">Highest Qualification</label>
-                  <select className="form-select" value={editStudent.qualification || "12th Pass"} onChange={(e) => setEditStudent({ ...editStudent, qualification: e.target.value })}>
-                    <option value="10th Pass">10th Matriculation</option>
-                    <option value="12th Pass">12th Intermediate</option>
-                    <option value="Undergraduate">Undergraduate</option>
-                    <option value="Graduate">Graduate</option>
-                    <option value="Postgraduate">Postgraduate</option>
-                    <option value="Other">Other Diploma</option>
-                  </select>
-                </div>
-                
-                <div className="col-md-6">
                   <label className="small fw-bold text-dark">Blood Group</label>
                   <select className="form-select" value={editStudent.bloodGroup || "Unknown"} onChange={(e) => setEditStudent({ ...editStudent, bloodGroup: e.target.value })}>
                     <option value="Unknown">Unknown</option>
@@ -673,23 +870,39 @@ function StudentList() {
                   </select>
                 </div>
 
-                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Family Background & Address</h6></div>
-                
-                <div className="col-md-6">
-                  <label className="small fw-bold text-dark">Father's Name</label>
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Student Mobile Number *</label>
+                  <input type="tel" className="form-control" maxLength="10" value={editStudent.phone || ""} onChange={(e) => setEditStudent({ ...editStudent, phone: e.target.value.replace(/[^0-9]/g, '') })} required />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Parents / Guardian Mobile Number</label>
+                  <input type="tel" className="form-control" maxLength="10" value={editStudent.parentPhone || ""} onChange={(e) => setEditStudent({ ...editStudent, parentPhone: e.target.value.replace(/[^0-9]/g, '') })} />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Email Address</label>
+                  <input type="email" className="form-control" value={editStudent.email || ""} onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })} placeholder="student@example.com" />
+                </div>
+
+                {/* 3. PARENTAGE & SOCIO-ECONOMIC */}
+                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">3. Parentage & Family Details</h6></div>
+
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Father's Full Name</label>
                   <input type="text" className="form-control" value={editStudent.fatherName || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherName: e.target.value })} />
                 </div>
-                
-                <div className="col-md-6">
+
+                <div className="col-md-4">
                   <label className="small fw-bold text-dark">Father's Occupation</label>
                   <input type="text" className="form-control" value={editStudent.fatherOccupation || ""} onChange={(e) => setEditStudent({ ...editStudent, fatherOccupation: e.target.value })} />
                 </div>
-                
-                <div className="col-md-6">
-                  <label className="small fw-bold text-dark">Mother's Name</label>
+
+                <div className="col-md-4">
+                  <label className="small fw-bold text-dark">Mother's Full Name</label>
                   <input type="text" className="form-control" value={editStudent.motherName || ""} onChange={(e) => setEditStudent({ ...editStudent, motherName: e.target.value })} />
                 </div>
-                
+
                 <div className="col-md-6">
                   <label className="small fw-bold text-dark">Annual Family Income</label>
                   <select className="form-select" value={editStudent.familyIncome || "Below 1 Lakh"} onChange={(e) => setEditStudent({ ...editStudent, familyIncome: e.target.value })}>
@@ -699,20 +912,135 @@ function StudentList() {
                     <option value="Above 5 Lakhs">Above ₹5,00,000</option>
                   </select>
                 </div>
-                
-                <div className="col-12">
-                  <label className="small fw-bold text-dark">Permanent Address</label>
-                  <textarea className="form-control" rows="2" value={editStudent.address || ""} onChange={(e) => setEditStudent({ ...editStudent, address: e.target.value })}></textarea>
+
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Highest Qualification</label>
+                  <select className="form-select" value={editStudent.qualification || "12th Pass"} onChange={(e) => setEditStudent({ ...editStudent, qualification: e.target.value })}>
+                    <option value="10th Pass">10th Matriculation</option>
+                    <option value="12th Pass">12th Intermediate</option>
+                    <option value="Undergraduate">Undergraduate</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Postgraduate">Postgraduate</option>
+                    <option value="Other">Other Diploma</option>
+                  </select>
                 </div>
 
-                <div className="col-12 mt-3"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Profile Photograph</h6></div>
-                <div className="col-12 d-flex align-items-center gap-3">
-                  {editStudent.photo && (
-                    <img src={editStudent.photo} alt="Student" style={{ width: '65px', height: '65px', objectFit: 'cover', borderRadius: '10px', border: '2px solid #0000FF' }} />
-                  )}
-                  <input type="file" className="form-control" accept="image/*" onChange={handleEditPhotoUpload} />
+                {/* 4. RESIDENTIAL ADDRESS */}
+                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">4. Residential Address Details</h6></div>
+
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Street Address / Village</label>
+                  <input type="text" className="form-control" value={editStudent.addressStreet || ""} onChange={(e) => setEditStudent({ ...editStudent, addressStreet: e.target.value })} placeholder="House No, Street, Village, Post Office" />
                 </div>
 
+                <div className="col-md-3">
+                  <label className="small fw-bold text-dark">City / Tehsil</label>
+                  <input type="text" className="form-control" value={editStudent.city || ""} onChange={(e) => setEditStudent({ ...editStudent, city: e.target.value })} placeholder="City / Tehsil" />
+                </div>
+
+                <div className="col-md-3">
+                  <label className="small fw-bold text-dark">District</label>
+                  <input type="text" className="form-control" value={editStudent.district || ""} onChange={(e) => setEditStudent({ ...editStudent, district: e.target.value })} placeholder="District" />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">State</label>
+                  <input type="text" className="form-control" value={editStudent.state || ""} onChange={(e) => setEditStudent({ ...editStudent, state: e.target.value })} placeholder="State" />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="small fw-bold text-dark">Postal PIN Code</label>
+                  <input type="text" className="form-control font-monospace" maxLength="6" value={editStudent.pincode || ""} onChange={(e) => setEditStudent({ ...editStudent, pincode: e.target.value.replace(/[^0-9]/g, '') })} placeholder="6-digit PIN" />
+                </div>
+
+                {/* 5. ACADEMIC DETAILS & ATTACHMENTS */}
+                <div className="col-12 mt-4"><h6 className="fw-bold text-primary border-bottom pb-1 mb-2">5. Educational Qualifications & Documents (PDF/JPG/PNG up to 2MB)</h6></div>
+
+                {/* 10th */}
+                <div className="col-12 p-3 bg-light rounded-3 border mb-2">
+                  <h6 className="fw-bold text-dark mb-2"><i className="fas fa-graduation-cap me-2 text-primary"></i> 10th Standard (Matriculation)</h6>
+                  <div className="row g-2">
+                    <div className="col-md-4">
+                      <label className="small text-muted fw-bold">School Name</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.tenthSchool || ""} onChange={(e) => setEditStudent({ ...editStudent, tenthSchool: e.target.value })} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="small text-muted fw-bold">Board (e.g. HPBOSE / CBSE)</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.tenthBoard || ""} onChange={(e) => setEditStudent({ ...editStudent, tenthBoard: e.target.value })} />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="small text-muted fw-bold">Passing Year</label>
+                      <input type="text" className="form-control form-control-sm" maxLength="4" value={editStudent.tenthYear || ""} onChange={(e) => setEditStudent({ ...editStudent, tenthYear: e.target.value.replace(/[^0-9]/g, '') })} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="small text-muted fw-bold">Percentage / CGPA</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.tenthPercentage || ""} onChange={(e) => setEditStudent({ ...editStudent, tenthPercentage: e.target.value })} />
+                    </div>
+                    <div className="col-12 mt-2">
+                      <label className="small fw-bold text-primary">Upload / Replace 10th Certificate (PDF/Image)</label>
+                      <input type="file" className="form-control form-control-sm" accept=".pdf,image/*" onChange={(e) => handleEditDocUpload(e, 'tenthDoc')} />
+                      {editStudent.tenthDoc && <small className="text-success fw-bold d-block mt-1">✓ Certificate currently attached</small>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 12th */}
+                <div className="col-12 p-3 bg-light rounded-3 border mb-2">
+                  <h6 className="fw-bold text-dark mb-2"><i className="fas fa-graduation-cap me-2 text-primary"></i> 12th Standard (Higher Secondary)</h6>
+                  <div className="row g-2">
+                    <div className="col-md-4">
+                      <label className="small text-muted fw-bold">School / College Name</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.twelfthSchool || ""} onChange={(e) => setEditStudent({ ...editStudent, twelfthSchool: e.target.value })} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="small text-muted fw-bold">Board (e.g. HPBOSE / CBSE)</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.twelfthBoard || ""} onChange={(e) => setEditStudent({ ...editStudent, twelfthBoard: e.target.value })} />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="small text-muted fw-bold">Passing Year</label>
+                      <input type="text" className="form-control form-control-sm" maxLength="4" value={editStudent.twelfthYear || ""} onChange={(e) => setEditStudent({ ...editStudent, twelfthYear: e.target.value.replace(/[^0-9]/g, '') })} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="small text-muted fw-bold">Percentage / CGPA</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.twelfthPercentage || ""} onChange={(e) => setEditStudent({ ...editStudent, twelfthPercentage: e.target.value })} />
+                    </div>
+                    <div className="col-12 mt-2">
+                      <label className="small fw-bold text-primary">Upload / Replace 12th Certificate (PDF/Image)</label>
+                      <input type="file" className="form-control form-control-sm" accept=".pdf,image/*" onChange={(e) => handleEditDocUpload(e, 'twelfthDoc')} />
+                      {editStudent.twelfthDoc && <small className="text-success fw-bold d-block mt-1">✓ Certificate currently attached</small>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* College */}
+                <div className="col-12 p-3 bg-light rounded-3 border mb-3">
+                  <h6 className="fw-bold text-dark mb-2"><i className="fas fa-university me-2 text-primary"></i> Graduation / College Degree (Optional)</h6>
+                  <div className="row g-2">
+                    <div className="col-md-4">
+                      <label className="small text-muted fw-bold">College Name</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.collegeName || ""} onChange={(e) => setEditStudent({ ...editStudent, collegeName: e.target.value })} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="small text-muted fw-bold">University (e.g. HPU / IGNOU)</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.collegeUniversity || ""} onChange={(e) => setEditStudent({ ...editStudent, collegeUniversity: e.target.value })} />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="small text-muted fw-bold">Passing Year</label>
+                      <input type="text" className="form-control form-control-sm" maxLength="4" value={editStudent.collegeYear || ""} onChange={(e) => setEditStudent({ ...editStudent, collegeYear: e.target.value.replace(/[^0-9]/g, '') })} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="small text-muted fw-bold">Aggregate Percentage</label>
+                      <input type="text" className="form-control form-control-sm" value={editStudent.collegePercentage || ""} onChange={(e) => setEditStudent({ ...editStudent, collegePercentage: e.target.value })} />
+                    </div>
+                    <div className="col-12 mt-2">
+                      <label className="small fw-bold text-primary">Upload / Replace College Document (PDF/Image)</label>
+                      <input type="file" className="form-control form-control-sm" accept=".pdf,image/*" onChange={(e) => handleEditDocUpload(e, 'collegeDoc')} />
+                      {editStudent.collegeDoc && <small className="text-success fw-bold d-block mt-1">✓ Degree document currently attached</small>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
                 <div className="col-12 mt-4 pt-4 border-top d-flex justify-content-end align-items-center gap-3">
                   <button 
                     type="button" 
